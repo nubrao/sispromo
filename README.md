@@ -101,7 +101,7 @@ Acesse o frontend no navegador: [http://localhost:5173](http://localhost:5173)
 
 ## 📞 **Contato**
 
-Caso tenha dúvidas ou sugestões, entre em contato pelo e-mail [seuemail@email.com](mailto\:seuemail@email.com) ou abra uma issue neste repositório.
+Caso tenha dúvidas ou sugestões, entre em contato pelo e-mail [brunomcamara@outlook.com](mailto\:brunomcamara@outlook.com) ou abra uma issue neste repositório.
 
 ---
 
