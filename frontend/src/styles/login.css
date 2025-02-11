@@ -1,0 +1,91 @@
+/* 🔹 Configuração padrão */
+:root {
+    --background-light: #f3f4f6;
+    --background-dark: #1a1a1a;
+    --text-light: #000;
+    --text-dark: #fff;
+    --input-border-light: #ccc;
+    --input-border-dark: #444;
+    --button-bg-light: #3182ce;
+    --button-bg-dark: #4a90e2;
+    --button-hover-light: #2b6cb0;
+    --button-hover-dark: #3b82f6;
+}
+
+/* 🔹 Aplica o tema claro por padrão */
+body {
+    background-color: var(--background-light);
+    color: var(--text-light);
+    transition: background 0.3s, color 0.3s;
+}
+
+/* 🔹 Aplica o tema escuro se o usuário estiver usando */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: var(--background-dark);
+        color: var(--text-dark);
+    }
+}
+
+/* 🔹 Centraliza os elementos na tela */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Ocupa toda a altura da tela */
+}
+
+/* 🔹 Formulário de login */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+}
+
+/* 🔹 Campos de entrada */
+.login-input {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: transparent;
+    border: 1px solid var(--input-border-light);
+    color: var(--text-light);
+    transition: border 0.3s;
+}
+
+@media (prefers-color-scheme: dark) {
+    .login-input {
+        border-color: var(--input-border-dark);
+        color: var(--text-dark);
+    }
+}
+
+/* 🔹 Botão de login */
+.login-button {
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: var(--button-bg-light);
+    color: white;
+    transition: background 0.3s;
+}
+
+@media (prefers-color-scheme: dark) {
+    .login-button {
+        background-color: var(--button-bg-dark);
+    }
+}
+
+.login-button:hover {
+    background-color: var(--button-hover-light);
+}
+
+@media (prefers-color-scheme: dark) {
+    .login-button:hover {
+        background-color: var(--button-hover-dark);
+    }
+}

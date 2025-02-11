@@ -1,0 +1,9 @@
+.dashboard-container {
+    text-align: center;
+    padding: 20px;
+}
+
+.dashboard-title {
+    font-size: 24px;
+    font-weight: bold;
+}

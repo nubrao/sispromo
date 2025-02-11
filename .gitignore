@@ -1,0 +1,38 @@
+# Ignorar arquivos de ambiente virtual
+venv/
+.env
+*.pyc
+__pycache__/
+db.sqlite3
+
+# Ignorar logs e caches
+*.log
+*.sqlite3-journal
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Ignorar arquivos de migração antigos (opcional)
+backend/core/migrations/
+
+# Ignorar dependências do Node.js (frontend)
+node_modules/
+dist/
+.vite/
+.vscode/
+dist-ssr
+*.local
+
+# Ignorar arquivos do Visual Studio Code
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

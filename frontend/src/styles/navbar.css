@@ -1,0 +1,86 @@
+/* 🔹 Configuração padrão da navbar */
+.navbar {
+    width: 250px;
+    height: 100vh;
+    background-color: #1a202c;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: width 0.3s ease-in-out;
+    overflow: hidden;
+}
+
+/* 🔹 Quando a navbar está fechada */
+.navbar.closed {
+    width: 60px;
+    
+    background-color: #1a202c00;
+}
+
+/* 🔹 Esconder elementos quando a navbar está fechada */
+.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+/* 🔹 Mostrar elementos quando a navbar está aberta */
+.visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+/* 🔹 Ajuste do título da navbar */
+.navbar-title {
+    transition: opacity 0.3s;
+    padding-left: 10px;
+}
+
+/* 🔹 Links e espaçamentos */
+.navbar-links ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.navbar-links li {
+    padding: 10px;
+}
+
+/* 🔹 Estilo dos links */
+.navbar-links a {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+    padding: 10px;
+    transition: background 0.3s;
+}
+
+.navbar-links a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* 🔹 Ajuste para o botão de logout no rodapé */
+.navbar-footer {
+    margin-top: auto;
+    padding: 16px;
+}
+
+/* 🔹 Botão de logout */
+.logout-button {
+    width: 100%;
+    background-color: #e53e3e;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.logout-button:hover {
+    background-color: #c53030;
+}
