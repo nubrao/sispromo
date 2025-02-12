@@ -75,3 +75,9 @@
 .table th {
     background-color: #444;
 }
+
+.error-message {
+    color: red;
+    font-size: 14px;
+    margin-top: 5px;
+}

@@ -1,14 +1,19 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/form.css";
+import { formatCPF, formatPhone } from "../hooks/useMask";
+import useTranslateMessage from "../hooks/useTranslateMessage";
 
 const PromoterForm = () => {
     const [name, setName] = useState("");
-    const [cpf, setCpf] = useState("");
+    const [cpf, setCPF] = useState("");
     const [phone, setPhone] = useState("");
     const [promoters, setPromoters] = useState([]);
+    const [errorMessage, setErrorMessage] = useState("");
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
+
+    const { translateMessage } = useTranslateMessage();
 
     useEffect(() => {
         fetchPromoters();
@@ -17,9 +22,7 @@ const PromoterForm = () => {
     const fetchPromoters = async () => {
         try {
             const response = await axios.get(`${API_URL}/api/promoters/`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
+                headers: { Authorization: `Bearer ${token}` },
             });
             setPromoters(response.data);
         } catch (error) {
@@ -29,18 +32,40 @@ const PromoterForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setErrorMessage("");
+
+        const cleanedCPF = cpf.replace(/\D/g, "");
+        const cleanedPhone = phone.replace(/\D/g, "");
+
         try {
-            await axios.post(`${API_URL}/api/token/`, {
-                name,
-                cpf,
-                phone,
-            });
+            await axios.post(
+                `${API_URL}/api/promoters/`,
+                { name, cpf: cleanedCPF, phone: cleanedPhone },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
             fetchPromoters();
             setName("");
-            setCpf("");
+            setCPF("");
             setPhone("");
         } catch (error) {
-            console.error("Error creating promoter", error);
+            if (error.response && error.response.status === 400) {
+                if (error.response.data.cpf) {
+                    const translatedMessage = await translateMessage(
+                        error.response.data.cpf[0]
+                    );
+                    setErrorMessage(translatedMessage);
+                } else {
+                    const translatedMessage = await translateMessage(
+                        "Erro ao cadastrar promotor. Verifique os dados."
+                    );
+                    setErrorMessage(translatedMessage);
+                }
+            } else {
+                const translatedMessage = await translateMessage(
+                    "Erro ao conectar com o servidor."
+                );
+                setErrorMessage(translatedMessage);
+            }
         }
     };
 
@@ -60,15 +85,18 @@ const PromoterForm = () => {
                     type="text"
                     placeholder="CPF"
                     value={cpf}
-                    onChange={(e) => setCpf(e.target.value)}
+                    onChange={(e) => setCPF(formatCPF(e.target.value))}
                     className="form-input-text"
                     required
                 />
+                {errorMessage && (
+                    <p className="error-message">{errorMessage}</p>
+                )}
                 <input
                     type="text"
-                    placeholder="Telefone"
+                    placeholder="Celular"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(formatPhone(e.target.value))}
                     className="form-input-text"
                     required
                 />
@@ -83,15 +111,15 @@ const PromoterForm = () => {
                     <tr>
                         <th>Nome</th>
                         <th>CPF</th>
-                        <th>Telefone</th>
+                        <th>Celular</th>
                     </tr>
                 </thead>
                 <tbody>
                     {promoters.map((promoter) => (
                         <tr key={promoter.id}>
                             <td>{promoter.name}</td>
-                            <td>{promoter.cpf}</td>
-                            <td>{promoter.phone}</td>
+                            <td>{formatCPF(promoter.cpf)}</td>
+                            <td>{formatPhone(promoter.phone)}</td>
                         </tr>
                     ))}
                 </tbody>

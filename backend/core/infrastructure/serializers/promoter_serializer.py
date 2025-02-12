@@ -5,4 +5,4 @@ from core.infrastructure.models.promoter_model import PromoterModel
 class PromoterSerializer(serializers.ModelSerializer):
     class Meta:
         model = PromoterModel
-        fields = '__all__'
+        fields = ["id", "name", "cpf", "phone"]
