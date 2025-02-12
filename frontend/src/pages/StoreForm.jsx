@@ -9,6 +9,8 @@ const StoreForm = () => {
     const [district, setDistrict] = useState("");
     const [cnpj, setCnpj] = useState("");
     const [stores, setStores] = useState([]);
+    const API_URL = import.meta.env.VITE_API_URL;
+    const token = localStorage.getItem("token");
 
     useEffect(() => {
         fetchStores();
@@ -16,9 +18,11 @@ const StoreForm = () => {
 
     const fetchStores = async () => {
         try {
-            const response = await axios.get(
-                "http://127.0.0.1:8000/api/stores/"
-            );
+            const response = await axios.get(`${API_URL}/api/stores/`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
             setStores(response.data);
         } catch (error) {
             console.error("Error fetching stores", error);
@@ -28,7 +32,7 @@ const StoreForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post("http://127.0.0.1:8000/api/stores/", {
+            await axios.post(`${API_URL}/api/token/`, {
                 name,
                 number,
                 city,

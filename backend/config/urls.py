@@ -21,6 +21,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from core.infrastructure.views.promoter_view import PromoterViewSet
 from core.infrastructure.views.store_view import StoreViewSet
 from core.infrastructure.views.visit_view import VisitViewSet
+from core.infrastructure.views.auth_view import LogoutView
 
 router = DefaultRouter()
 router.register(r'promoters', PromoterViewSet)
@@ -32,4 +33,5 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path("api/logout/", LogoutView.as_view(), name="logout"),
 ]

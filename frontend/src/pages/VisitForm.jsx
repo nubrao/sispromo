@@ -10,6 +10,8 @@ const VisitForm = () => {
     const [visits, setVisits] = useState([]);
     const [promoters, setPromoters] = useState([]);
     const [stores, setStores] = useState([]);
+    const API_URL = import.meta.env.VITE_API_URL;
+    const token = localStorage.getItem("token");
 
     useEffect(() => {
         fetchPromoters();
@@ -19,9 +21,11 @@ const VisitForm = () => {
 
     const fetchPromoters = async () => {
         try {
-            const response = await axios.get(
-                "http://127.0.0.1:8000/api/promoters/"
-            );
+            const response = await axios.get(`${API_URL}/api/promoters/`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
             setPromoters(response.data);
         } catch (error) {
             console.error("Error fetching promoters", error);
@@ -30,9 +34,11 @@ const VisitForm = () => {
 
     const fetchStores = async () => {
         try {
-            const response = await axios.get(
-                "http://127.0.0.1:8000/api/stores/"
-            );
+            const response = await axios.get(`${API_URL}/api/stores/`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
             setStores(response.data);
         } catch (error) {
             console.error("Error fetching stores", error);
@@ -41,9 +47,11 @@ const VisitForm = () => {
 
     const fetchVisits = async () => {
         try {
-            const response = await axios.get(
-                "http://127.0.0.1:8000/api/visits/"
-            );
+            const response = await axios.get(`${API_URL}/api/visits/`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
             setVisits(response.data);
         } catch (error) {
             console.error("Error fetching visits", error);
@@ -61,7 +69,7 @@ const VisitForm = () => {
         };
 
         try {
-            await axios.post("http://127.0.0.1:8000/api/visits/", visitData, {
+            await axios.post(`${API_URL}/api/token/`, visitData, {
                 headers: { "Content-Type": "application/json" },
             });
             fetchVisits();

@@ -7,6 +7,8 @@ const PromoterForm = () => {
     const [cpf, setCpf] = useState("");
     const [phone, setPhone] = useState("");
     const [promoters, setPromoters] = useState([]);
+    const API_URL = import.meta.env.VITE_API_URL;
+    const token = localStorage.getItem("token");
 
     useEffect(() => {
         fetchPromoters();
@@ -14,9 +16,11 @@ const PromoterForm = () => {
 
     const fetchPromoters = async () => {
         try {
-            const response = await axios.get(
-                "http://127.0.0.1:8000/api/promoters/"
-            );
+            const response = await axios.get(`${API_URL}/api/promoters/`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
             setPromoters(response.data);
         } catch (error) {
             console.error("Error fetching promoters", error);
@@ -26,7 +30,7 @@ const PromoterForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post("http://127.0.0.1:8000/api/promoters/", {
+            await axios.post(`${API_URL}/api/token/`, {
                 name,
                 cpf,
                 phone,
