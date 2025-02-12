@@ -8,11 +8,8 @@ export const AuthContext = createContext(null);
 const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem("token") || null);
-    const INACTIVITY_LIMIT = 3600000;
     const navigate = useNavigate();
     const API_URL = import.meta.env.VITE_API_URL;
-
-    let logoutTimer;
 
     useEffect(() => {
         if (token) {
@@ -37,7 +34,6 @@ const AuthProvider = ({ children }) => {
             );
 
             setToken(response.data.access);
-            resetTimer();
             navigate("/dashboard");
             localStorage.setItem("token", response.data.access);
             axios.defaults.headers.common[
@@ -58,26 +54,6 @@ const AuthProvider = ({ children }) => {
         delete axios.defaults.headers.common["Authorization"];
         navigate("/login");
     };
-
-    const resetTimer = () => {
-        if (logoutTimer) clearTimeout(logoutTimer);
-        logoutTimer = setTimeout(() => {
-            logout();
-        }, INACTIVITY_LIMIT);
-    };
-
-    useEffect(() => {
-        if (token) {
-            resetTimer();
-            window.addEventListener("mousemove", resetTimer);
-            window.addEventListener("keydown", resetTimer);
-        }
-
-        return () => {
-            window.removeEventListener("mousemove", resetTimer);
-            window.removeEventListener("keydown", resetTimer);
-        };
-    }, [token]);
 
     return (
         <AuthContext.Provider value={{ user, token, login, logout }}>

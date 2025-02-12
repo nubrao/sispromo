@@ -12,7 +12,6 @@ const PromoterForm = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
-
     const { translateMessage } = useTranslateMessage();
 
     useEffect(() => {

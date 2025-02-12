@@ -81,3 +81,29 @@
     font-size: 14px;
     margin-top: 5px;
 }
+
+.form-city-state {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    .city {
+        width: 58%;
+    }
+    .state {
+        width: 38%;
+    }
+}
+
+.form-storeName-number {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    .storeName {
+        width: 68%;
+    }
+    .number {
+        width: 28%;
+    }
+}

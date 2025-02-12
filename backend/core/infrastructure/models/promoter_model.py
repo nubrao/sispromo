@@ -6,7 +6,7 @@ from validate_docbr import CPF
 def validate_cpf(value):
     cpf = CPF()
     if not cpf.validate(value):
-        raise ValidationError("CPF inválido.")
+        raise ValidationError("Invalid CPF.")
 
 
 class PromoterModel(models.Model):
