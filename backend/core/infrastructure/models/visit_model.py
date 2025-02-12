@@ -8,4 +8,3 @@ class VisitModel(models.Model):
     store = models.ForeignKey(StoreModel, on_delete=models.CASCADE)
     brand = models.CharField(max_length=255)
     visit_date = models.DateTimeField()
-    photo_url = models.ImageField(upload_to='visits/')

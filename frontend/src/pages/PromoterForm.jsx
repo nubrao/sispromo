@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import "../styles/form.css"; // 🔹 Importação do CSS
+import "../styles/form.css";
 
 const PromoterForm = () => {
     const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+    const [cpf, setCpf] = useState("");
     const [phone, setPhone] = useState("");
     const [promoters, setPromoters] = useState([]);
 
@@ -28,12 +28,12 @@ const PromoterForm = () => {
         try {
             await axios.post("http://127.0.0.1:8000/api/promoters/", {
                 name,
-                email,
+                cpf,
                 phone,
             });
             fetchPromoters();
             setName("");
-            setEmail("");
+            setCpf("");
             setPhone("");
         } catch (error) {
             console.error("Error creating promoter", error);
@@ -49,15 +49,15 @@ const PromoterForm = () => {
                     placeholder="Nome"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 />
                 <input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="form-input"
+                    type="text"
+                    placeholder="CPF"
+                    value={cpf}
+                    onChange={(e) => setCpf(e.target.value)}
+                    className="form-input-text"
                     required
                 />
                 <input
@@ -65,7 +65,7 @@ const PromoterForm = () => {
                     placeholder="Telefone"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 />
                 <button type="submit" className="form-button">
@@ -78,7 +78,7 @@ const PromoterForm = () => {
                 <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>Email</th>
+                        <th>CPF</th>
                         <th>Telefone</th>
                     </tr>
                 </thead>
@@ -86,7 +86,7 @@ const PromoterForm = () => {
                     {promoters.map((promoter) => (
                         <tr key={promoter.id}>
                             <td>{promoter.name}</td>
-                            <td>{promoter.email}</td>
+                            <td>{promoter.cpf}</td>
                             <td>{promoter.phone}</td>
                         </tr>
                     ))}

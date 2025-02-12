@@ -1,6 +1,6 @@
 class Promoter:
-    def __init__(self, id: int, name: str, email: str, phone: str):
+    def __init__(self, id: int, name: str, cpf: str, phone: str):
         self.id = id
         self.name = name
-        self.email = email
+        self.cpf = cpf
         self.phone = phone

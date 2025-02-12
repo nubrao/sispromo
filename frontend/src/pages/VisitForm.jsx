@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import "../styles/form.css"; // 🔹 Importação do CSS
+import "../styles/form.css";
 
 const VisitForm = () => {
-    const [promoterId, setPromoterId] = useState(""); // 🔹 Guarda o ID do promotor selecionado
-    const [storeId, setStoreId] = useState(""); // 🔹 Guarda o ID da loja selecionada
+    const [promoterId, setPromoterId] = useState("");
+    const [storeId, setStoreId] = useState("");
     const [brand, setBrand] = useState("");
     const [visitDate, setVisitDate] = useState("");
     const [visits, setVisits] = useState([]);
-    const [promoters, setPromoters] = useState([]); // 🔹 Lista de promotores disponíveis
-    const [stores, setStores] = useState([]); // 🔹 Lista de lojas disponíveis
+    const [promoters, setPromoters] = useState([]);
+    const [stores, setStores] = useState([]);
 
     useEffect(() => {
         fetchPromoters();
@@ -76,11 +76,10 @@ const VisitForm = () => {
         <div className="form-container">
             <h2 className="form-title">Cadastro de Visitas</h2>
             <form onSubmit={handleSubmit} className="form-input">
-                {/* 🔹 Seleção do Promotor */}
                 <select
                     value={promoterId}
                     onChange={(e) => setPromoterId(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 >
                     <option value="">Selecione um Promotor</option>
@@ -91,11 +90,10 @@ const VisitForm = () => {
                     ))}
                 </select>
 
-                {/* 🔹 Seleção da Loja */}
                 <select
                     value={storeId}
                     onChange={(e) => setStoreId(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 >
                     <option value="">Selecione uma Loja</option>
@@ -111,14 +109,14 @@ const VisitForm = () => {
                     placeholder="Marca"
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 />
                 <input
                     type="datetime-local"
                     value={visitDate}
                     onChange={(e) => setVisitDate(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 />
 

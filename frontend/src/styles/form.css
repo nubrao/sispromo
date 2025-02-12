@@ -14,12 +14,24 @@
 .form-input {
     display: flex;
     flex-direction: column;
+    width: 400px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.form-input-text {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     max-width: 400px;
     padding: 10px;
     margin-bottom: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    box-sizing: border-box;
 }
 
 .form-button {

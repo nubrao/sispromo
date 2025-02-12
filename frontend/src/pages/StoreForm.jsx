@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import "../styles/form.css"; // 🔹 Importação do CSS
+import "../styles/form.css";
 
 const StoreForm = () => {
     const [name, setName] = useState("");
@@ -55,7 +55,7 @@ const StoreForm = () => {
                     placeholder="Nome"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 />
                 <input
@@ -63,7 +63,7 @@ const StoreForm = () => {
                     placeholder="Número"
                     value={number}
                     onChange={(e) => setNumber(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 />
                 <input
@@ -71,7 +71,7 @@ const StoreForm = () => {
                     placeholder="Cidade"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 />
                 <input
@@ -79,7 +79,7 @@ const StoreForm = () => {
                     placeholder="Bairro"
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 />
                 <input
@@ -87,7 +87,7 @@ const StoreForm = () => {
                     placeholder="CNPJ"
                     value={cnpj}
                     onChange={(e) => setCnpj(e.target.value)}
-                    className="form-input"
+                    className="form-input-text"
                     required
                 />
                 <button type="submit" className="form-button">

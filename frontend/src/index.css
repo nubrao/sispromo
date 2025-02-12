@@ -43,6 +43,7 @@ body {
     place-items: center;
     min-width: 320px;
     min-height: 100vh;
+    height: auto;
 }
 
 h1 {
@@ -84,23 +85,18 @@ button:focus-visible {
 
 .app-container {
     display: flex;
-    width: 100vw;
-    height: 100vh;
+    flex-direction: column;
 }
 
 .content {
-    flex-grow: 1;
+    margin-top: 60px;
     padding: 16px;
-    transition: margin-left 0.3s ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .with-navbar {
-    margin-left: 250px; /* 🔹 Ajusta quando a navbar está aberta */
+    margin-left: 250px;
 }
 
 .full-width {
-    margin-left: 60px; /* 🔹 Ajusta quando a navbar está fechada */
+    margin-left: 60px;
 }

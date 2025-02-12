@@ -1,4 +1,3 @@
-/* 🔹 Configuração padrão */
 :root {
     --background-light: #f3f4f6;
     --background-dark: #1a1a1a;
@@ -12,14 +11,12 @@
     --button-hover-dark: #3b82f6;
 }
 
-/* 🔹 Aplica o tema claro por padrão */
 body {
     background-color: var(--background-light);
     color: var(--text-light);
     transition: background 0.3s, color 0.3s;
 }
 
-/* 🔹 Aplica o tema escuro se o usuário estiver usando */
 @media (prefers-color-scheme: dark) {
     body {
         background-color: var(--background-dark);
@@ -27,15 +24,13 @@ body {
     }
 }
 
-/* 🔹 Centraliza os elementos na tela */
 .login-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh; /* Ocupa toda a altura da tela */
+    height: 100vh;
 }
 
-/* 🔹 Formulário de login */
 .login-form {
     display: flex;
     flex-direction: column;
@@ -43,7 +38,6 @@ body {
     max-width: 300px;
 }
 
-/* 🔹 Campos de entrada */
 .login-input {
     padding: 10px;
     margin-bottom: 10px;
@@ -62,7 +56,6 @@ body {
     }
 }
 
-/* 🔹 Botão de login */
 .login-button {
     padding: 10px;
     border-radius: 5px;

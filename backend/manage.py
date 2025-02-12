@@ -16,7 +16,6 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    # 🔹 Se nenhum argumento for passado, define "runserver 0.0.0.0:8000"
     if len(sys.argv) == 1:
         sys.argv.extend(["runserver", "0.0.0.0:8000"])
 

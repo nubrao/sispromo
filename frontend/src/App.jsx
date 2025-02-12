@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 import Login from "./pages/Login";
@@ -20,18 +20,11 @@ PrivateRoute.propTypes = {
 
 function App() {
     const { token } = useContext(AuthContext);
-    const [isNavbarOpen, setIsNavbarOpen] = useState(true); // 🔹 Estado único para a navbar
 
     return (
         <div className="app-container">
-            {token && (
-                <Navbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} />
-            )}
-            <div
-                className={`content ${
-                    isNavbarOpen ? "with-navbar" : "full-width"
-                }`}
-            >
+            {token && <Navbar />}
+            <div className="content">
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route
