@@ -52,15 +52,17 @@ const VisitForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const formData = new FormData();
-        formData.append("promoter", promoterId);
-        formData.append("store", storeId);
-        formData.append("brand", brand);
-        formData.append("visit_date", visitDate);
+
+        const visitData = {
+            promoter: promoterId,
+            store: storeId,
+            brand: brand,
+            visit_date: visitDate,
+        };
 
         try {
-            await axios.post("http://127.0.0.1:8000/api/visits/", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
+            await axios.post("http://127.0.0.1:8000/api/visits/", visitData, {
+                headers: { "Content-Type": "application/json" },
             });
             fetchVisits();
             setPromoterId("");
@@ -68,7 +70,7 @@ const VisitForm = () => {
             setBrand("");
             setVisitDate("");
         } catch (error) {
-            console.error("Error creating visit", error);
+            console.error("Erro ao cadastrar visita", error);
         }
     };
 
@@ -138,11 +140,13 @@ const VisitForm = () => {
                 <tbody>
                     {visits.map((visit) => (
                         <tr key={visit.id}>
-                            <td>{visit.promoter}</td>
-                            <td>{visit.store}</td>
+                            <td>{visit.promoter_name}</td>
+                            <td>{visit.store_display}</td>
                             <td>{visit.brand}</td>
                             <td>
-                                {new Date(visit.visit_date).toLocaleString()}
+                                {new Date(
+                                    visit.visit_date
+                                ).toLocaleDateString()}
                             </td>
                         </tr>
                     ))}

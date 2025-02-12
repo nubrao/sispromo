@@ -76,7 +76,7 @@ const StoreForm = () => {
                 />
                 <input
                     type="text"
-                    placeholder="Bairro"
+                    placeholder="Estado"
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
                     className="form-input-text"
@@ -102,7 +102,7 @@ const StoreForm = () => {
                         <th>Nome</th>
                         <th>Numero</th>
                         <th>Cidade</th>
-                        <th>Bairro</th>
+                        <th>Estado</th>
                         <th>CNPJ</th>
                     </tr>
                 </thead>
