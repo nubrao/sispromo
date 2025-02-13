@@ -11,11 +11,19 @@ const StoreForm = () => {
     const [states, setStates] = useState([]);
     const [selectedState, setSelectedState] = useState("");
     const [cnpj, setCnpj] = useState("");
-    const [errorMessage, setErrorMessage] = useState("");
     const [stores, setStores] = useState([]);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [editingId, setEditingId] = useState(null);
+    const [editName, setEditName] = useState("");
+    const [editNumber, setEditNumber] = useState("");
+    const [editCity, setEditCity] = useState("");
+    const [editState, setEditState] = useState("");
+    const [editCnpj, setEditCnpj] = useState("");
+
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
+    const cleanedCNPJ = editCnpj.replace(/\D/g, "");  
 
     useEffect(() => {
         fetchStores();
@@ -38,9 +46,7 @@ const StoreForm = () => {
     const fetchStores = async () => {
         try {
             const response = await axios.get(`${API_URL}/api/stores/`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` },
             });
             setStores(response.data);
         } catch (error) {
@@ -64,13 +70,16 @@ const StoreForm = () => {
             console.error("Erro ao buscar estados", error);
             setStates([]);
         }
-    };
+    };  
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrorMessage("");
 
-        const cleanedCNPJ = cnpj.replace(/\D/g, "");
+        if (cleanedCNPJ.length !== 14) {
+            setErrorMessage("CNPJ inválido.");
+            return;
+        }
 
         try {
             await axios.post(
@@ -83,10 +92,7 @@ const StoreForm = () => {
                     cnpj: cleanedCNPJ,
                 },
                 {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                 }
             );
             fetchStores();
@@ -115,6 +121,64 @@ const StoreForm = () => {
                 setErrorMessage(translatedMessage);
             }
         }
+    };
+
+    const handleEdit = (store) => {
+        setEditingId(store.id);
+        setEditName(store.name);
+        setEditNumber(store.number);
+        setEditCity(store.city);
+        setEditState(store.state);
+        setEditCnpj(store.cnpj);
+    };
+
+    const handleSaveEdit = async (id) => {
+        setErrorMessage("");
+
+        if (cleanedCNPJ.length !== 14) {
+            setErrorMessage("CNPJ inválido.");
+            return;
+        }
+
+        try {
+            await axios.put(
+                `${API_URL}/api/stores/${id}/`,
+                {
+                    name: editName,
+                    number: editNumber,
+                    city: editCity,
+                    state: editState,
+                    cnpj: cleanedCNPJ,
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            setEditingId(null);
+            fetchStores();
+        } catch (error) {
+            setErrorMessage("Erro ao atualizar loja. Verifique os dados.", error);
+        }
+    };
+
+
+    const handleDelete = async (id) => {
+        if (window.confirm("Tem certeza que deseja excluir esta loja?")) {
+            try {
+                await axios.delete(`${API_URL}/api/stores/${id}/`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                fetchStores();
+            } catch (error) {
+                console.error("Erro ao excluir loja", error);
+            }
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setErrorMessage("");
     };
 
     const handleNumberInput = (value) => {
@@ -189,20 +253,111 @@ const StoreForm = () => {
                 <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>Numero</th>
+                        <th>Número</th>
                         <th>Cidade</th>
                         <th>Estado</th>
                         <th>CNPJ</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {stores.map((store) => (
                         <tr key={store.id}>
-                            <td>{store.name}</td>
-                            <td>{store.number}</td>
-                            <td>{store.city}</td>
-                            <td>{store.state}</td>
-                            <td>{validateCNPJ(store.cnpj)}</td>
+                            {editingId === store.id ? (
+                                <>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            value={editName}
+                                            onChange={(e) =>
+                                                setEditName(e.target.value)
+                                            }
+                                            className="form-input-text"
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            value={editNumber}
+                                            onChange={(e) =>
+                                                setEditNumber(
+                                                    handleNumberInput(
+                                                        e.target.value
+                                                    )
+                                                )
+                                            }
+                                            className="form-input-text"
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            value={editCity}
+                                            onChange={(e) =>
+                                                setEditCity(e.target.value)
+                                            }
+                                            className="form-input-text"
+                                        />
+                                    </td>
+                                    <td>{editState}</td>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            value={formatCNPJ(editCnpj)}
+                                            onChange={(e) =>
+                                                setEditCnpj(e.target.value)
+                                            }
+                                            className="form-input-text"
+                                        />
+                                        {errorMessage && (
+                                            <p className="error-message">
+                                                {errorMessage}
+                                            </p>
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        <button
+                                            onClick={() =>
+                                                handleSaveEdit(store.id)
+                                            }
+                                            className="form-button save-button"
+                                        >
+                                            Salvar
+                                        </button>
+                                        <button
+                                            onClick={handleCancelEdit}
+                                            className="form-button cancel-button"
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </td>
+                                </>
+                            ) : (
+                                <>
+                                    <td>{store.name}</td>
+                                    <td>{store.number}</td>
+                                    <td>{store.city}</td>
+                                    <td>{store.state}</td>
+                                    <td>{validateCNPJ(store.cnpj)}</td>
+                                    <td>
+                                        <button
+                                            onClick={() => handleEdit(store)}
+                                            className="form-button edit-button"
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                handleDelete(store.id)
+                                            }
+                                            className="form-button delete-button"
+                                        >
+                                            ❌
+                                        </button>
+                                    </td>
+                                </>
+                            )}
                         </tr>
                     ))}
                 </tbody>

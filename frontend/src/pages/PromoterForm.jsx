@@ -10,6 +10,11 @@ const PromoterForm = () => {
     const [phone, setPhone] = useState("");
     const [promoters, setPromoters] = useState([]);
     const [errorMessage, setErrorMessage] = useState("");
+    const [editingId, setEditingId] = useState(null);
+    const [editName, setEditName] = useState("");
+    const [editCPF, setEditCPF] = useState("");
+    const [editPhone, setEditPhone] = useState("");
+
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
@@ -25,7 +30,7 @@ const PromoterForm = () => {
             });
             setPromoters(response.data);
         } catch (error) {
-            console.error("Error fetching promoters", error);
+            console.error("Erro ao buscar promotores", error);
         }
     };
 
@@ -66,6 +71,59 @@ const PromoterForm = () => {
                 setErrorMessage(translatedMessage);
             }
         }
+    };
+
+    const handleEdit = (promoter) => {
+        setEditingId(promoter.id);
+        setEditName(promoter.name);
+        setEditCPF(promoter.cpf);
+        setEditPhone(promoter.phone);
+    };
+
+    const handleSaveEdit = async (id) => {
+        setErrorMessage("");
+
+        const cleanedCPF = editCPF.replace(/\D/g, "");
+
+        if (cleanedCPF.length !== 11) {
+            setErrorMessage("CPF inválido.");
+            return;
+        }
+
+        try {
+            await axios.put(
+                `${API_URL}/api/promoters/${id}/`,
+                {
+                    name: editName,
+                    cpf: cleanedCPF,
+                    phone: editPhone.replace(/\D/g, ""),
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setEditingId(null);
+            fetchPromoters();
+        } catch (error) {
+            setErrorMessage("Erro ao atualizar promotor. Verifique os dados."), error;
+        }
+    };
+
+
+    const handleDelete = async (id) => {
+        if (window.confirm("Tem certeza que deseja excluir este promotor?")) {
+            try {
+                await axios.delete(`${API_URL}/api/promoters/${id}/`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                fetchPromoters();
+            } catch (error) {
+                console.error("Erro ao excluir promotor", error);
+            }
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setErrorMessage("");
     };
 
     return (
@@ -111,14 +169,89 @@ const PromoterForm = () => {
                         <th>Nome</th>
                         <th>CPF</th>
                         <th>Celular</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {promoters.map((promoter) => (
                         <tr key={promoter.id}>
-                            <td>{promoter.name}</td>
-                            <td>{formatCPF(promoter.cpf)}</td>
-                            <td>{formatPhone(promoter.phone)}</td>
+                            {editingId === promoter.id ? (
+                                <>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            value={editName}
+                                            onChange={(e) =>
+                                                setEditName(e.target.value)
+                                            }
+                                            className="form-input-text"
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            value={formatCPF(editCPF)}
+                                            onChange={(e) =>
+                                                setEditCPF(e.target.value)
+                                            }
+                                            className="form-input-text"
+                                        />
+                                        {errorMessage && (
+                                            <p className="error-message">
+                                                {errorMessage}
+                                            </p>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            value={formatPhone(editPhone)}
+                                            onChange={(e) =>
+                                                setEditPhone(e.target.value)
+                                            }
+                                            className="form-input-text"
+                                        />
+                                    </td>
+                                    <td>
+                                        <button
+                                            onClick={() =>
+                                                handleSaveEdit(promoter.id)
+                                            }
+                                            className="form-button save-button"
+                                        >
+                                            Salvar
+                                        </button>
+                                        <button
+                                            onClick={handleCancelEdit}
+                                            className="form-button cancel-button"
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </td>
+                                </>
+                            ) : (
+                                <>
+                                    <td>{promoter.name}</td>
+                                    <td>{formatCPF(promoter.cpf)}</td>
+                                    <td>{formatPhone(promoter.phone)}</td>
+                                    <td>
+                                        <button
+                                            onClick={() => handleEdit(promoter)}
+                                            className="form-button edit-button"
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                handleDelete(promoter.id)
+                                            }
+                                            className="form-button delete-button"
+                                        >
+                                            ❌
+                                        </button>
+                                    </td>
+                                </>
+                            )}
                         </tr>
                     ))}
                 </tbody>
