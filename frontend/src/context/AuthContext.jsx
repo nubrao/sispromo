@@ -29,24 +29,16 @@ const AuthProvider = ({ children }) => {
             axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
             try {
-                let newToken = token;
-
                 if (refreshToken) {
                     const response = await axios.post(
                         `${API_URL}/api/token/refresh/`,
                         { refresh: refreshToken }
                     );
-                    newToken = response.data.access;
-                    localStorage.setItem("token", newToken);
-                } else {
-                    await axios.get(`${API_URL}/api/user/`);
-                }
-
-                if (newToken !== token) {
-                    setToken(newToken);
+                    setToken(response.data.access);
+                    localStorage.setItem("token", response.data.access);
                     axios.defaults.headers.common[
                         "Authorization"
-                    ] = `Bearer ${newToken}`;
+                    ] = `Bearer ${response.data.access}`;
                 }
             } catch (error) {
                 console.error("Token inválido ou expirado", error);
@@ -55,6 +47,24 @@ const AuthProvider = ({ children }) => {
         };
 
         verifyToken();
+    }, []);
+
+    // Intercepta respostas do Axios para capturar token expirado (401)
+    useEffect(() => {
+        const interceptor = axios.interceptors.response.use(
+            (response) => response,
+            async (error) => {
+                if (error.response?.status === 401) {
+                    console.error("Sessão expirada. Deslogando usuário...");
+                    logout();
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        return () => {
+            axios.interceptors.response.eject(interceptor);
+        };
     }, []);
 
     const login = async (username, password) => {
