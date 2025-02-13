@@ -1,5 +1,5 @@
-import { useContext } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useContext, useEffect } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -26,6 +26,16 @@ function App() {
             {token && <Navbar />}
             <div className="content">
                 <Routes>
+                    <Route
+                        path="/"
+                        element={
+                            <Navigate
+                                to={token ? "/dashboard" : "/login"}
+                                replace
+                            />
+                        }
+                    />
+
                     <Route path="/login" element={<Login />} />
                     <Route
                         path="/dashboard"
@@ -59,7 +69,8 @@ function App() {
                             </PrivateRoute>
                         }
                     />
-                    <Route path="*" element={<Navigate to="/login" />} />
+
+                    <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </div>
         </div>
