@@ -16,6 +16,10 @@ const VisitForm = () => {
     const [editBrand, setEditBrand] = useState("");
     const [brands, setBrands] = useState([]);
     const [editVisitDate, setEditVisitDate] = useState("");
+    const [filteredStores, setFilteredStores] = useState([]);
+    const [filteredBrands, setFilteredBrands] = useState([]);
+    const [editFilteredStores, setEditFilteredStores] = useState([]);
+    const [editFilteredBrands, setEditFilteredBrands] = useState([]);
 
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
@@ -26,6 +30,54 @@ const VisitForm = () => {
         fetchVisits();
         fetchBrands();
     }, []);
+
+    useEffect(() => {
+        if (promoterId) {
+            const promoterIdNum = parseInt(promoterId, 10);
+
+            const storesForPromoter = stores.filter((store) =>
+                brands.some(
+                    (brand) =>
+                        brand.promoter_id === promoterIdNum &&
+                        brand.store_name === store.name
+                )
+            );
+
+            const brandsForPromoter = brands.filter(
+                (brand) => brand.promoter_id === promoterIdNum
+            );
+
+            setFilteredStores([...storesForPromoter]);
+            setFilteredBrands([...brandsForPromoter]);
+        } else {
+            setFilteredStores([]);
+            setFilteredBrands([]);
+        }
+    }, [promoterId, stores, brands]);
+
+    useEffect(() => {
+        if (editPromoter) {
+            const editPromoterIdNum = parseInt(editPromoter, 10);
+
+            const editStoresForPromoter = stores.filter((store) =>
+                brands.some(
+                    (brand) =>
+                        brand.promoter_id === editPromoterIdNum &&
+                        brand.store_name === store.name
+                )
+            );
+
+            const editBrandsForPromoter = brands.filter(
+                (brand) => brand.promoter_id === editPromoterIdNum
+            );
+
+            setEditFilteredStores([...editStoresForPromoter]);
+            setEditFilteredBrands([...editBrandsForPromoter]);
+        } else {
+            setEditFilteredStores([]);
+            setEditFilteredBrands([]);
+        }
+    }, [editPromoter, stores, brands]);
 
     const fetchPromoters = async () => {
         try {
@@ -162,11 +214,12 @@ const VisitForm = () => {
                     onChange={(e) => setStoreId(e.target.value)}
                     className="form-input-text"
                     required
+                    disabled={!promoterId}
                 >
                     <option value="">Selecione uma Loja</option>
-                    {stores.map((store) => (
+                    {filteredStores.map((store) => (
                         <option key={store.id} value={store.id}>
-                            {store.name} {store.number}
+                            {store.name} - {store.number}
                         </option>
                     ))}
                 </select>
@@ -176,9 +229,10 @@ const VisitForm = () => {
                     onChange={(e) => setBrand(e.target.value)}
                     className="form-input-text"
                     required
+                    disabled={!promoterId}
                 >
                     <option value="">Selecione uma Marca</option>
-                    {brands.map((brand) => (
+                    {filteredBrands.map((brand) => (
                         <option key={brand.id} value={brand.id}>
                             {brand.brand_name}
                         </option>
@@ -239,13 +293,16 @@ const VisitForm = () => {
                                                 setEditStore(e.target.value)
                                             }
                                             className="form-input-text"
+                                            required
+                                            disabled={!editPromoter}
                                         >
-                                            {stores.map((store) => (
+                                            {editFilteredStores.map((store) => (
                                                 <option
                                                     key={store.id}
                                                     value={store.id}
                                                 >
-                                                    {store.name} {store.number}
+                                                    {store.name} -{" "}
+                                                    {store.number}
                                                 </option>
                                             ))}
                                         </select>
@@ -258,11 +315,9 @@ const VisitForm = () => {
                                             }
                                             className="form-input-text"
                                             required
+                                            disabled={!editPromoter}
                                         >
-                                            <option value="">
-                                                Selecione uma Marca
-                                            </option>
-                                            {brands.map((brand) => (
+                                            {editFilteredBrands.map((brand) => (
                                                 <option
                                                     key={brand.id}
                                                     value={brand.id}

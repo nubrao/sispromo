@@ -102,10 +102,10 @@ const PromoterForm = () => {
             setEditingId(null);
             fetchPromoters();
         } catch (error) {
-            setErrorMessage("Erro ao atualizar promotor. Verifique os dados."), error;
+            setErrorMessage("Erro ao atualizar promotor. Verifique os dados."),
+                error;
         }
     };
-
 
     const handleDelete = async (id) => {
         if (window.confirm("Tem certeza que deseja excluir este promotor?")) {

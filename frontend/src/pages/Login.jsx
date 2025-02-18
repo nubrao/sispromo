@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import "../styles/login.css";
 import { useNavigate } from "react-router-dom";
+import Logo from "../assets/img/logo";
 
 const Login = () => {
     const { login } = useContext(AuthContext);
@@ -21,6 +22,7 @@ const Login = () => {
 
     return (
         <div className="login-container">
+            <Logo></Logo>
             <form onSubmit={handleSubmit} className="login-form">
                 <input
                     type="text"

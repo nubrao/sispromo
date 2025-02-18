@@ -1,14 +1,14 @@
 :root {
-    --background-light: #f3f4f6;
-    --background-dark: #1a1a1a;
+    --background-light: #141414;
+    --background-dark: #141414;
     --text-light: #000;
     --text-dark: #fff;
     --input-border-light: #ccc;
     --input-border-dark: #444;
-    --button-bg-light: #3182ce;
-    --button-bg-dark: #4a90e2;
-    --button-hover-light: #2b6cb0;
-    --button-hover-dark: #3b82f6;
+    --button-bg-light: #89b789;
+    --button-bg-dark: #89b789;
+    --button-hover-light: #b3d0b3;
+    --button-hover-dark: #b3d0b3;
 }
 
 body {
@@ -28,7 +28,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100%;
+
+    svg {
+       min-width: fit-content;
+    }
 }
 
 .login-form {

@@ -68,13 +68,9 @@ const BrandForm = () => {
                 return;
             }
 
-            await axios.post(
-                `${API_URL}/api/brands/`,
-                body,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+            await axios.post(`${API_URL}/api/brands/`, body, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
 
             fetchBrands();
             setBrandName("");
@@ -85,7 +81,6 @@ const BrandForm = () => {
             console.error("Erro ao cadastrar marca", error);
         }
     };
-
 
     return (
         <div className="form-container">
@@ -154,14 +149,24 @@ const BrandForm = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {brands.map((brand, index) => (
-                        <tr key={index}>
-                            <td>{brand.brand_name}</td>
-                            <td>{brand.promoter_name}</td>
-                            <td>{brand.store_name}</td>
-                            <td>{brand.visit_frequency}x por semana</td>
-                        </tr>
-                    ))}
+                    {brands.map((brand, index) => {
+                        const storeMatch = stores.find(
+                            (store) => store.name === brand.store_name
+                        );
+
+                        return (
+                            <tr key={index}>
+                                <td>{brand.brand_name}</td>
+                                <td>{brand.promoter_name}</td>
+                                <td>
+                                    {brand.store_name}
+                                    {" - "}
+                                    {storeMatch ? `${storeMatch.number}` : ""}
+                                </td>
+                                <td>{brand.visit_frequency}x por semana</td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
         </div>

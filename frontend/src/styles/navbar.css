@@ -1,7 +1,7 @@
 .navbar {
     width: 100%;
     height: 60px;
-    background-color: #1a202c;
+    background-color: #5f805f;
     color: white;
     display: flex;
     align-items: center;
@@ -36,7 +36,7 @@
 }
 
 .navbar-links a:hover {
-    color: #63b3ed;
+    color: #b3d0b3;
 }
 
 .logout-button {

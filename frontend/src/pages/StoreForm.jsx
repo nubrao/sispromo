@@ -164,9 +164,7 @@ const StoreForm = () => {
                 );
                 setErrorMessage(translatedMessage);
             } else {
-                setErrorMessage(
-                    "Erro ao atualizar loja. Verifique os dados."
-                );
+                setErrorMessage("Erro ao atualizar loja. Verifique os dados.");
             }
         }
     };
