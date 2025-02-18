@@ -8,6 +8,7 @@ import StoreForm from "./pages/StoreForm";
 import VisitForm from "./pages/VisitForm";
 import Navbar from "./components/Navbar";
 import PropTypes from "prop-types";
+import BrandForm from "./pages/BrandForm";
 
 const PrivateRoute = ({ children }) => {
     const authContext = useContext(AuthContext);
@@ -58,6 +59,14 @@ function App() {
                         element={
                             <PrivateRoute>
                                 <StoreForm />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/brands"
+                        element={
+                            <PrivateRoute>
+                                <BrandForm />
                             </PrivateRoute>
                         }
                     />

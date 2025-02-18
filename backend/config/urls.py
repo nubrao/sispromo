@@ -25,23 +25,25 @@ from core.infrastructure.views.store_view import StoreViewSet
 from core.infrastructure.views.visit_view import VisitViewSet
 from core.infrastructure.views.auth_view import LogoutView
 from core.infrastructure.views.state_view import StateListView
+from core.infrastructure.views.brand_view import BrandViewSet
 
 router = DefaultRouter()
 router.register(r"promoters", PromoterViewSet)
 router.register(r"stores", StoreViewSet)
 router.register(r"visits", VisitViewSet)
+router.register(r'brands', BrandViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include(router.urls)),
     path(
-        "api/token/", 
-        TokenObtainPairView.as_view(), 
+        "api/token/",
+        TokenObtainPairView.as_view(),
         name="token_obtain_pair"
     ),
     path(
-        "api/token/refresh/", 
-        TokenRefreshView.as_view(), 
+        "api/token/refresh/",
+        TokenRefreshView.as_view(),
         name="token_refresh"
     ),
     path("api/logout/", LogoutView.as_view(), name="logout"),

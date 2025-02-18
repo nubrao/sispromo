@@ -154,10 +154,29 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://192.168.1.10:5173",
+    "http://192.168.1.200:5173",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 # This allows all origins, not recommended for production
 CORS_ALLOW_ALL_ORIGINS = True
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "debug.log",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+    },
+}

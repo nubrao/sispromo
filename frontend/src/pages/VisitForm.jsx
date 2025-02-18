@@ -14,6 +14,7 @@ const VisitForm = () => {
     const [editPromoter, setEditPromoter] = useState("");
     const [editStore, setEditStore] = useState("");
     const [editBrand, setEditBrand] = useState("");
+    const [brands, setBrands] = useState([]);
     const [editVisitDate, setEditVisitDate] = useState("");
 
     const API_URL = import.meta.env.VITE_API_URL;
@@ -23,6 +24,7 @@ const VisitForm = () => {
         fetchPromoters();
         fetchStores();
         fetchVisits();
+        fetchBrands();
     }, []);
 
     const fetchPromoters = async () => {
@@ -58,6 +60,17 @@ const VisitForm = () => {
         }
     };
 
+    const fetchBrands = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/brands/`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setBrands(response.data);
+        } catch (error) {
+            console.error("Erro ao buscar marcas", error);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -76,6 +89,7 @@ const VisitForm = () => {
                 },
             });
             fetchVisits();
+            fetchBrands();
             setPromoterId("");
             setStoreId("");
             setBrand("");
@@ -157,14 +171,20 @@ const VisitForm = () => {
                     ))}
                 </select>
 
-                <input
-                    type="text"
-                    placeholder="Marca"
+                <select
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
                     className="form-input-text"
                     required
-                />
+                >
+                    <option value="">Selecione uma Marca</option>
+                    {brands.map((brand) => (
+                        <option key={brand.id} value={brand.id}>
+                            {brand.brand_name}
+                        </option>
+                    ))}
+                </select>
+
                 <input
                     type="datetime-local"
                     value={visitDate}
@@ -231,14 +251,26 @@ const VisitForm = () => {
                                         </select>
                                     </td>
                                     <td>
-                                        <input
-                                            type="text"
+                                        <select
                                             value={editBrand}
                                             onChange={(e) =>
                                                 setEditBrand(e.target.value)
                                             }
                                             className="form-input-text"
-                                        />
+                                            required
+                                        >
+                                            <option value="">
+                                                Selecione uma Marca
+                                            </option>
+                                            {brands.map((brand) => (
+                                                <option
+                                                    key={brand.id}
+                                                    value={brand.id}
+                                                >
+                                                    {brand.brand_name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </td>
                                     <td>
                                         <input

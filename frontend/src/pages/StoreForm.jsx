@@ -19,11 +19,12 @@ const StoreForm = () => {
     const [editCity, setEditCity] = useState("");
     const [editState, setEditState] = useState("");
     const [editCnpj, setEditCnpj] = useState("");
+    const [isEditing, setIsEditing] = useState(false);
 
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
-    const cleanedCNPJ = editCnpj.replace(/\D/g, "");  
+    const cleanedCNPJ = isEditing ? editCnpj : cnpj.replace(/\D/g, "");
 
     useEffect(() => {
         fetchStores();
@@ -70,13 +71,13 @@ const StoreForm = () => {
             console.error("Erro ao buscar estados", error);
             setStates([]);
         }
-    };  
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrorMessage("");
 
-        if (cleanedCNPJ.length !== 14) {
+        if (!isEditing && cleanedCNPJ.length !== 14) {
             setErrorMessage("CNPJ inválido.");
             return;
         }
@@ -102,22 +103,19 @@ const StoreForm = () => {
             setSelectedState("");
             setCnpj("");
         } catch (error) {
-            if (error.response && error.response.status === 400) {
-                if (error.response.data.cnpj) {
+            if (!isEditing && error.response && error.response.status === 400) {
+                if (error.response?.data.cnpj) {
                     const translatedMessage = await translateMessage(
                         error.response.data.cnpj[0]
                     );
                     setErrorMessage(translatedMessage);
                 } else {
-                    const translatedMessage = await translateMessage(
-                        "Erro ao cadastrar loja. Verifique os dados."
-                    );
+                    const translatedMessage =
+                        "Erro ao cadastrar loja. Verifique os dados.";
                     setErrorMessage(translatedMessage);
                 }
             } else {
-                const translatedMessage = await translateMessage(
-                    "Erro ao conectar com o servidor."
-                );
+                const translatedMessage = "Erro ao conectar com o servidor.";
                 setErrorMessage(translatedMessage);
             }
         }
@@ -130,12 +128,13 @@ const StoreForm = () => {
         setEditCity(store.city);
         setEditState(store.state);
         setEditCnpj(store.cnpj);
+        setIsEditing(true);
     };
 
     const handleSaveEdit = async (id) => {
         setErrorMessage("");
 
-        if (cleanedCNPJ.length !== 14) {
+        if (isEditing && cleanedCNPJ.length !== 14) {
             setErrorMessage("CNPJ inválido.");
             return;
         }
@@ -157,11 +156,20 @@ const StoreForm = () => {
 
             setEditingId(null);
             fetchStores();
+            setIsEditing(false);
         } catch (error) {
-            setErrorMessage("Erro ao atualizar loja. Verifique os dados.", error);
+            if (isEditing && error.response?.data?.cnpj) {
+                const translatedMessage = await translateMessage(
+                    error.response.data.cnpj[0]
+                );
+                setErrorMessage(translatedMessage);
+            } else {
+                setErrorMessage(
+                    "Erro ao atualizar loja. Verifique os dados."
+                );
+            }
         }
     };
-
 
     const handleDelete = async (id) => {
         if (window.confirm("Tem certeza que deseja excluir esta loja?")) {
@@ -179,6 +187,7 @@ const StoreForm = () => {
     const handleCancelEdit = () => {
         setEditingId(null);
         setErrorMessage("");
+        setIsEditing(false);
     };
 
     const handleNumberInput = (value) => {
