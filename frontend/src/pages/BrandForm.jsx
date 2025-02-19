@@ -11,6 +11,11 @@ const BrandForm = () => {
     const [promoters, setPromoters] = useState([]);
     const [stores, setStores] = useState([]);
     const [brands, setBrands] = useState([]);
+    const [filterBrandName, setFilterBrandName] = useState("");
+    const [filterPromoter, setFilterPromoter] = useState("");
+    const [filterStore, setFilterStore] = useState("");
+    const [filterVisitFrequency, setFilterVisitFrequency] = useState("");
+    const [filteredBrands, setFilteredBrands] = useState([]);
 
     const [editingId, setEditingId] = useState(null);
     const [editBrandName, setEditBrandName] = useState("");
@@ -26,6 +31,17 @@ const BrandForm = () => {
         fetchStores();
         fetchBrands();
     }, []);
+
+    useEffect(() => {
+        applyFilters();
+    }, [
+        filterBrandName,
+        filterPromoter,
+        filterStore,
+        filterVisitFrequency,
+        brands,
+    ]);
+
 
     const fetchPromoters = async () => {
         try {
@@ -58,6 +74,33 @@ const BrandForm = () => {
         } catch (error) {
             console.error("Erro ao buscar marcas", error);
         }
+    };
+
+    const applyFilters = () => {
+        const lowerCaseBrandName = filterBrandName.toLowerCase();
+        const lowerCasePromoter = filterPromoter.toLowerCase();
+        const lowerCaseStore = filterStore.toLowerCase();
+        const lowerCaseVisitFrequency = filterVisitFrequency.toString();
+
+        const filtered = brands.filter((brand) => {
+            return (
+                brand.brand_name.toLowerCase().includes(lowerCaseBrandName) &&
+                brand.promoter_name.toLowerCase().includes(lowerCasePromoter) &&
+                brand.store_name.toLowerCase().includes(lowerCaseStore) &&
+                brand.visit_frequency
+                    .toString()
+                    .includes(lowerCaseVisitFrequency)
+            );
+        });
+
+        setFilteredBrands(filtered);
+    };
+
+    const clearFilters = () => {
+        setFilterBrandName("");
+        setFilterPromoter("");
+        setFilterStore("");
+        setFilteredBrands(brands);
     };
 
     const handleSubmit = async (e) => {
@@ -192,6 +235,48 @@ const BrandForm = () => {
             </form>
 
             <h3 className="form-title">Lista de Marcas</h3>
+
+            <div className="filter-container">
+                <input
+                    type="text"
+                    placeholder="Filtrar Marca"
+                    value={filterBrandName}
+                    onChange={(e) => setFilterBrandName(e.target.value)}
+                    className="form-input-text"
+                />
+                
+                <input
+                    type="text"
+                    placeholder="Filtrar Promotor"
+                    value={filterPromoter}
+                    onChange={(e) => setFilterPromoter(e.target.value)}
+                    className="form-input-text"
+                />
+
+                <input
+                    type="text"
+                    placeholder="Filtrar Loja"
+                    value={filterStore}
+                    onChange={(e) => setFilterStore(e.target.value)}
+                    className="form-input-text"
+                />
+
+                <input
+                    type="number"
+                    placeholder="Filtrar Periodicidade"
+                    value={filterVisitFrequency}
+                    onChange={(e) => setFilterVisitFrequency(e.target.value)}
+                    className="form-input-text"
+                />
+
+                <button
+                    onClick={clearFilters}
+                    className="form-button clear-button"
+                >
+                    Limpar Filtros
+                </button>
+            </div>
+
             <table className="table">
                 <thead>
                     <tr>
@@ -203,7 +288,7 @@ const BrandForm = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {brands.map((brand) => (
+                    {filteredBrands.map((brand) => (
                         <tr key={brand.brand_id}>
                             {editingId === brand.brand_id ? (
                                 <>

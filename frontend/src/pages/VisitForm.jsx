@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/form.css";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 const VisitForm = () => {
     const [promoterId, setPromoterId] = useState("");
     const [storeId, setStoreId] = useState("");
     const [brand, setBrand] = useState("");
     const [visitDate, setVisitDate] = useState("");
+
     const [visits, setVisits] = useState([]);
     const [promoters, setPromoters] = useState([]);
     const [stores, setStores] = useState([]);
@@ -15,6 +18,12 @@ const VisitForm = () => {
     const [editStore, setEditStore] = useState("");
     const [editBrand, setEditBrand] = useState("");
     const [brands, setBrands] = useState([]);
+    const [filterPromoter, setFilterPromoter] = useState("");
+    const [filterStore, setFilterStore] = useState("");
+    const [filterBrand, setFilterBrand] = useState("");
+    const [filterDate, setFilterDate] = useState("");
+    const [filteredVisits, setFilteredVisits] = useState([]);
+
     const [editVisitDate, setEditVisitDate] = useState("");
     const [filteredStores, setFilteredStores] = useState([]);
     const [filteredBrands, setFilteredBrands] = useState([]);
@@ -30,6 +39,42 @@ const VisitForm = () => {
         fetchVisits();
         fetchBrands();
     }, []);
+
+    useEffect(() => {
+        applyFilters();
+    }, [filterPromoter, filterStore, filterBrand, filterDate, visits]);
+
+    const applyFilters = () => {
+        const filtered = visits.filter((visit) => {
+            const visitDate = new Date(visit.visit_date)
+                .toISOString()
+                .split("T")[0];
+
+            const isSameDate = !filterDate || visitDate === filterDate;
+
+            return (
+                visit.promoter_name
+                    .toLowerCase()
+                    .includes(filterPromoter.toLowerCase()) &&
+                visit.store_display
+                    .toLowerCase()
+                    .includes(filterStore.toLowerCase()) &&
+                visit.brand.toLowerCase().includes(filterBrand.toLowerCase()) &&
+                isSameDate
+            );
+        });
+
+        setFilteredVisits(filtered);
+    };
+
+    const clearFilters = () => {
+        setFilterPromoter("");
+        setFilterStore("");
+        setFilterBrand("");
+        setFilterDate("");
+        setFilteredVisits(visits);
+    };
+
 
     useEffect(() => {
         if (promoterId) {
@@ -253,6 +298,48 @@ const VisitForm = () => {
             </form>
 
             <h3 className="form-title">Lista de Visitas</h3>
+
+            <div className="filter-container">
+                <input
+                    type="text"
+                    placeholder="Filtrar Promotor"
+                    value={filterPromoter}
+                    onChange={(e) => setFilterPromoter(e.target.value)}
+                    className="form-input-text"
+                />
+
+                <input
+                    type="text"
+                    placeholder="Filtrar Loja"
+                    value={filterStore}
+                    onChange={(e) => setFilterStore(e.target.value)}
+                    className="form-input-text"
+                />
+
+                <input
+                    type="text"
+                    placeholder="Filtrar Marca"
+                    value={filterBrand}
+                    onChange={(e) => setFilterBrand(e.target.value)}
+                    className="form-input-text"
+                />
+
+                <input
+                    type="date"
+                    placeholder="Filtrar Data"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                    className="form-input-text"
+                />
+
+                <button
+                    onClick={clearFilters}
+                    className="form-button clear-button"
+                >
+                    Limpar Filtros
+                </button>
+            </div>
+
             <table className="table">
                 <thead>
                     <tr>
@@ -264,7 +351,7 @@ const VisitForm = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {visits.map((visit) => (
+                    {filteredVisits.map((visit) => (
                         <tr key={visit.id}>
                             {editingId === visit.id ? (
                                 <>

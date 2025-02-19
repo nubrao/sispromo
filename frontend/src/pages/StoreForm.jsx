@@ -11,7 +11,15 @@ const StoreForm = () => {
     const [states, setStates] = useState([]);
     const [selectedState, setSelectedState] = useState("");
     const [cnpj, setCnpj] = useState("");
+
     const [stores, setStores] = useState([]);
+    const [filteredStores, setFilteredStores] = useState([]);
+    const [filterName, setFilterName] = useState("");
+    const [filterNumber, setFilterNumber] = useState("");
+    const [filterCity, setFilterCity] = useState("");
+    const [filterState, setFilterState] = useState("");
+    const [filterCNPJ, setFilterCNPJ] = useState("");
+
     const [errorMessage, setErrorMessage] = useState("");
     const [editingId, setEditingId] = useState(null);
     const [editName, setEditName] = useState("");
@@ -30,6 +38,10 @@ const StoreForm = () => {
         fetchStores();
         fetchStates();
     }, []);
+
+    useEffect(() => {
+        applyFilters();
+    }, [filterName, filterNumber, filterCity, filterState, filterCNPJ, stores]);
 
     const validateCNPJ = (cnpj) => {
         if (!cnpj) return "CNPJ Inválido";
@@ -50,6 +62,7 @@ const StoreForm = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setStores(response.data);
+            setFilteredStores(response.data);
         } catch (error) {
             console.error("Erro ao buscar lojas", error);
         }
@@ -72,6 +85,33 @@ const StoreForm = () => {
             setStates([]);
         }
     };
+
+    const applyFilters = () => {
+        const lowerCaseName = filterName.toLowerCase();
+        const formattedCNPJ = formatCNPJ(filterCNPJ).replace(/\D/g, "");
+
+        const filtered = stores.filter((store) => {
+            return (
+                store.name.toLowerCase().includes(lowerCaseName) &&
+                store.number.toString().includes(filterNumber) &&
+                store.city.toLowerCase().includes(filterCity.toLowerCase()) &&
+                store.state.toLowerCase().includes(filterState.toLowerCase()) &&
+                store.cnpj.replace(/\D/g, "").includes(formattedCNPJ)
+            );
+        });
+
+        setFilteredStores(filtered);
+    };
+
+    const clearFilters = () => {
+        setFilterName("");
+        setFilterNumber("");
+        setFilterCity("");
+        setFilterState("");
+        setFilterCNPJ("");
+        setFilteredStores(stores);
+    };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -256,6 +296,54 @@ const StoreForm = () => {
             </form>
 
             <h3 className="form-title">Lista de Lojas</h3>
+
+            <div className="filter-container">
+                <input
+                    type="text"
+                    placeholder="Filtrar Nome"
+                    value={filterName}
+                    onChange={(e) => setFilterName(e.target.value)}
+                    className="form-input-text"
+                />
+                <input
+                    type="text"
+                    placeholder="Filtrar Número"
+                    value={filterNumber}
+                    onChange={(e) =>
+                        setFilterNumber(e.target.value.replace(/\D/g, ""))
+                    }
+                    className="form-input-text"
+                />
+                <input
+                    type="text"
+                    placeholder="Filtrar Cidade"
+                    value={filterCity}
+                    onChange={(e) => setFilterCity(e.target.value)}
+                    className="form-input-text"
+                />
+                <input
+                    type="text"
+                    placeholder="Filtrar Estado"
+                    value={filterState}
+                    onChange={(e) => setFilterState(e.target.value)}
+                    className="form-input-text"
+                />
+                <input
+                    type="text"
+                    placeholder="Filtrar CNPJ"
+                    value={filterCNPJ}
+                    onChange={(e) => setFilterCNPJ(formatCNPJ(e.target.value))}
+                    className="form-input-text"
+                />
+
+                <button
+                    onClick={clearFilters}
+                    className="form-button clear-button"
+                >
+                    Limpar Filtros
+                </button>
+            </div>
+
             <table className="table">
                 <thead>
                     <tr>
@@ -268,7 +356,7 @@ const StoreForm = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {stores.map((store) => (
+                    {filteredStores.map((store) => (
                         <tr key={store.id}>
                             {editingId === store.id ? (
                                 <>

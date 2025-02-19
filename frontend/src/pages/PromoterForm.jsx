@@ -8,12 +8,19 @@ const PromoterForm = () => {
     const [name, setName] = useState("");
     const [cpf, setCPF] = useState("");
     const [phone, setPhone] = useState("");
+
     const [promoters, setPromoters] = useState([]);
+    const [filteredPromoters, setFilteredPromoters] = useState([]);
+    const [filterName, setFilterName] = useState("");
+    const [filterCPF, setFilterCPF] = useState("");
+    const [filterPhone, setFilterPhone] = useState("");
+
     const [errorMessage, setErrorMessage] = useState("");
     const [editingId, setEditingId] = useState(null);
     const [editName, setEditName] = useState("");
     const [editCPF, setEditCPF] = useState("");
     const [editPhone, setEditPhone] = useState("");
+
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
@@ -22,16 +29,47 @@ const PromoterForm = () => {
         fetchPromoters();
     }, []);
 
+    useEffect(() => {
+        applyFilters();
+    }, [filterName, filterCPF, filterPhone, promoters]);
+
     const fetchPromoters = async () => {
         try {
             const response = await axios.get(`${API_URL}/api/promoters/`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setPromoters(response.data);
+            setFilteredPromoters(response.data);
         } catch (error) {
             console.error("Erro ao buscar promotores", error);
         }
     };
+
+    const applyFilters = () => {
+        const lowerCaseName = filterName.toLowerCase();
+
+        const formattedCPF = formatCPF(filterCPF).replace(/\D/g, "");
+
+        const formattedPhone = formatPhone(filterPhone).replace(/\D/g, "");
+
+        const filtered = promoters.filter((promoter) => {
+            return (
+                promoter.name.toLowerCase().includes(lowerCaseName) &&
+                promoter.cpf.replace(/\D/g, "").includes(formattedCPF) &&
+                promoter.phone.replace(/\D/g, "").includes(formattedPhone)
+            );
+        });
+
+        setFilteredPromoters(filtered);
+    };
+
+    const clearFilters = () => {
+        setFilterName("");
+        setFilterCPF("");
+        setFilterPhone("");
+        setFilteredPromoters(promoters);
+    };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -58,15 +96,13 @@ const PromoterForm = () => {
                     );
                     setErrorMessage(translatedMessage);
                 } else {
-                    const translatedMessage = await translateMessage(
-                        "Erro ao cadastrar promotor. Verifique os dados."
-                    );
+                    const translatedMessage =
+                        "Erro ao cadastrar promotor. Verifique os dados.";
                     setErrorMessage(translatedMessage);
                 }
             } else {
-                const translatedMessage = await translateMessage(
-                    "Erro ao conectar com o servidor."
-                );
+                const translatedMessage =
+                    "Erro ao cadastrar promotor. Verifique os dados.";
                 setErrorMessage(translatedMessage);
             }
         }
@@ -102,8 +138,7 @@ const PromoterForm = () => {
             setEditingId(null);
             fetchPromoters();
         } catch (error) {
-            setErrorMessage("Erro ao atualizar promotor. Verifique os dados."),
-                error;
+            setErrorMessage("Erro ao atualizar promotor. Verifique os dados.", error);
         }
     };
 
@@ -162,6 +197,40 @@ const PromoterForm = () => {
             </form>
 
             <h3 className="form-title">Lista de Promotores</h3>
+
+            <div className="filter-container">
+                <input
+                    type="text"
+                    placeholder="Filtrar Nome"
+                    value={filterName}
+                    onChange={(e) => setFilterName(e.target.value)}
+                    className="form-input-text"
+                />
+
+                <input
+                    type="text"
+                    placeholder="Filtrar CPF"
+                    value={filterCPF}
+                    onChange={(e) => setFilterCPF(formatCPF(e.target.value))}
+                    className="form-input-text"
+                />
+
+                <input
+                    type="text"
+                    placeholder="Filtrar Celular"
+                    value={filterPhone}
+                    onChange={(e) => setFilterPhone(formatPhone(e.target.value))}
+                    className="form-input-text"
+                />
+
+                <button
+                    onClick={clearFilters}
+                    className="form-button clear-button"
+                >
+                    Limpar Filtros
+                </button>
+            </div>
+
             <table className="table">
                 <thead>
                     <tr>
@@ -172,7 +241,7 @@ const PromoterForm = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {promoters.map((promoter) => (
+                    {filteredPromoters.map((promoter) => (
                         <tr key={promoter.id}>
                             {editingId === promoter.id ? (
                                 <>
