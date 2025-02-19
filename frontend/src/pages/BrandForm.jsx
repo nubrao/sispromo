@@ -29,12 +29,7 @@ const BrandForm = () => {
 
     useEffect(() => {
         applyFilters();
-    }, [
-        filterBrandName,
-        filterStore,
-        filterVisitFrequency,
-        brands,
-    ]);
+    }, [filterBrandName, filterStore, filterVisitFrequency, brands]);
 
     const fetchStores = async () => {
         try {
@@ -112,7 +107,10 @@ const BrandForm = () => {
     const handleEdit = (brand) => {
         setEditingId(brand.brand_id);
         setEditBrandName(brand.brand_name);
-        setEditStore(brand.store_name);
+
+        const store = stores.find((s) => s.name === brand.store_name);
+        setEditStore(store ? store.id : "");
+
         setEditVisitFrequency(brand.visit_frequency);
     };
 
@@ -247,7 +245,7 @@ const BrandForm = () => {
                                     <td>
                                         <input
                                             type="text"
-                                            value={editBrandName}
+                                            value={editBrandName.toUpperCase()}
                                             onChange={(e) =>
                                                 setEditBrandName(e.target.value)
                                             }
@@ -271,14 +269,15 @@ const BrandForm = () => {
                                                         key={store.id}
                                                         value={store.id}
                                                     >
-                                                        {store.name.toUperCase()}{" "}
+                                                        {store.name.toUpperCase()}{" "}
                                                         - {store.number}
                                                     </option>
                                                 ))}
                                             </select>
                                         ) : (
                                             <>
-                                                {brand.store_name} -{" "}
+                                                {brand.store_name.toUpperCase()}{" "}
+                                                -{" "}
                                                 {stores.find(
                                                     (store) =>
                                                         store.id ===
