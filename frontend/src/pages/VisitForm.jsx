@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/form.css";
-import "react-date-range/dist/styles.css";
-import "react-date-range/dist/theme/default.css";
 
 const VisitForm = () => {
     const [promoterId, setPromoterId] = useState("");
