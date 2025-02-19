@@ -41,7 +41,7 @@
 }
 
 .logout-button {
-    background-color: #e53e3e;
+    background-color: #ce4848;
     color: white;
     padding: 8px 16px;
     border-radius: 5px;
@@ -51,5 +51,5 @@
 }
 
 .logout-button:hover {
-    background-color: #c53030;
+    background-color: #ff4747;
 }

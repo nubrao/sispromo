@@ -161,6 +161,7 @@
     margin-bottom: 10px;
     justify-content: space-between;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .filter-container input {
@@ -169,4 +170,23 @@
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    height: 40px;
+}
+
+.clear-button {
+    background-color: #ff6363;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+}
+
+.clear-button:hover {
+    background-color: #ff4747;
 }
