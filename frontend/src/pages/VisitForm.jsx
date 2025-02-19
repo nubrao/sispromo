@@ -267,7 +267,7 @@ const VisitForm = () => {
                     <option value="">Selecione um Promotor</option>
                     {promoters.map((promoter) => (
                         <option key={promoter.id} value={promoter.id}>
-                            {promoter.name}
+                            {promoter.name.toUpperCase()}
                         </option>
                     ))}
                 </select>
@@ -281,7 +281,7 @@ const VisitForm = () => {
                     <option value="">Selecione uma Loja</option>
                     {filteredStores.map((store) => (
                         <option key={store.id} value={store.id}>
-                            {store.name} - {store.number}
+                            {store.name.toUpperCase()} - {store.number}
                         </option>
                     ))}
                 </select>
@@ -299,7 +299,7 @@ const VisitForm = () => {
                     </option>
                     {filteredBrands.map((brand) => (
                         <option key={brand.id} value={brand.id}>
-                            {brand.brand_name}
+                            {brand.brand_name.toUpperCase()}
                         </option>
                     ))}
                 </select>

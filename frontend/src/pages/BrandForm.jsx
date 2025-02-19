@@ -172,8 +172,8 @@ const BrandForm = () => {
                 >
                     <option value="">Selecione a Loja</option>
                     {stores.map((store) => (
-                        <option key={store.id} value={store.name}>
-                            {store.name} - {store.number}
+                        <option key={store.id} value={store.name.toUpperCase()}>
+                            {store.name.toUpperCase()} - {store.number}
                         </option>
                     ))}
                 </select>
