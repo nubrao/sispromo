@@ -338,20 +338,24 @@ const VisitForm = () => {
                                         />
                                     </td>
                                     <td>
-                                        <button
-                                            onClick={() =>
-                                                handleSaveEdit(visit.id)
-                                            }
-                                            className="form-button save-button"
-                                        >
-                                            Salvar
-                                        </button>
-                                        <button
-                                            onClick={() => setEditingId(null)}
-                                            className="form-button cancel-button"
-                                        >
-                                            Cancelar
-                                        </button>
+                                        <div className="form-actions">
+                                            <button
+                                                onClick={() =>
+                                                    handleSaveEdit(visit.id)
+                                                }
+                                                className="form-button save-button"
+                                            >
+                                                Salvar
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    setEditingId(null)
+                                                }
+                                                className="form-button cancel-button"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </div>
                                     </td>
                                 </>
                             ) : (
@@ -365,20 +369,24 @@ const VisitForm = () => {
                                         ).toLocaleDateString()}
                                     </td>
                                     <td>
-                                        <button
-                                            onClick={() => handleEdit(visit)}
-                                            className="form-button edit-button"
-                                        >
-                                            ✏️
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                handleDelete(visit.id)
-                                            }
-                                            className="form-button delete-button"
-                                        >
-                                            ❌
-                                        </button>
+                                        <div className="form-actions">
+                                            <button
+                                                onClick={() =>
+                                                    handleEdit(visit)
+                                                }
+                                                className="form-button edit-button"
+                                            >
+                                                ✏️
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(visit.id)
+                                                }
+                                                className="form-button delete-button"
+                                            >
+                                                ❌
+                                            </button>
+                                        </div>
                                     </td>
                                 </>
                             )}

@@ -322,22 +322,23 @@ const StoreForm = () => {
                                             </p>
                                         )}
                                     </td>
-
                                     <td>
-                                        <button
-                                            onClick={() =>
-                                                handleSaveEdit(store.id)
-                                            }
-                                            className="form-button save-button"
-                                        >
-                                            Salvar
-                                        </button>
-                                        <button
-                                            onClick={handleCancelEdit}
-                                            className="form-button cancel-button"
-                                        >
-                                            Cancelar
-                                        </button>
+                                        <div className="form-actions">
+                                            <button
+                                                onClick={() =>
+                                                    handleSaveEdit(store.id)
+                                                }
+                                                className="form-button save-button"
+                                            >
+                                                Salvar
+                                            </button>
+                                            <button
+                                                onClick={handleCancelEdit}
+                                                className="form-button cancel-button"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </div>
                                     </td>
                                 </>
                             ) : (
@@ -348,20 +349,24 @@ const StoreForm = () => {
                                     <td>{store.state}</td>
                                     <td>{validateCNPJ(store.cnpj)}</td>
                                     <td>
-                                        <button
-                                            onClick={() => handleEdit(store)}
-                                            className="form-button edit-button"
-                                        >
-                                            ✏️
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                handleDelete(store.id)
-                                            }
-                                            className="form-button delete-button"
-                                        >
-                                            ❌
-                                        </button>
+                                        <div className="form-actions">
+                                            <button
+                                                onClick={() =>
+                                                    handleEdit(store)
+                                                }
+                                                className="form-button edit-button"
+                                            >
+                                                ✏️
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(store.id)
+                                                }
+                                                className="form-button delete-button"
+                                            >
+                                                ❌
+                                            </button>
+                                        </div>
                                     </td>
                                 </>
                             )}

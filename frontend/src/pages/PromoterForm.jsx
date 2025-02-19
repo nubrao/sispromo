@@ -212,20 +212,22 @@ const PromoterForm = () => {
                                         />
                                     </td>
                                     <td>
-                                        <button
-                                            onClick={() =>
-                                                handleSaveEdit(promoter.id)
-                                            }
-                                            className="form-button save-button"
-                                        >
-                                            Salvar
-                                        </button>
-                                        <button
-                                            onClick={handleCancelEdit}
-                                            className="form-button cancel-button"
-                                        >
-                                            Cancelar
-                                        </button>
+                                        <div className="form-actions">
+                                            <button
+                                                onClick={() =>
+                                                    handleSaveEdit(promoter.id)
+                                                }
+                                                className="form-button save-button"
+                                            >
+                                                Salvar
+                                            </button>
+                                            <button
+                                                onClick={handleCancelEdit}
+                                                className="form-button cancel-button"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </div>
                                     </td>
                                 </>
                             ) : (
@@ -234,20 +236,24 @@ const PromoterForm = () => {
                                     <td>{formatCPF(promoter.cpf)}</td>
                                     <td>{formatPhone(promoter.phone)}</td>
                                     <td>
-                                        <button
-                                            onClick={() => handleEdit(promoter)}
-                                            className="form-button edit-button"
-                                        >
-                                            ✏️
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                handleDelete(promoter.id)
-                                            }
-                                            className="form-button delete-button"
-                                        >
-                                            ❌
-                                        </button>
+                                        <div className="form-actions">
+                                            <button
+                                                onClick={() =>
+                                                    handleEdit(promoter)
+                                                }
+                                                className="form-button edit-button"
+                                            >
+                                                ✏️
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(promoter.id)
+                                                }
+                                                className="form-button delete-button"
+                                            >
+                                                ❌
+                                            </button>
+                                        </div>
                                     </td>
                                 </>
                             )}

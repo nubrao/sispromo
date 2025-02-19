@@ -39,20 +39,45 @@
     background-color: #89b789;
     color: white;
     padding: 10px;
-    margin-top: 5px;
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.3s;
 }
 
-.delete-button,
-.cancel-button {
+.form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-width: 40px;
+    gap: 10px;
+}
+
+.cancel-button,
+.save-button {
+    background-color: transparent;
     margin-left: 4px;
 }
 
 .edit-button,
-.save-button {
-    margin-right: 4px;
+.delete-button {
+    height: 32px;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.edit-button:hover,
+.save-button:hover,
+.delete-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
 }
 
 .form-button:hover {
@@ -80,11 +105,22 @@
 .table td {
     border: 1px solid #ccc;
     padding: 8px;
-    text-align: left;
+    text-align: center;
+    height: 100%;
+    vertical-align: middle;
 }
 
 .table th {
     background-color: #444;
+}
+
+.table td {
+    min-height: 40px;
+    max-height: 50px;
+}
+
+.table tr {
+    height: auto;
 }
 
 .error-message {
