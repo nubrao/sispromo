@@ -9,27 +9,23 @@ logger = logging.getLogger(__name__)
 
 
 class BrandViewSet(viewsets.ModelViewSet):
-    queryset = BrandModel.objects.prefetch_related('promoters', 'stores').all()
+    queryset = BrandModel.objects.prefetch_related('stores').all()
     serializer_class = BrandSerializer
     permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-        brands = BrandModel.objects.prefetch_related(
-            'promoters', 'stores').all()
+        brands = BrandModel.objects.prefetch_related('stores').all()
         results = []
 
         for brand in brands:
             for brand_store in brand.brandstore_set.all():
-                for promoter in brand.promoters.all():
-                    results.append({
-                        "brand_id": brand.id,
-                        "brand_name": brand.name,
-                        "promoter_id": promoter.id,
-                        "promoter_name": promoter.name,
-                        "store_id": brand_store.store.id,
-                        "store_name": brand_store.store.name,
-                        "visit_frequency": brand_store.visit_frequency,
-                    })
+                results.append({
+                    "brand_id": brand.id,
+                    "brand_name": brand.name,
+                    "store_id": brand_store.store.id,
+                    "store_name": brand_store.store.name,
+                    "visit_frequency": brand_store.visit_frequency,
+                })
 
         return Response(results, status=status.HTTP_200_OK)
 

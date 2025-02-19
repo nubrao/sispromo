@@ -4,22 +4,18 @@ import "../styles/form.css";
 
 const BrandForm = () => {
     const [brandName, setBrandName] = useState("");
-    const [selectedPromoter, setSelectedPromoter] = useState("");
     const [selectedStore, setSelectedStore] = useState("");
     const [visitFrequency, setVisitFrequency] = useState("");
 
-    const [promoters, setPromoters] = useState([]);
     const [stores, setStores] = useState([]);
     const [brands, setBrands] = useState([]);
     const [filterBrandName, setFilterBrandName] = useState("");
-    const [filterPromoter, setFilterPromoter] = useState("");
     const [filterStore, setFilterStore] = useState("");
     const [filterVisitFrequency, setFilterVisitFrequency] = useState("");
     const [filteredBrands, setFilteredBrands] = useState([]);
 
     const [editingId, setEditingId] = useState(null);
     const [editBrandName, setEditBrandName] = useState("");
-    const [editPromoter, setEditPromoter] = useState("");
     const [editStore, setEditStore] = useState("");
     const [editVisitFrequency, setEditVisitFrequency] = useState("");
 
@@ -27,7 +23,6 @@ const BrandForm = () => {
     const token = localStorage.getItem("token");
 
     useEffect(() => {
-        fetchPromoters();
         fetchStores();
         fetchBrands();
     }, []);
@@ -36,23 +31,10 @@ const BrandForm = () => {
         applyFilters();
     }, [
         filterBrandName,
-        filterPromoter,
         filterStore,
         filterVisitFrequency,
         brands,
     ]);
-
-
-    const fetchPromoters = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/api/promoters/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setPromoters(response.data);
-        } catch (error) {
-            console.error("Erro ao buscar promotores", error);
-        }
-    };
 
     const fetchStores = async () => {
         try {
@@ -78,14 +60,12 @@ const BrandForm = () => {
 
     const applyFilters = () => {
         const lowerCaseBrandName = filterBrandName.toLowerCase();
-        const lowerCasePromoter = filterPromoter.toLowerCase();
         const lowerCaseStore = filterStore.toLowerCase();
         const lowerCaseVisitFrequency = filterVisitFrequency.toString();
 
         const filtered = brands.filter((brand) => {
             return (
                 brand.brand_name.toLowerCase().includes(lowerCaseBrandName) &&
-                brand.promoter_name.toLowerCase().includes(lowerCasePromoter) &&
                 brand.store_name.toLowerCase().includes(lowerCaseStore) &&
                 brand.visit_frequency
                     .toString()
@@ -98,7 +78,6 @@ const BrandForm = () => {
 
     const clearFilters = () => {
         setFilterBrandName("");
-        setFilterPromoter("");
         setFilterStore("");
         setFilteredBrands(brands);
     };
@@ -107,7 +86,6 @@ const BrandForm = () => {
         e.preventDefault();
         const body = {
             brand_name: brandName.trim(),
-            promoter_name: selectedPromoter,
             store_name: selectedStore,
             visit_frequency: parseInt(visitFrequency, 10),
         };
@@ -124,7 +102,6 @@ const BrandForm = () => {
 
             fetchBrands();
             setBrandName("");
-            setSelectedPromoter("");
             setSelectedStore("");
             setVisitFrequency("");
         } catch (error) {
@@ -135,7 +112,6 @@ const BrandForm = () => {
     const handleEdit = (brand) => {
         setEditingId(brand.brand_id);
         setEditBrandName(brand.brand_name);
-        setEditPromoter(brand.promoter_name);
         setEditStore(brand.store_name);
         setEditVisitFrequency(brand.visit_frequency);
     };
@@ -146,7 +122,6 @@ const BrandForm = () => {
                 `${API_URL}/api/brands/${id}/`,
                 {
                     brand_name: editBrandName.trim(),
-                    promoter_name: editPromoter,
                     store_name: editStore,
                     visit_frequency: parseInt(editVisitFrequency, 10),
                 },
@@ -192,20 +167,6 @@ const BrandForm = () => {
                 />
 
                 <select
-                    value={selectedPromoter}
-                    onChange={(e) => setSelectedPromoter(e.target.value)}
-                    className="form-input-text"
-                    required
-                >
-                    <option value="">Selecione o Promotor</option>
-                    {promoters.map((promoter) => (
-                        <option key={promoter.id} value={promoter.name}>
-                            {promoter.name}
-                        </option>
-                    ))}
-                </select>
-
-                <select
                     value={selectedStore}
                     onChange={(e) => setSelectedStore(e.target.value)}
                     className="form-input-text"
@@ -244,14 +205,6 @@ const BrandForm = () => {
                     onChange={(e) => setFilterBrandName(e.target.value)}
                     className="form-input-text"
                 />
-                
-                <input
-                    type="text"
-                    placeholder="Filtrar Promotor"
-                    value={filterPromoter}
-                    onChange={(e) => setFilterPromoter(e.target.value)}
-                    className="form-input-text"
-                />
 
                 <input
                     type="text"
@@ -281,7 +234,6 @@ const BrandForm = () => {
                 <thead>
                     <tr>
                         <th>Marca</th>
-                        <th>Promotor</th>
                         <th>Loja</th>
                         <th>Periodicidade</th>
                         <th>Ações</th>
@@ -303,24 +255,37 @@ const BrandForm = () => {
                                         />
                                     </td>
                                     <td>
-                                        <input
-                                            type="text"
-                                            value={editPromoter}
-                                            onChange={(e) =>
-                                                setEditPromoter(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            value={editStore}
-                                            onChange={(e) =>
-                                                setEditStore(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        />
+                                        {editingId === brand.brand_id ? (
+                                            <select
+                                                value={editStore}
+                                                onChange={(e) =>
+                                                    setEditStore(e.target.value)
+                                                }
+                                                className="form-input-text"
+                                            >
+                                                <option value="">
+                                                    Selecione a Loja
+                                                </option>
+                                                {stores.map((store) => (
+                                                    <option
+                                                        key={store.id}
+                                                        value={store.id}
+                                                    >
+                                                        {store.name.toUperCase()}{" "}
+                                                        - {store.number}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <>
+                                                {brand.store_name} -{" "}
+                                                {stores.find(
+                                                    (store) =>
+                                                        store.id ===
+                                                        brand.store_id
+                                                )?.number || ""}
+                                            </>
+                                        )}
                                     </td>
                                     <td>
                                         <input
@@ -357,9 +322,15 @@ const BrandForm = () => {
                                 </>
                             ) : (
                                 <>
-                                    <td>{brand.brand_name}</td>
-                                    <td>{brand.promoter_name}</td>
-                                    <td>{brand.store_name}</td>
+                                    <td>{brand.brand_name.toUpperCase()}</td>
+                                    <td>
+                                        {brand.store_name.toUpperCase()}
+                                        {" - "}
+                                        {stores.find(
+                                            (store) =>
+                                                store.name === brand.store_name
+                                        )?.number || ""}
+                                    </td>
                                     <td>{brand.visit_frequency}x</td>
                                     <td>
                                         <div className="form-actions">

@@ -219,7 +219,9 @@ const PromoterForm = () => {
                     type="text"
                     placeholder="Filtrar Celular"
                     value={filterPhone}
-                    onChange={(e) => setFilterPhone(formatPhone(e.target.value))}
+                    onChange={(e) =>
+                        setFilterPhone(formatPhone(e.target.value))
+                    }
                     className="form-input-text"
                 />
 
@@ -248,7 +250,7 @@ const PromoterForm = () => {
                                     <td>
                                         <input
                                             type="text"
-                                            value={editName}
+                                            value={editName.toUpperCase()}
                                             onChange={(e) =>
                                                 setEditName(e.target.value)
                                             }
@@ -301,7 +303,7 @@ const PromoterForm = () => {
                                 </>
                             ) : (
                                 <>
-                                    <td>{promoter.name}</td>
+                                    <td>{promoter.name.toUpperCase()}</td>
                                     <td>{formatCPF(promoter.cpf)}</td>
                                     <td>{formatPhone(promoter.phone)}</td>
                                     <td>

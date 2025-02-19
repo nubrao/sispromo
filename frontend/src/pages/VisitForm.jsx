@@ -25,7 +25,6 @@ const VisitForm = () => {
     const [editVisitDate, setEditVisitDate] = useState("");
     const [filteredStores, setFilteredStores] = useState([]);
     const [filteredBrands, setFilteredBrands] = useState([]);
-    const [editFilteredStores, setEditFilteredStores] = useState([]);
     const [editFilteredBrands, setEditFilteredBrands] = useState([]);
 
     const API_URL = import.meta.env.VITE_API_URL;
@@ -73,54 +72,59 @@ const VisitForm = () => {
         setFilteredVisits(visits);
     };
 
-
     useEffect(() => {
-        if (promoterId) {
-            const promoterIdNum = parseInt(promoterId, 10);
+        setFilteredStores(stores);
 
-            const storesForPromoter = stores.filter((store) =>
-                brands.some(
-                    (brand) =>
-                        brand.promoter_id === promoterIdNum &&
-                        brand.store_name === store.name
-                )
+        if (storeId) {
+            const filtered = brands.filter(
+                (brand) => brand.store_id === parseInt(storeId, 10)
             );
-
-            const brandsForPromoter = brands.filter(
-                (brand) => brand.promoter_id === promoterIdNum
-            );
-
-            setFilteredStores([...storesForPromoter]);
-            setFilteredBrands([...brandsForPromoter]);
+            setFilteredBrands(filtered);
         } else {
-            setFilteredStores([]);
             setFilteredBrands([]);
         }
-    }, [promoterId, stores, brands]);
+    }, [storeId, stores, brands]);
+
+    useEffect(() => {
+        if (editStore) {
+            const filtered = brands.filter(
+                (brand) => brand.store_id === parseInt(editStore, 10)
+            );
+            setEditFilteredBrands(filtered);
+
+            if (!filtered.some((b) => b.brand_id === parseInt(editBrand, 10))) {
+                setEditBrand(filtered.length > 0 ? filtered[0].brand_id : "");
+            }
+        } else {
+            setEditFilteredBrands([]);
+            setEditBrand("");
+        }
+    }, [editStore, brands, stores, editBrand]);
 
     useEffect(() => {
         if (editPromoter) {
             const editPromoterIdNum = parseInt(editPromoter, 10);
 
-            const editStoresForPromoter = stores.filter((store) =>
-                brands.some(
-                    (brand) =>
-                        brand.promoter_id === editPromoterIdNum &&
-                        brand.store_name === store.name
-                )
-            );
-
             const editBrandsForPromoter = brands.filter(
                 (brand) => brand.promoter_id === editPromoterIdNum
             );
 
-            setEditFilteredStores([...editStoresForPromoter]);
             setEditFilteredBrands([...editBrandsForPromoter]);
         } else {
-            setEditFilteredStores([]);
             setEditFilteredBrands([]);
         }
     }, [editPromoter, stores, brands]);
+
+    useEffect(() => {
+        if (
+            editBrand &&
+            !editFilteredBrands.some(
+                (brand) => brand.brand_id === parseInt(editBrand, 10)
+            )
+        ) {
+            setEditBrand("");
+        }
+    }, [editFilteredBrands, editBrand]);
 
     const fetchPromoters = async () => {
         try {
@@ -198,8 +202,18 @@ const VisitForm = () => {
         setEditingId(visit.id);
         setEditPromoter(visit.promoter);
         setEditStore(visit.store);
-        setEditBrand(visit.brand);
         setEditVisitDate(visit.visit_date);
+
+        const filteredBrands = brands.filter(
+            (brand) => brand.store_id === parseInt(visit.store, 10)
+        );
+        setEditFilteredBrands(filteredBrands);
+
+        const selectedBrand = filteredBrands.find(
+            (brand) => brand.brand_id === parseInt(visit.brand, 10)
+        );
+
+        setEditBrand(selectedBrand ? selectedBrand.brand_id : "");
     };
 
     const handleSaveEdit = async (id) => {
@@ -234,6 +248,12 @@ const VisitForm = () => {
         }
     };
 
+    const formatDateTimeLocal = (dateString) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        return date.toISOString().slice(0, 16);
+    };
+
     return (
         <div className="form-container">
             <h2 className="form-title">Cadastro de Visitas</h2>
@@ -257,7 +277,6 @@ const VisitForm = () => {
                     onChange={(e) => setStoreId(e.target.value)}
                     className="form-input-text"
                     required
-                    disabled={!promoterId}
                 >
                     <option value="">Selecione uma Loja</option>
                     {filteredStores.map((store) => (
@@ -272,9 +291,12 @@ const VisitForm = () => {
                     onChange={(e) => setBrand(e.target.value)}
                     className="form-input-text"
                     required
-                    disabled={!promoterId}
                 >
-                    <option value="">Selecione uma Marca</option>
+                    <option value="">
+                        {!storeId
+                            ? "Selecione uma Loja primeiro"
+                            : "Selecione uma Marca"}
+                    </option>
                     {filteredBrands.map((brand) => (
                         <option key={brand.id} value={brand.id}>
                             {brand.brand_name}
@@ -366,7 +388,7 @@ const VisitForm = () => {
                                                     key={promoter.id}
                                                     value={promoter.id}
                                                 >
-                                                    {promoter.name}
+                                                    {promoter.name.toUpperCase()}
                                                 </option>
                                             ))}
                                         </select>
@@ -378,15 +400,16 @@ const VisitForm = () => {
                                                 setEditStore(e.target.value)
                                             }
                                             className="form-input-text"
-                                            required
-                                            disabled={!editPromoter}
                                         >
-                                            {editFilteredStores.map((store) => (
+                                            <option value="">
+                                                Selecione uma Loja
+                                            </option>
+                                            {stores.map((store) => (
                                                 <option
                                                     key={store.id}
                                                     value={store.id}
                                                 >
-                                                    {store.name} -{" "}
+                                                    {store.name.toUpperCase()} -{" "}
                                                     {store.number}
                                                 </option>
                                             ))}
@@ -394,20 +417,24 @@ const VisitForm = () => {
                                     </td>
                                     <td>
                                         <select
-                                            value={editBrand}
+                                            value={editBrand || ""}
                                             onChange={(e) =>
                                                 setEditBrand(e.target.value)
                                             }
                                             className="form-input-text"
                                             required
-                                            disabled={!editPromoter}
                                         >
+                                            <option value="">
+                                                {!editStore
+                                                    ? "Selecione uma Loja primeiro"
+                                                    : "Selecione uma Marca"}
+                                            </option>
                                             {editFilteredBrands.map((brand) => (
                                                 <option
-                                                    key={brand.id}
-                                                    value={brand.id}
+                                                    key={brand.brand_id}
+                                                    value={brand.brand_id}
                                                 >
-                                                    {brand.brand_name}
+                                                    {brand.brand_name.toUpperCase()}
                                                 </option>
                                             ))}
                                         </select>
@@ -415,7 +442,9 @@ const VisitForm = () => {
                                     <td>
                                         <input
                                             type="datetime-local"
-                                            value={editVisitDate}
+                                            value={formatDateTimeLocal(
+                                                editVisitDate
+                                            )}
                                             onChange={(e) =>
                                                 setEditVisitDate(e.target.value)
                                             }
@@ -445,9 +474,9 @@ const VisitForm = () => {
                                 </>
                             ) : (
                                 <>
-                                    <td>{visit.promoter_name}</td>
-                                    <td>{visit.store_display}</td>
-                                    <td>{visit.brand}</td>
+                                    <td>{visit.promoter_name.toUpperCase()}</td>
+                                    <td>{visit.store_display.toUpperCase()}</td>
+                                    <td>{visit.brand.toUpperCase()}</td>
                                     <td>
                                         {new Date(
                                             visit.visit_date

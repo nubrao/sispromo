@@ -1,11 +1,9 @@
 from django.db import models
-from core.infrastructure.models.promoter_model import PromoterModel
 from core.infrastructure.models.store_model import StoreModel
 
 
 class BrandModel(models.Model):
     name = models.CharField(max_length=255)
-    promoters = models.ManyToManyField(PromoterModel, related_name="brands")
     stores = models.ManyToManyField(
         StoreModel, through="BrandStore", related_name="brands")
 

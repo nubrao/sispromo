@@ -363,7 +363,7 @@ const StoreForm = () => {
                                     <td>
                                         <input
                                             type="text"
-                                            value={editName}
+                                            value={editName.toUpperCase()}
                                             onChange={(e) =>
                                                 setEditName(e.target.value)
                                             }
@@ -387,7 +387,7 @@ const StoreForm = () => {
                                     <td>
                                         <input
                                             type="text"
-                                            value={editCity}
+                                            value={editCity.toUpperCase()}
                                             onChange={(e) =>
                                                 setEditCity(e.target.value)
                                             }
@@ -431,9 +431,9 @@ const StoreForm = () => {
                                 </>
                             ) : (
                                 <>
-                                    <td>{store.name}</td>
+                                    <td>{store.name.toUpperCase()}</td>
                                     <td>{store.number}</td>
-                                    <td>{store.city}</td>
+                                    <td>{store.city.toUpperCase()}</td>
                                     <td>{store.state}</td>
                                     <td>{validateCNPJ(store.cnpj)}</td>
                                     <td>
