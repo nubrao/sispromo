@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -21,11 +21,16 @@ PrivateRoute.propTypes = {
 
 function App() {
     const { token } = useContext(AuthContext);
+    const location = useLocation();
 
     return (
         <div className="app-container">
             {token && <Navbar />}
-            <div className="content">
+            <div
+                className={`content ${
+                    location.pathname === "/login" ? "login" : ""
+                }`}
+            >
                 <Routes>
                     <Route
                         path="/"

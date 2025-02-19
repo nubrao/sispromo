@@ -91,6 +91,12 @@ button:focus-visible {
 .content {
     margin-top: 50px;
     padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.login {
+    margin-top: 0px;
 }
 
 .with-navbar {

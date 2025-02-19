@@ -3,6 +3,7 @@
     --background-dark: #141414;
     --text-light: #000;
     --text-dark: #fff;
+    --title-light: #213547;
     --input-border-light: #ccc;
     --input-border-dark: #444;
     --button-bg-light: #89b789;
@@ -20,6 +21,21 @@ body {
 @media (prefers-color-scheme: dark) {
     body {
         background-color: var(--background-dark);
+        color: var(--text-dark);
+    }
+}
+
+.welcome {
+    font-weight: 500;
+    text-align: center;
+    font-size: 6cqb;
+    padding-bottom: 32px;
+    color: var(--title-light);
+    transition: color 0.3s;
+}
+
+@media (prefers-color-scheme: dark) {
+    .welcome {
         color: var(--text-dark);
     }
 }
