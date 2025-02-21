@@ -44,3 +44,24 @@ class BrandViewSet(viewsets.ModelViewSet):
                 {"error": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = request.data.copy()
+
+        try:
+            if "store_id" in data:
+                from core.infrastructure.models.store_model import StoreModel
+                store = StoreModel.objects.get(id=data["store_id"])
+                instance.stores.set([store])
+
+            if "brand_name" in data:
+                instance.name = data["brand_name"]
+
+            instance.save()  # Salva as alterações no banco
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

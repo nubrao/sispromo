@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+import Home from "./pages/Home";
 import PromoterForm from "./pages/PromoterForm";
 import StoreForm from "./pages/StoreForm";
 import VisitForm from "./pages/VisitForm";
@@ -36,7 +36,7 @@ function App() {
                         path="/"
                         element={
                             <Navigate
-                                to={token ? "/dashboard" : "/login"}
+                                to={token ? "/home" : "/login"}
                                 replace
                             />
                         }
@@ -44,10 +44,10 @@ function App() {
 
                     <Route path="/login" element={<Login />} />
                     <Route
-                        path="/dashboard"
+                        path="/home"
                         element={
                             <PrivateRoute>
-                                <Dashboard />
+                                <Home />
                             </PrivateRoute>
                         }
                     />

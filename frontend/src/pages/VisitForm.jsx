@@ -248,12 +248,6 @@ const VisitForm = () => {
         }
     };
 
-    const formatDateTimeLocal = (dateString) => {
-        if (!dateString) return "";
-        const date = new Date(dateString);
-        return date.toISOString().slice(0, 16);
-    };
-
     return (
         <div className="form-container">
             <h2 className="form-title">Cadastro de Visitas</h2>
@@ -305,7 +299,7 @@ const VisitForm = () => {
                 </select>
 
                 <input
-                    type="datetime-local"
+                    type="date"
                     value={visitDate}
                     onChange={(e) => setVisitDate(e.target.value)}
                     className="form-input-text"
@@ -441,10 +435,8 @@ const VisitForm = () => {
                                     </td>
                                     <td>
                                         <input
-                                            type="datetime-local"
-                                            value={formatDateTimeLocal(
-                                                editVisitDate
-                                            )}
+                                            type="date"
+                                            value={editVisitDate}
                                             onChange={(e) =>
                                                 setEditVisitDate(e.target.value)
                                             }

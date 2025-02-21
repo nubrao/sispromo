@@ -87,7 +87,7 @@ const AuthProvider = ({ children }) => {
             axios.defaults.headers.common[
                 "Authorization"
             ] = `Bearer ${response.data.access}`;
-            navigate("/dashboard");
+            navigate("/home");
 
             return true;
         } catch (error) {
