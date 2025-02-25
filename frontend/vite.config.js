@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import createHtmlPlugin from 'vite-plugin-mpa'
+import { createHtmlPlugin } from 'vite-plugin-mpa'
 
 export default defineConfig({
   plugins: [react(),
