@@ -1,11 +1,11 @@
 from django.db import models
 from core.infrastructure.models.promoter_model import PromoterModel
 from core.infrastructure.models.store_model import StoreModel
+from core.infrastructure.models.brand_model import BrandModel
 
 
 class VisitModel(models.Model):
-    promoter = models.ForeignKey(
-        PromoterModel, on_delete=models.CASCADE) 
+    promoter = models.ForeignKey(PromoterModel, on_delete=models.CASCADE)
     store = models.ForeignKey(StoreModel, on_delete=models.CASCADE)
-    brand = models.CharField(max_length=255)
+    brand = models.ForeignKey(BrandModel, on_delete=models.CASCADE)
     visit_date = models.DateTimeField()
