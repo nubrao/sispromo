@@ -190,3 +190,11 @@
 .clear-button:hover {
     background-color: #ff4747;
 }
+
+.loading-container {
+    height: 150px;
+}
+
+.loading-container-button {
+    height: 40px;
+}
