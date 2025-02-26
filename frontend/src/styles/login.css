@@ -12,7 +12,8 @@
     --button-hover-dark: #b3d0b3;
 }
 
-html, body {
+html,
+body {
     width: 100vw;
     height: 100vh;
     margin: 0;
@@ -22,10 +23,62 @@ html, body {
     transition: background 0.3s, color 0.3s;
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (max-width: 768px) {
+    html,
     body {
-        background-color: var(--background-dark);
-        color: var(--text-dark);
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .welcome {
+        font-size: 6cqb;
+        padding-bottom: 20px;
+        white-space: pre-line;
+    }
+
+    .login-container {
+        flex-direction: column;
+        width: 100%;
+        max-width: 350px;
+        padding: 20px;
+        gap: 16px;
+
+        svg {
+            height: 150px;
+            width: auto;
+            margin-bottom: 20px;
+        }
+    }
+
+    .login-container img {
+        height: 50px;
+        width: auto;
+        margin-bottom: 20px;
+    }
+
+    .login-form {
+        align-items: center;
+        max-width: 0px;
+    }
+
+    .login-input {
+        width: 100%;
+        max-width: 230px;
+    }
+
+    .login-button {
+        width: 100%;
+        max-width: 250px;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100px;
+        width: 100%;
     }
 }
 
@@ -36,12 +89,6 @@ html, body {
     padding-bottom: 32px;
     color: var(--title-light);
     transition: color 0.3s;
-}
-
-@media (prefers-color-scheme: dark) {
-    .welcome {
-        color: var(--text-dark);
-    }
 }
 
 .login-container {
@@ -74,13 +121,6 @@ html, body {
     transition: border 0.3s;
 }
 
-@media (prefers-color-scheme: dark) {
-    .login-input {
-        border-color: var(--input-border-dark);
-        color: var(--text-dark);
-    }
-}
-
 .login-button {
     padding: 10px;
     border-radius: 5px;
@@ -92,17 +132,29 @@ html, body {
     transition: background 0.3s;
 }
 
-@media (prefers-color-scheme: dark) {
-    .login-button {
-        background-color: var(--button-bg-dark);
-    }
-}
-
 .login-button:hover {
     background-color: var(--button-hover-light);
 }
 
 @media (prefers-color-scheme: dark) {
+    body {
+        background-color: var(--background-dark);
+        color: var(--text-dark);
+    }
+
+    .welcome {
+        color: var(--text-dark);
+    }
+
+    .login-input {
+        border-color: var(--input-border-dark);
+        color: var(--text-dark);
+    }
+
+    .login-button {
+        background-color: var(--button-bg-dark);
+    }
+
     .login-button:hover {
         background-color: var(--button-hover-dark);
     }
