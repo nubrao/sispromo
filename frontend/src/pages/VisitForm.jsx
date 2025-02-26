@@ -56,7 +56,7 @@ const VisitForm = () => {
                 visit.store_display
                     .toLowerCase()
                     .includes(filterStore.toLowerCase()) &&
-                visit.brand.toLowerCase().includes(filterBrand.toLowerCase()) &&
+                visit.brand_name.toLowerCase().includes(filterBrand.toLowerCase()) &&
                 isSameDate
             );
         });
@@ -210,7 +210,7 @@ const VisitForm = () => {
         setEditFilteredBrands(filteredBrands);
 
         const selectedBrand = filteredBrands.find(
-            (brand) => brand.brand_id === parseInt(visit.brand, 10)
+            (brand) => brand.brand_id === parseInt(visit.brand_name, 10)
         );
 
         setEditBrand(selectedBrand ? selectedBrand.brand_id : "");
@@ -468,7 +468,7 @@ const VisitForm = () => {
                                 <>
                                     <td>{visit.promoter_name.toUpperCase()}</td>
                                     <td>{visit.store_display.toUpperCase()}</td>
-                                    <td>{visit.brand.toUpperCase()}</td>
+                                    <td>{visit.brand_name.toUpperCase()}</td>
                                     <td>
                                         {new Date(
                                             visit.visit_date
