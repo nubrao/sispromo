@@ -5,6 +5,6 @@ from rest_framework.permissions import IsAuthenticated
 
 
 class VisitViewSet(viewsets.ModelViewSet):
-    queryset = VisitModel.objects.all()
+    queryset = VisitModel.objects.select_related("promoter", "store").all()
     serializer_class = VisitSerializer
     permission_classes = [IsAuthenticated]
