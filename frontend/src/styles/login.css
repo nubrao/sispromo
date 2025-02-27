@@ -21,6 +21,10 @@ body {
     background-color: var(--background-light);
     color: var(--text-light);
     transition: background 0.3s, color 0.3s;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--background-light);
+    color: var(--text-light);
 }
 
 @media screen and (max-width: 768px) {

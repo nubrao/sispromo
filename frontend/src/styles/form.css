@@ -1,3 +1,13 @@
+@media screen and (max-width: 768px) {
+    .form-container {
+        align-items: flex-start;
+    }
+
+    .form {
+        align-items: flex-start;
+    }
+}
+
 .form-container {
     display: flex;
     flex-direction: column;
