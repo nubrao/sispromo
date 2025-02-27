@@ -101,6 +101,10 @@
 .table {
     width: 100%;
     border-collapse: collapse;
+
+    th {
+        color: var(--text-dark);
+    }
 }
 
 .form {
@@ -168,7 +172,7 @@
 .filter-container {
     display: flex;
     gap: 10px;
-    margin-bottom: 10px;    
+    margin-bottom: 10px;
     padding: 10px;
     justify-content: space-between;
     flex-wrap: wrap;

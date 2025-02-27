@@ -112,4 +112,8 @@ button:focus-visible {
 
 .login {
     margin-top: 0px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

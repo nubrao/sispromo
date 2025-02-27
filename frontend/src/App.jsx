@@ -25,7 +25,11 @@ function App() {
     const [loading, setLoading] = useState(null);
 
     return (
-        <div className="app-container">
+        <div
+            className={`app-container ${
+                location.pathname === "/login" ? "login" : ""
+            }`}
+        >
             {token && <Navbar />}
             <div
                 className={`content ${
