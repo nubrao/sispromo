@@ -1,3 +1,13 @@
+@media screen and (max-width: 768px) {
+    .form-container {
+        align-items: flex-start;
+    }
+
+    .form {
+        align-items: flex-start;
+    }
+}
+
 .form-container {
     display: flex;
     flex-direction: column;
@@ -91,6 +101,10 @@
 .table {
     width: 100%;
     border-collapse: collapse;
+
+    th {
+        color: var(--text-dark);
+    }
 }
 
 .form {
@@ -159,18 +173,35 @@
     display: flex;
     gap: 10px;
     margin-bottom: 10px;
+    padding: 10px;
     justify-content: space-between;
     flex-wrap: wrap;
     align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
 }
 
 .filter-container input {
     flex: 1;
     min-width: 150px;
-    padding: 8px;
+    padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
     height: 40px;
+}
+
+@media screen and (max-width: 768px) {
+    .filter-container {
+        flex-direction: column;
+        width: 100%;
+        gap: 0px;
+        margin-bottom: 24px;
+    }
+
+    .clear-button {
+        width: 100%;
+    }
 }
 
 .clear-button {
@@ -189,4 +220,12 @@
 
 .clear-button:hover {
     background-color: #ff4747;
+}
+
+.loading-container {
+    height: 150px;
+}
+
+.loading-container-button {
+    height: 40px;
 }

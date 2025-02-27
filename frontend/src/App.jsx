@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 import Login from "./pages/Login";
@@ -22,9 +22,14 @@ PrivateRoute.propTypes = {
 function App() {
     const { token } = useContext(AuthContext);
     const location = useLocation();
+    const [loading, setLoading] = useState(null);
 
     return (
-        <div className="app-container">
+        <div
+            className={`app-container ${
+                location.pathname === "/login" ? "login" : ""
+            }`}
+        >
             {token && <Navbar />}
             <div
                 className={`content ${
@@ -35,10 +40,7 @@ function App() {
                     <Route
                         path="/"
                         element={
-                            <Navigate
-                                to={token ? "/home" : "/login"}
-                                replace
-                            />
+                            <Navigate to={token ? "/home" : "/login"} replace />
                         }
                     />
 
@@ -55,7 +57,10 @@ function App() {
                         path="/promoters"
                         element={
                             <PrivateRoute>
-                                <PromoterForm />
+                                <PromoterForm
+                                    loading={loading}
+                                    setLoading={setLoading}
+                                />
                             </PrivateRoute>
                         }
                     />
@@ -63,7 +68,10 @@ function App() {
                         path="/stores"
                         element={
                             <PrivateRoute>
-                                <StoreForm />
+                                <StoreForm
+                                    loading={loading}
+                                    setLoading={setLoading}
+                                />
                             </PrivateRoute>
                         }
                     />
@@ -71,7 +79,10 @@ function App() {
                         path="/brands"
                         element={
                             <PrivateRoute>
-                                <BrandForm />
+                                <BrandForm
+                                    loading={loading}
+                                    setLoading={setLoading}
+                                />
                             </PrivateRoute>
                         }
                     />
@@ -79,7 +90,10 @@ function App() {
                         path="/visits"
                         element={
                             <PrivateRoute>
-                                <VisitForm />
+                                <VisitForm
+                                    loading={loading}
+                                    setLoading={setLoading}
+                                />
                             </PrivateRoute>
                         }
                     />

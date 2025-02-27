@@ -3,8 +3,11 @@ import axios from "axios";
 import "../styles/form.css";
 import { formatCPF, formatPhone } from "../hooks/useMask";
 import useTranslateMessage from "../hooks/useTranslateMessage";
+import Loader from "../components/Loader";
+import PropTypes from "prop-types";
+import LoadingModal from "../components/LoadingModal";
 
-const PromoterForm = () => {
+const PromoterForm = ({ loading, setLoading }) => {
     const [name, setName] = useState("");
     const [cpf, setCPF] = useState("");
     const [phone, setPhone] = useState("");
@@ -25,13 +28,24 @@ const PromoterForm = () => {
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
 
+    const [modalOpen, setModalOpen] = useState(false);
+    const [success, setSuccess] = useState(false);
+
     useEffect(() => {
         fetchPromoters();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
         applyFilters();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filterName, filterCPF, filterPhone, promoters]);
+
+    useEffect(() => {
+        setLoading(true);
+        fetchPromoters().finally(() => setLoading(false));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const fetchPromoters = async () => {
         try {
@@ -70,10 +84,11 @@ const PromoterForm = () => {
         setFilteredPromoters(promoters);
     };
 
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrorMessage("");
+        setModalOpen(true);
+        setLoading(true);
 
         const cleanedCPF = cpf.replace(/\D/g, "");
         const cleanedPhone = phone.replace(/\D/g, "");
@@ -84,28 +99,36 @@ const PromoterForm = () => {
                 { name, cpf: cleanedCPF, phone: cleanedPhone },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+
             fetchPromoters();
             setName("");
             setCPF("");
             setPhone("");
+            setSuccess(true);
+
+            setTimeout(() => {
+                setModalOpen(false);
+                setSuccess(false);
+                setLoading(false);
+            }, 2000);
         } catch (error) {
-            if (error.response && error.response.status === 400) {
-                if (error.response.data.cpf) {
-                    const translatedMessage = await translateMessage(
-                        error.response.data.cpf[0]
-                    );
-                    setErrorMessage(translatedMessage);
-                } else {
-                    const translatedMessage =
-                        "Erro ao cadastrar promotor. Verifique os dados.";
-                    setErrorMessage(translatedMessage);
-                }
-            } else {
-                const translatedMessage =
-                    "Erro ao cadastrar promotor. Verifique os dados.";
-                setErrorMessage(translatedMessage);
+            let translatedMessage =
+                "Erro ao cadastrar promotor. Verifique os dados.";
+
+            if (error.response?.status === 400) {
+                translatedMessage = error.response.data.cpf
+                    ? await translateMessage(error.response.data.cpf[0])
+                    : translatedMessage;
             }
-        }
+
+            setErrorMessage(translatedMessage);
+            setLoading(false);
+
+            setTimeout(() => {
+                setModalOpen(false);
+                setErrorMessage("");
+            }, 3000);
+        }        
     };
 
     const handleEdit = (promoter) => {
@@ -138,7 +161,10 @@ const PromoterForm = () => {
             setEditingId(null);
             fetchPromoters();
         } catch (error) {
-            setErrorMessage("Erro ao atualizar promotor. Verifique os dados.", error);
+            setErrorMessage(
+                "Erro ao atualizar promotor. Verifique os dados.",
+                error
+            );
         }
     };
 
@@ -196,6 +222,14 @@ const PromoterForm = () => {
                 </button>
             </form>
 
+            <LoadingModal
+                open={modalOpen}
+                success={success}
+                loading={loading}
+                errorMessage={errorMessage}
+                onClose={() => setModalOpen(false)}
+            />
+
             <h3 className="form-title">Lista de Promotores</h3>
 
             <div className="filter-container">
@@ -243,97 +277,116 @@ const PromoterForm = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredPromoters.map((promoter) => (
-                        <tr key={promoter.id}>
-                            {editingId === promoter.id ? (
-                                <>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            value={editName.toUpperCase()}
-                                            onChange={(e) =>
-                                                setEditName(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            value={formatCPF(editCPF)}
-                                            onChange={(e) =>
-                                                setEditCPF(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        />
-                                        {errorMessage && (
-                                            <p className="error-message">
-                                                {errorMessage}
-                                            </p>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            value={formatPhone(editPhone)}
-                                            onChange={(e) =>
-                                                setEditPhone(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        />
-                                    </td>
-                                    <td>
-                                        <div className="form-actions">
-                                            <button
-                                                onClick={() =>
-                                                    handleSaveEdit(promoter.id)
-                                                }
-                                                className="form-button save-button"
-                                            >
-                                                Salvar
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                className="form-button cancel-button"
-                                            >
-                                                Cancelar
-                                            </button>
-                                        </div>
-                                    </td>
-                                </>
-                            ) : (
-                                <>
-                                    <td>{promoter.name.toUpperCase()}</td>
-                                    <td>{formatCPF(promoter.cpf)}</td>
-                                    <td>{formatPhone(promoter.phone)}</td>
-                                    <td>
-                                        <div className="form-actions">
-                                            <button
-                                                onClick={() =>
-                                                    handleEdit(promoter)
-                                                }
-                                                className="form-button edit-button"
-                                            >
-                                                ✏️
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(promoter.id)
-                                                }
-                                                className="form-button delete-button"
-                                            >
-                                                ❌
-                                            </button>
-                                        </div>
-                                    </td>
-                                </>
-                            )}
+                    {loading && filteredPromoters.length === 0 ? (
+                        <tr>
+                            <td colSpan="4" style={{ textAlign: "center" }}>
+                                <div className="loading-container">
+                                    <Loader />
+                                </div>
+                            </td>
                         </tr>
-                    ))}
+                    ) : (
+                        filteredPromoters.map((promoter) => (
+                            <tr key={promoter.id}>
+                                {editingId === promoter.id ? (
+                                    <>
+                                        <td>
+                                            <input
+                                                type="text"
+                                                value={editName.toUpperCase()}
+                                                onChange={(e) =>
+                                                    setEditName(e.target.value)
+                                                }
+                                                className="form-input-text"
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="text"
+                                                value={formatCPF(editCPF)}
+                                                onChange={(e) =>
+                                                    setEditCPF(e.target.value)
+                                                }
+                                                className="form-input-text"
+                                            />
+                                            {errorMessage && (
+                                                <p className="error-message">
+                                                    {errorMessage}
+                                                </p>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="text"
+                                                value={formatPhone(editPhone)}
+                                                onChange={(e) =>
+                                                    setEditPhone(e.target.value)
+                                                }
+                                                className="form-input-text"
+                                            />
+                                        </td>
+                                        <td>
+                                            <div className="form-actions">
+                                                <button
+                                                    onClick={() =>
+                                                        handleSaveEdit(
+                                                            promoter.id
+                                                        )
+                                                    }
+                                                    className="form-button save-button"
+                                                >
+                                                    Salvar
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    className="form-button cancel-button"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </>
+                                ) : (
+                                    <>
+                                        <td>{promoter.name.toUpperCase()}</td>
+                                        <td>{formatCPF(promoter.cpf)}</td>
+                                        <td>{formatPhone(promoter.phone)}</td>
+                                        <td>
+                                            <div className="form-actions">
+                                                <button
+                                                    onClick={() =>
+                                                        handleEdit(promoter)
+                                                    }
+                                                    className="form-button edit-button"
+                                                >
+                                                    ✏️
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        handleDelete(
+                                                            promoter.id
+                                                        )
+                                                    }
+                                                    className="form-button delete-button"
+                                                >
+                                                    ❌
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </>
+                                )}
+                            </tr>
+                        ))
+                    )}
                 </tbody>
             </table>
         </div>
     );
+};
+
+PromoterForm.propTypes = {
+    loading: PropTypes.bool.isRequired,
+    setLoading: PropTypes.func.isRequired,
 };
 
 export default PromoterForm;
