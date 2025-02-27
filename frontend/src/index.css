@@ -87,6 +87,7 @@ button:focus-visible {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    width: 100vw;
 }
 
 .content {
@@ -96,23 +97,19 @@ button:focus-visible {
     flex-direction: column;
     align-items: center;
     flex-grow: 1;
-    overflow-y: auto;
+    overflow: auto;
 }
 
 @media screen and (max-width: 768px) {
     .content {
         padding: 10px;
     }
+
+    .app-container {
+        width: auto;
+    }
 }
 
 .login {
     margin-top: 0px;
-}
-
-.with-navbar {
-    margin-left: 250px;
-}
-
-.full-width {
-    margin-left: 60px;
 }
