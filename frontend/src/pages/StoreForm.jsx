@@ -1,10 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "../styles/form.css";
 import { formatCNPJ } from "../hooks/useMask";
 import useTranslateMessage from "../hooks/useTranslateMessage";
+import Loader from "../components/Loader";
+import PropTypes from "prop-types";
+import LoadingModal from "../components/LoadingModal";
 
-const StoreForm = () => {
+const StoreForm = ({
+    loading,
+    setLoading,
+    modalOpen,
+    setModalOpen,
+    success,
+    setSuccess,
+    errorMessage,
+    setErrorMessage,
+    dataLoaded,
+    setDataLoaded,
+}) => {
     const [name, setName] = useState("");
     const [number, setNumber] = useState("");
     const [city, setCity] = useState("");
@@ -20,7 +34,6 @@ const StoreForm = () => {
     const [filterState, setFilterState] = useState("");
     const [filterCNPJ, setFilterCNPJ] = useState("");
 
-    const [errorMessage, setErrorMessage] = useState("");
     const [editingId, setEditingId] = useState(null);
     const [editName, setEditName] = useState("");
     const [editNumber, setEditNumber] = useState("");
@@ -33,15 +46,34 @@ const StoreForm = () => {
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
     const cleanedCNPJ = isEditing ? editCnpj : cnpj.replace(/\D/g, "");
-
-    useEffect(() => {
-        fetchStores();
-        fetchStates();
-    }, []);
+    const didFetchData = useRef(false);
 
     useEffect(() => {
         applyFilters();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filterName, filterNumber, filterCity, filterState, filterCNPJ, stores]);
+
+    useEffect(() => {
+        if (didFetchData.current) return;
+        didFetchData.current = true;
+
+        const fetchData = async () => {
+            setLoading(true);
+            setDataLoaded(false);
+
+            try {
+                await Promise.all([fetchStates(), fetchStores()]);
+            } catch (error) {
+                console.error("Erro ao buscar dados:", error);
+            } finally {
+                setLoading(false);
+                setDataLoaded(true);
+            }
+        };
+
+        fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const validateCNPJ = (cnpj) => {
         if (!cnpj) return "CNPJ Inválido";
@@ -112,53 +144,69 @@ const StoreForm = () => {
         setFilteredStores(stores);
     };
 
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrorMessage("");
+        setModalOpen(true);
+        setLoading(true);
 
         if (!isEditing && cleanedCNPJ.length !== 14) {
             setErrorMessage("CNPJ inválido.");
             return;
         }
 
+        const storeData = {
+            name,
+            number,
+            city,
+            state: selectedState,
+            cnpj: cleanedCNPJ,
+        };
+
         try {
-            await axios.post(
-                `${API_URL}/api/stores/`,
-                {
-                    name,
-                    number,
-                    city,
-                    state: selectedState,
-                    cnpj: cleanedCNPJ,
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+            await axios.post(`${API_URL}/api/stores/`, storeData, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
             fetchStores();
-            setName("");
-            setNumber("");
-            setCity("");
-            setSelectedState("");
-            setCnpj("");
+            resetForm();
+            setSuccess(true);
         } catch (error) {
-            if (!isEditing && error.response && error.response.status === 400) {
-                if (error.response?.data.cnpj) {
-                    const translatedMessage = await translateMessage(
-                        error.response.data.cnpj[0]
-                    );
-                    setErrorMessage(translatedMessage);
-                } else {
-                    const translatedMessage =
-                        "Erro ao cadastrar loja. Verifique os dados.";
-                    setErrorMessage(translatedMessage);
-                }
-            } else {
-                const translatedMessage = "Erro ao conectar com o servidor.";
-                setErrorMessage(translatedMessage);
-            }
+            setErrorMessage(await getErrorMessage(error));
+        } finally {
+            finalizeModal();
         }
+    };
+
+    const resetForm = () => {
+        setName("");
+        setNumber("");
+        setCity("");
+        setCnpj("");
+        setSelectedState("");
+    };
+
+    const getErrorMessage = async (error) => {
+        if (!error.response) return "Erro ao conectar com o servidor.";
+
+        const { status, data } = error.response;
+
+        if (!isEditing && status === 400) {
+            return data?.cnpj
+                ? await translateMessage(data.cnpj[0])
+                : "Erro ao cadastrar loja. Verifique os dados.";
+        }
+
+        return "Erro ao cadastrar loja.";
+    };
+
+    const finalizeModal = () => {
+        setLoading(false);
+        setTimeout(() => {
+            setModalOpen(false);
+            setErrorMessage("");
+            setSuccess(false);
+        }, 3000);
     };
 
     const handleEdit = (store) => {
@@ -295,6 +343,14 @@ const StoreForm = () => {
                 </button>
             </form>
 
+            <LoadingModal
+                open={modalOpen}
+                success={success}
+                loading={loading}
+                errorMessage={errorMessage}
+                onClose={() => setModalOpen(false)}
+            />
+
             <h3 className="form-title">Lista de Lojas</h3>
 
             <div className="filter-container">
@@ -344,126 +400,159 @@ const StoreForm = () => {
                 </button>
             </div>
 
-            <table className="table">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Número</th>
-                        <th>Cidade</th>
-                        <th>Estado</th>
-                        <th>CNPJ</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredStores.map((store) => (
-                        <tr key={store.id}>
-                            {editingId === store.id ? (
-                                <>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            value={editName.toUpperCase()}
-                                            onChange={(e) =>
-                                                setEditName(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            value={editNumber}
-                                            onChange={(e) =>
-                                                setEditNumber(
-                                                    handleNumberInput(
-                                                        e.target.value
-                                                    )
-                                                )
-                                            }
-                                            className="form-input-text"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            value={editCity.toUpperCase()}
-                                            onChange={(e) =>
-                                                setEditCity(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        />
-                                    </td>
-                                    <td>{editState}</td>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            value={formatCNPJ(editCnpj)}
-                                            onChange={(e) =>
-                                                setEditCnpj(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        />
-                                        {errorMessage && (
-                                            <p className="error-message">
-                                                {errorMessage}
-                                            </p>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <div className="form-actions">
-                                            <button
-                                                onClick={() =>
-                                                    handleSaveEdit(store.id)
-                                                }
-                                                className="form-button save-button"
-                                            >
-                                                Salvar
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                className="form-button cancel-button"
-                                            >
-                                                Cancelar
-                                            </button>
-                                        </div>
-                                    </td>
-                                </>
-                            ) : (
-                                <>
-                                    <td>{store.name.toUpperCase()}</td>
-                                    <td>{store.number}</td>
-                                    <td>{store.city.toUpperCase()}</td>
-                                    <td>{store.state}</td>
-                                    <td>{validateCNPJ(store.cnpj)}</td>
-                                    <td>
-                                        <div className="form-actions">
-                                            <button
-                                                onClick={() =>
-                                                    handleEdit(store)
-                                                }
-                                                className="form-button edit-button"
-                                            >
-                                                ✏️
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(store.id)
-                                                }
-                                                className="form-button delete-button"
-                                            >
-                                                ❌
-                                            </button>
-                                        </div>
-                                    </td>
-                                </>
-                            )}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            <div className="table-container">
+                {!dataLoaded ? (
+                    <div className="loading-container">
+                        <Loader />
+                    </div>
+                ) : (
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Número</th>
+                                <th>Cidade</th>
+                                <th>Estado</th>
+                                <th>CNPJ</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredStores.map((store) => (
+                                <tr key={store.id}>
+                                    {editingId === store.id ? (
+                                        <>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    value={editName.toUpperCase()}
+                                                    onChange={(e) =>
+                                                        setEditName(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    value={editNumber}
+                                                    onChange={(e) =>
+                                                        setEditNumber(
+                                                            handleNumberInput(
+                                                                e.target.value
+                                                            )
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    value={editCity.toUpperCase()}
+                                                    onChange={(e) =>
+                                                        setEditCity(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                />
+                                            </td>
+                                            <td>{editState}</td>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    value={formatCNPJ(editCnpj)}
+                                                    onChange={(e) =>
+                                                        setEditCnpj(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                />
+                                                {errorMessage && (
+                                                    <p className="error-message">
+                                                        {errorMessage}
+                                                    </p>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <div className="form-actions">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleSaveEdit(
+                                                                store.id
+                                                            )
+                                                        }
+                                                        className="form-button save-button"
+                                                    >
+                                                        Salvar
+                                                    </button>
+                                                    <button
+                                                        onClick={
+                                                            handleCancelEdit
+                                                        }
+                                                        className="form-button cancel-button"
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td>{store.name.toUpperCase()}</td>
+                                            <td>{store.number}</td>
+                                            <td>{store.city.toUpperCase()}</td>
+                                            <td>{store.state}</td>
+                                            <td>{validateCNPJ(store.cnpj)}</td>
+                                            <td>
+                                                <div className="form-actions">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleEdit(store)
+                                                        }
+                                                        className="form-button edit-button"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                store.id
+                                                            )
+                                                        }
+                                                        className="form-button delete-button"
+                                                    >
+                                                        ❌
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
         </div>
     );
+};
+
+StoreForm.propTypes = {
+    loading: PropTypes.bool.isRequired,
+    setLoading: PropTypes.func.isRequired,
+    modalOpen: PropTypes.bool.isRequired,
+    setModalOpen: PropTypes.func.isRequired,
+    success: PropTypes.bool.isRequired,
+    setSuccess: PropTypes.func.isRequired,
+    errorMessage: PropTypes.string,
+    setErrorMessage: PropTypes.func.isRequired,
+    dataLoaded: PropTypes.bool.isRequired,
+    setDataLoaded: PropTypes.func.isRequired,
 };
 
 export default StoreForm;

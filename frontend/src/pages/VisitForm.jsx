@@ -1,76 +1,83 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "../styles/form.css";
+import Loader from "../components/Loader";
+import PropTypes from "prop-types";
+import LoadingModal from "../components/LoadingModal";
+import useTranslateMessage from "../hooks/useTranslateMessage";
 
-const VisitForm = () => {
+const VisitForm = ({
+    loading,
+    setLoading,
+    modalOpen,
+    setModalOpen,
+    success,
+    setSuccess,
+    errorMessage,
+    setErrorMessage,
+    dataLoaded,
+    setDataLoaded,
+}) => {
     const [promoterId, setPromoterId] = useState("");
     const [storeId, setStoreId] = useState("");
     const [brand, setBrand] = useState("");
-    const [visitDate, setVisitDate] = useState("");
-
     const [visits, setVisits] = useState([]);
+    const [visitDate, setVisitDate] = useState("");
     const [promoters, setPromoters] = useState([]);
     const [stores, setStores] = useState([]);
-    const [editingId, setEditingId] = useState(null);
-    const [editPromoter, setEditPromoter] = useState("");
-    const [editStore, setEditStore] = useState("");
-    const [editBrand, setEditBrand] = useState("");
     const [brands, setBrands] = useState([]);
+
     const [filterPromoter, setFilterPromoter] = useState("");
     const [filterStore, setFilterStore] = useState("");
     const [filterBrand, setFilterBrand] = useState("");
     const [filterDate, setFilterDate] = useState("");
     const [filteredVisits, setFilteredVisits] = useState([]);
-
-    const [editVisitDate, setEditVisitDate] = useState("");
     const [filteredStores, setFilteredStores] = useState([]);
     const [filteredBrands, setFilteredBrands] = useState([]);
+
     const [editFilteredBrands, setEditFilteredBrands] = useState([]);
+    const [editingId, setEditingId] = useState(null);
+    const [editPromoter, setEditPromoter] = useState("");
+    const [editStore, setEditStore] = useState("");
+    const [editBrand, setEditBrand] = useState("");
+    const [editVisitDate, setEditVisitDate] = useState("");
 
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
+    const { translateMessage } = useTranslateMessage();
+    const didFetchData = useRef(false);
 
     useEffect(() => {
-        fetchPromoters();
-        fetchStores();
-        fetchVisits();
-        fetchBrands();
+        if (didFetchData.current) return;
+        didFetchData.current = true;
+
+        const fetchData = async () => {
+            setLoading(true);
+            setDataLoaded(false);
+
+            try {
+                await Promise.all([
+                    fetchBrands(),
+                    fetchStores(),
+                    fetchPromoters(),
+                    fetchVisits(),
+                ]);
+            } catch (error) {
+                console.error("Erro ao buscar dados:", error);
+            } finally {
+                setLoading(false);
+                setDataLoaded(true);
+            }
+        };
+
+        fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
         applyFilters();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filterPromoter, filterStore, filterBrand, filterDate, visits]);
-
-    const applyFilters = () => {
-        const filtered = visits.filter((visit) => {
-            const visitDate = new Date(visit.visit_date)
-                .toISOString()
-                .split("T")[0];
-
-            const isSameDate = !filterDate || visitDate === filterDate;
-
-            return (
-                visit.promoter_name
-                    .toLowerCase()
-                    .includes(filterPromoter.toLowerCase()) &&
-                visit.store_display
-                    .toLowerCase()
-                    .includes(filterStore.toLowerCase()) &&
-                visit.brand_name.toLowerCase().includes(filterBrand.toLowerCase()) &&
-                isSameDate
-            );
-        });
-
-        setFilteredVisits(filtered);
-    };
-
-    const clearFilters = () => {
-        setFilterPromoter("");
-        setFilterStore("");
-        setFilterBrand("");
-        setFilterDate("");
-        setFilteredVisits(visits);
-    };
 
     useEffect(() => {
         setFilteredStores(stores);
@@ -126,6 +133,39 @@ const VisitForm = () => {
         }
     }, [editFilteredBrands, editBrand]);
 
+    const applyFilters = () => {
+        const filtered = visits.filter((visit) => {
+            const visitDate = new Date(visit.visit_date)
+                .toISOString()
+                .split("T")[0];
+
+            const isSameDate = !filterDate || visitDate === filterDate;
+
+            return (
+                visit.promoter_name
+                    .toLowerCase()
+                    .includes(filterPromoter.toLowerCase()) &&
+                visit.store_display
+                    .toLowerCase()
+                    .includes(filterStore.toLowerCase()) &&
+                visit.brand_name
+                    .toLowerCase()
+                    .includes(filterBrand.toLowerCase()) &&
+                isSameDate
+            );
+        });
+
+        setFilteredVisits(filtered);
+    };
+
+    const clearFilters = () => {
+        setFilterPromoter("");
+        setFilterStore("");
+        setFilterBrand("");
+        setFilterDate("");
+        setFilteredVisits(visits);
+    };
+
     const fetchPromoters = async () => {
         try {
             const response = await axios.get(`${API_URL}/api/promoters/`, {
@@ -172,6 +212,9 @@ const VisitForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setErrorMessage("");
+        setModalOpen(true);
+        setLoading(true);
 
         const visitData = {
             promoter: promoterId,
@@ -187,15 +230,47 @@ const VisitForm = () => {
                     "Content-Type": "application/json",
                 },
             });
-            fetchVisits();
-            fetchBrands();
-            setPromoterId("");
-            setStoreId("");
-            setBrand("");
-            setVisitDate("");
+
+            await refreshVisits();
+            resetForm();
+            setSuccess(true);
         } catch (error) {
-            console.error("Erro ao cadastrar visita", error);
+            setErrorMessage(await getErrorMessage(error));
+        } finally {
+            finalizeModal();
         }
+    };
+
+    const resetForm = () => {
+        setPromoterId("");
+        setStoreId("");
+        setBrand("");
+        setVisitDate("");
+    };
+
+    const refreshVisits = async () => {
+        try {
+            await fetchVisits();
+        } catch (error) {
+            console.error("Erro ao atualizar visitas", error);
+        }
+    };
+
+    const getErrorMessage = async (error) => {
+        if (!error.response) return "Erro ao conectar com o servidor.";
+
+        return error.response.data?.[0]
+            ? await translateMessage(error.response.data[0])
+            : "Erro ao cadastrar visita. Verifique os dados.";
+    };
+
+    const finalizeModal = () => {
+        setLoading(false);
+        setTimeout(() => {
+            setModalOpen(false);
+            setErrorMessage("");
+            setSuccess(false);
+        }, 3000);
     };
 
     const handleEdit = (visit) => {
@@ -311,6 +386,14 @@ const VisitForm = () => {
                 </button>
             </form>
 
+            <LoadingModal
+                open={modalOpen}
+                success={success}
+                loading={loading}
+                errorMessage={errorMessage}
+                onClose={() => setModalOpen(false)}
+            />
+
             <h3 className="form-title">Lista de Visitas</h3>
 
             <div className="filter-container">
@@ -354,154 +437,205 @@ const VisitForm = () => {
                 </button>
             </div>
 
-            <table className="table">
-                <thead>
-                    <tr>
-                        <th>Promotor</th>
-                        <th>Loja</th>
-                        <th>Marca</th>
-                        <th>Data</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredVisits.map((visit) => (
-                        <tr key={visit.id}>
-                            {editingId === visit.id ? (
-                                <>
-                                    <td>
-                                        <select
-                                            value={editPromoter}
-                                            onChange={(e) =>
-                                                setEditPromoter(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        >
-                                            {promoters.map((promoter) => (
-                                                <option
-                                                    key={promoter.id}
-                                                    value={promoter.id}
+            <div className="table-container">
+                {!dataLoaded ? (
+                    <div className="loading-container">
+                        <Loader />
+                    </div>
+                ) : (
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Promotor</th>
+                                <th>Loja</th>
+                                <th>Marca</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredVisits.map((visit) => (
+                                <tr key={visit.id}>
+                                    {editingId === visit.id ? (
+                                        <>
+                                            <td>
+                                                <select
+                                                    value={editPromoter}
+                                                    onChange={(e) =>
+                                                        setEditPromoter(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
                                                 >
-                                                    {promoter.name.toUpperCase()}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <select
-                                            value={editStore}
-                                            onChange={(e) =>
-                                                setEditStore(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        >
-                                            <option value="">
-                                                Selecione uma Loja
-                                            </option>
-                                            {stores.map((store) => (
-                                                <option
-                                                    key={store.id}
-                                                    value={store.id}
+                                                    {promoters.map(
+                                                        (promoter) => (
+                                                            <option
+                                                                key={
+                                                                    promoter.id
+                                                                }
+                                                                value={
+                                                                    promoter.id
+                                                                }
+                                                            >
+                                                                {promoter.name.toUpperCase()}
+                                                            </option>
+                                                        )
+                                                    )}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select
+                                                    value={editStore}
+                                                    onChange={(e) =>
+                                                        setEditStore(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
                                                 >
-                                                    {store.name.toUpperCase()} -{" "}
-                                                    {store.number}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <select
-                                            value={editBrand || ""}
-                                            onChange={(e) =>
-                                                setEditBrand(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                            required
-                                        >
-                                            <option value="">
-                                                {!editStore
-                                                    ? "Selecione uma Loja primeiro"
-                                                    : "Selecione uma Marca"}
-                                            </option>
-                                            {editFilteredBrands.map((brand) => (
-                                                <option
-                                                    key={brand.brand_id}
-                                                    value={brand.brand_id}
+                                                    <option value="">
+                                                        Selecione uma Loja
+                                                    </option>
+                                                    {stores.map((store) => (
+                                                        <option
+                                                            key={store.id}
+                                                            value={store.id}
+                                                        >
+                                                            {store.name.toUpperCase()}{" "}
+                                                            - {store.number}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select
+                                                    value={editBrand || ""}
+                                                    onChange={(e) =>
+                                                        setEditBrand(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                    required
                                                 >
-                                                    {brand.brand_name.toUpperCase()}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="date"
-                                            value={editVisitDate}
-                                            onChange={(e) =>
-                                                setEditVisitDate(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        />
-                                    </td>
-                                    <td>
-                                        <div className="form-actions">
-                                            <button
-                                                onClick={() =>
-                                                    handleSaveEdit(visit.id)
-                                                }
-                                                className="form-button save-button"
-                                            >
-                                                Salvar
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    setEditingId(null)
-                                                }
-                                                className="form-button cancel-button"
-                                            >
-                                                Cancelar
-                                            </button>
-                                        </div>
-                                    </td>
-                                </>
-                            ) : (
-                                <>
-                                    <td>{visit.promoter_name.toUpperCase()}</td>
-                                    <td>{visit.store_display.toUpperCase()}</td>
-                                    <td>{visit.brand_name.toUpperCase()}</td>
-                                    <td>
-                                        {new Date(
-                                            visit.visit_date
-                                        ).toLocaleDateString()}
-                                    </td>
-                                    <td>
-                                        <div className="form-actions">
-                                            <button
-                                                onClick={() =>
-                                                    handleEdit(visit)
-                                                }
-                                                className="form-button edit-button"
-                                            >
-                                                ✏️
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(visit.id)
-                                                }
-                                                className="form-button delete-button"
-                                            >
-                                                ❌
-                                            </button>
-                                        </div>
-                                    </td>
-                                </>
-                            )}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                                                    <option value="">
+                                                        {!editStore
+                                                            ? "Selecione uma Loja primeiro"
+                                                            : "Selecione uma Marca"}
+                                                    </option>
+                                                    {editFilteredBrands.map(
+                                                        (brand) => (
+                                                            <option
+                                                                key={
+                                                                    brand.brand_id
+                                                                }
+                                                                value={
+                                                                    brand.brand_id
+                                                                }
+                                                            >
+                                                                {brand.brand_name.toUpperCase()}
+                                                            </option>
+                                                        )
+                                                    )}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="date"
+                                                    value={editVisitDate}
+                                                    onChange={(e) =>
+                                                        setEditVisitDate(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                />
+                                            </td>
+                                            <td>
+                                                <div className="form-actions">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleSaveEdit(
+                                                                visit.id
+                                                            )
+                                                        }
+                                                        className="form-button save-button"
+                                                    >
+                                                        Salvar
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            setEditingId(null)
+                                                        }
+                                                        className="form-button cancel-button"
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td>
+                                                {visit.promoter_name.toUpperCase()}
+                                            </td>
+                                            <td>
+                                                {visit.store_display.toUpperCase()}
+                                            </td>
+                                            <td>
+                                                {visit.brand_name.toUpperCase()}
+                                            </td>
+                                            <td>
+                                                {new Date(
+                                                    visit.visit_date
+                                                ).toLocaleDateString()}
+                                            </td>
+                                            <td>
+                                                <div className="form-actions">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleEdit(visit)
+                                                        }
+                                                        className="form-button edit-button"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                visit.id
+                                                            )
+                                                        }
+                                                        className="form-button delete-button"
+                                                    >
+                                                        ❌
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
         </div>
     );
+};
+
+VisitForm.propTypes = {
+    loading: PropTypes.bool.isRequired,
+    setLoading: PropTypes.func.isRequired,
+    modalOpen: PropTypes.bool.isRequired,
+    setModalOpen: PropTypes.func.isRequired,
+    success: PropTypes.bool.isRequired,
+    setSuccess: PropTypes.func.isRequired,
+    errorMessage: PropTypes.string,
+    setErrorMessage: PropTypes.func.isRequired,
+    dataLoaded: PropTypes.bool.isRequired,
+    setDataLoaded: PropTypes.func.isRequired,
 };
 
 export default VisitForm;
