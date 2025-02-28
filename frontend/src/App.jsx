@@ -23,6 +23,10 @@ function App() {
     const { token } = useContext(AuthContext);
     const location = useLocation();
     const [loading, setLoading] = useState(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");    
+    const [dataLoaded, setDataLoaded] = useState(false);
 
     return (
         <div
@@ -43,7 +47,6 @@ function App() {
                             <Navigate to={token ? "/home" : "/login"} replace />
                         }
                     />
-
                     <Route path="/login" element={<Login />} />
                     <Route
                         path="/home"
@@ -60,6 +63,12 @@ function App() {
                                 <PromoterForm
                                     loading={loading}
                                     setLoading={setLoading}
+                                    modalOpen={modalOpen}
+                                    setModalOpen={setModalOpen}
+                                    success={success}
+                                    setSuccess={setSuccess}
+                                    errorMessage={errorMessage}
+                                    setErrorMessage={setErrorMessage}
                                 />
                             </PrivateRoute>
                         }
@@ -71,6 +80,14 @@ function App() {
                                 <StoreForm
                                     loading={loading}
                                     setLoading={setLoading}
+                                    modalOpen={modalOpen}
+                                    setModalOpen={setModalOpen}
+                                    success={success}
+                                    setSuccess={setSuccess}
+                                    errorMessage={errorMessage}
+                                    setErrorMessage={setErrorMessage}
+                                    dataLoaded={dataLoaded}
+                                    setDataLoaded={setDataLoaded}
                                 />
                             </PrivateRoute>
                         }
@@ -82,6 +99,14 @@ function App() {
                                 <BrandForm
                                     loading={loading}
                                     setLoading={setLoading}
+                                    modalOpen={modalOpen}
+                                    setModalOpen={setModalOpen}
+                                    success={success}
+                                    setSuccess={setSuccess}
+                                    errorMessage={errorMessage}
+                                    setErrorMessage={setErrorMessage}
+                                    dataLoaded={dataLoaded}
+                                    setDataLoaded={setDataLoaded}
                                 />
                             </PrivateRoute>
                         }
@@ -93,11 +118,18 @@ function App() {
                                 <VisitForm
                                     loading={loading}
                                     setLoading={setLoading}
+                                    modalOpen={modalOpen}
+                                    setModalOpen={setModalOpen}
+                                    success={success}
+                                    setSuccess={setSuccess}
+                                    errorMessage={errorMessage}
+                                    setErrorMessage={setErrorMessage}
+                                    dataLoaded={dataLoaded}
+                                    setDataLoaded={setDataLoaded}
                                 />
                             </PrivateRoute>
                         }
                     />
-
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </div>

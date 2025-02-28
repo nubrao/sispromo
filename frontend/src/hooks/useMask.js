@@ -7,7 +7,6 @@ export const formatCPF = (value) => {
         .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
 };
 
-
 export const formatPhone = (value) => {
     return value
         .replace(/\D/g, '')
@@ -15,7 +14,6 @@ export const formatPhone = (value) => {
         .replace(/(\d{5})(\d)/, '$1-$2')
         .slice(0, 15);
 };
-
 
 export const formatCNPJ = (value) => {
     value = value.replace(/\D/g, "");

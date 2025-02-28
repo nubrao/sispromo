@@ -1,8 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "../styles/form.css";
+import Loader from "../components/Loader";
+import PropTypes from "prop-types";
+import LoadingModal from "../components/LoadingModal";
 
-const BrandForm = () => {
+const BrandForm = ({
+    loading,
+    setLoading,
+    modalOpen,
+    setModalOpen,
+    success,
+    setSuccess,
+    errorMessage,
+    setErrorMessage,
+    dataLoaded,
+    setDataLoaded,
+}) => {
     const [brandName, setBrandName] = useState("");
     const [selectedStore, setSelectedStore] = useState("");
     const [visitFrequency, setVisitFrequency] = useState("");
@@ -21,14 +35,33 @@ const BrandForm = () => {
 
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
+    const didFetchData = useRef(false);
 
     useEffect(() => {
-        fetchStores();
-        fetchBrands();
+        if (didFetchData.current) return;
+        didFetchData.current = true;
+
+        const fetchData = async () => {
+            setLoading(true);
+            setDataLoaded(false);
+
+            try {
+                await Promise.all([fetchBrands(), fetchStores()]);
+            } catch (error) {
+                console.error("Erro ao buscar dados:", error);
+            } finally {
+                setLoading(false);
+                setDataLoaded(true);
+            }
+        };
+
+        fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
         applyFilters();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filterBrandName, filterStore, filterVisitFrequency, brands]);
 
     const fetchStores = async () => {
@@ -79,29 +112,53 @@ const BrandForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setErrorMessage("");
+        setModalOpen(true);
+        setLoading(true);
+
+        if (!brandName.trim()) {
+            console.error("Nome da marca é obrigatório.");
+            setLoading(false);
+            return;
+        }
+
+        try {
+            await createBrand();
+            await fetchBrands();
+            resetForm();
+            setSuccess(true);
+        } catch (error) {
+            console.error("Erro ao cadastrar marca", error);
+        } finally {
+            finalizeModal();
+        }
+    };
+
+    const createBrand = async () => {
         const body = {
             brand_name: brandName.trim(),
             store_name: selectedStore,
             visit_frequency: parseInt(visitFrequency, 10),
         };
 
-        try {
-            if (!brandName) {
-                console.error("Nome da marca é obrigatório.");
-                return;
-            }
+        await axios.post(`${API_URL}/api/brands/`, body, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+    };
 
-            await axios.post(`${API_URL}/api/brands/`, body, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+    const resetForm = () => {
+        setBrandName("");
+        setSelectedStore("");
+        setVisitFrequency("");
+    };
 
-            fetchBrands();
-            setBrandName("");
-            setSelectedStore("");
-            setVisitFrequency("");
-        } catch (error) {
-            console.error("Erro ao cadastrar marca", error);
-        }
+    const finalizeModal = () => {
+        setLoading(false);
+        setTimeout(() => {
+            setModalOpen(false);
+            setErrorMessage("");
+            setSuccess(false);
+        }, 3000);
     };
 
     const handleEdit = (brand) => {
@@ -193,6 +250,14 @@ const BrandForm = () => {
                 </button>
             </form>
 
+            <LoadingModal
+                open={modalOpen}
+                success={success}
+                loading={loading}
+                errorMessage={errorMessage}
+                onClose={() => setModalOpen(false)}
+            />
+
             <h3 className="form-title">Lista de Marcas</h3>
 
             <div className="filter-container">
@@ -227,138 +292,170 @@ const BrandForm = () => {
                     Limpar Filtros
                 </button>
             </div>
-
-            <table className="table">
-                <thead>
-                    <tr>
-                        <th>Marca</th>
-                        <th>Loja</th>
-                        <th>Periodicidade</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredBrands.map((brand) => (
-                        <tr key={brand.brand_id}>
-                            {editingId === brand.brand_id ? (
-                                <>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            value={editBrandName.toUpperCase()}
-                                            onChange={(e) =>
-                                                setEditBrandName(e.target.value)
-                                            }
-                                            className="form-input-text"
-                                        />
-                                    </td>
-                                    <td>
-                                        {editingId === brand.brand_id ? (
-                                            <select
-                                                value={editStore}
-                                                onChange={(e) =>
-                                                    setEditStore(e.target.value)
-                                                }
-                                                className="form-input-text"
-                                            >
-                                                <option value="">
-                                                    Selecione a Loja
-                                                </option>
-                                                {stores.map((store) => (
-                                                    <option
-                                                        key={store.id}
-                                                        value={store.id}
+            <div className="table-container">
+                {!dataLoaded ? (
+                    <div className="loading-container">
+                        <Loader />
+                    </div>
+                ) : (
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Marca</th>
+                                <th>Loja</th>
+                                <th>Periodicidade</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredBrands.map((brand) => (
+                                <tr key={brand.brand_id}>
+                                    {editingId === brand.brand_id ? (
+                                        <>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    value={editBrandName.toUpperCase()}
+                                                    onChange={(e) =>
+                                                        setEditBrandName(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                />
+                                            </td>
+                                            <td>
+                                                {editingId ===
+                                                brand.brand_id ? (
+                                                    <select
+                                                        value={editStore}
+                                                        onChange={(e) =>
+                                                            setEditStore(
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        className="form-input-text"
                                                     >
-                                                        {store.name.toUpperCase()}{" "}
-                                                        - {store.number}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            <>
-                                                {brand.store_name.toUpperCase()}{" "}
-                                                -{" "}
+                                                        <option value="">
+                                                            Selecione a Loja
+                                                        </option>
+                                                        {stores.map((store) => (
+                                                            <option
+                                                                key={store.id}
+                                                                value={store.id}
+                                                            >
+                                                                {store.name.toUpperCase()}{" "}
+                                                                - {store.number}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    <>
+                                                        {brand.store_name.toUpperCase()}{" "}
+                                                        -{" "}
+                                                        {stores.find(
+                                                            (store) =>
+                                                                store.id ===
+                                                                brand.store_id
+                                                        )?.number || ""}
+                                                    </>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={editVisitFrequency}
+                                                    onChange={(e) =>
+                                                        setEditVisitFrequency(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                />
+                                            </td>
+                                            <td>
+                                                <div className="form-actions">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleSaveEdit(
+                                                                brand.brand_id
+                                                            )
+                                                        }
+                                                        className="form-button save-button"
+                                                    >
+                                                        Salvar
+                                                    </button>
+                                                    <button
+                                                        onClick={
+                                                            handleCancelEdit
+                                                        }
+                                                        className="form-button cancel-button"
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td>
+                                                {brand.brand_name.toUpperCase()}
+                                            </td>
+                                            <td>
+                                                {brand.store_name.toUpperCase()}
+                                                {" - "}
                                                 {stores.find(
                                                     (store) =>
-                                                        store.id ===
-                                                        brand.store_id
+                                                        store.name ===
+                                                        brand.store_name
                                                 )?.number || ""}
-                                            </>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            value={editVisitFrequency}
-                                            onChange={(e) =>
-                                                setEditVisitFrequency(
-                                                    e.target.value
-                                                )
-                                            }
-                                            className="form-input-text"
-                                        />
-                                    </td>
-                                    <td>
-                                        <div className="form-actions">
-                                            <button
-                                                onClick={() =>
-                                                    handleSaveEdit(
-                                                        brand.brand_id
-                                                    )
-                                                }
-                                                className="form-button save-button"
-                                            >
-                                                Salvar
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                className="form-button cancel-button"
-                                            >
-                                                Cancelar
-                                            </button>
-                                        </div>
-                                    </td>
-                                </>
-                            ) : (
-                                <>
-                                    <td>{brand.brand_name.toUpperCase()}</td>
-                                    <td>
-                                        {brand.store_name.toUpperCase()}
-                                        {" - "}
-                                        {stores.find(
-                                            (store) =>
-                                                store.name === brand.store_name
-                                        )?.number || ""}
-                                    </td>
-                                    <td>{brand.visit_frequency}x</td>
-                                    <td>
-                                        <div className="form-actions">
-                                            <button
-                                                onClick={() =>
-                                                    handleEdit(brand)
-                                                }
-                                                className="form-button edit-button"
-                                            >
-                                                ✏️
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(brand.brand_id)
-                                                }
-                                                className="form-button delete-button"
-                                            >
-                                                ❌
-                                            </button>
-                                        </div>
-                                    </td>
-                                </>
-                            )}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                                            </td>
+                                            <td>{brand.visit_frequency}x</td>
+                                            <td>
+                                                <div className="form-actions">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleEdit(brand)
+                                                        }
+                                                        className="form-button edit-button"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                brand.brand_id
+                                                            )
+                                                        }
+                                                        className="form-button delete-button"
+                                                    >
+                                                        ❌
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
         </div>
     );
+};
+
+BrandForm.propTypes = {
+    loading: PropTypes.bool.isRequired,
+    setLoading: PropTypes.func.isRequired,
+    modalOpen: PropTypes.bool.isRequired,
+    setModalOpen: PropTypes.func.isRequired,
+    success: PropTypes.bool.isRequired,
+    setSuccess: PropTypes.func.isRequired,
+    errorMessage: PropTypes.string,
+    setErrorMessage: PropTypes.func.isRequired,
+    dataLoaded: PropTypes.bool.isRequired,
+    setDataLoaded: PropTypes.func.isRequired,
 };
 
 export default BrandForm;
