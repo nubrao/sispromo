@@ -20,7 +20,7 @@ const VisitForm = ({
 }) => {
     const [promoterId, setPromoterId] = useState("");
     const [storeId, setStoreId] = useState("");
-    const [brand, setBrand] = useState("");
+    const [brand, setBrand] = useState({ id: "", name: "" });
     const [visits, setVisits] = useState([]);
     const [visitDate, setVisitDate] = useState("");
     const [promoters, setPromoters] = useState([]);
@@ -141,6 +141,9 @@ const VisitForm = ({
 
             const isSameDate = !filterDate || visitDate === filterDate;
 
+            console.log(visit);
+            console.log(visit.promoter_name, visit.store_display, visit.brand);
+
             return (
                 visit.promoter_name
                     .toLowerCase()
@@ -148,9 +151,7 @@ const VisitForm = ({
                 visit.store_display
                     .toLowerCase()
                     .includes(filterStore.toLowerCase()) &&
-                visit.brand_name
-                    .toLowerCase()
-                    .includes(filterBrand.toLowerCase()) &&
+                visit.brand?.toString().includes(filterBrand.toString()) &&
                 isSameDate
             );
         });
@@ -219,7 +220,7 @@ const VisitForm = ({
         const visitData = {
             promoter: promoterId,
             store: storeId,
-            brand,
+            brand: brand.brand_id,
             visit_date: visitDate,
         };
 
@@ -288,14 +289,18 @@ const VisitForm = ({
             (brand) => brand.brand_id === parseInt(visit.brand_name, 10)
         );
 
-        setEditBrand(selectedBrand ? selectedBrand.brand_id : "");
+        setEditBrand(
+            selectedBrand
+                ? { id: selectedBrand.brand_id, name: selectedBrand.brand_name }
+                : { id: "", name: "" }
+        );
     };
 
     const handleSaveEdit = async (id) => {
         const updatedVisit = {
             promoter: editPromoter,
             store: editStore,
-            brand: editBrand,
+            brand: editBrand.id,
             visit_date: editVisitDate,
         };
 
@@ -356,8 +361,17 @@ const VisitForm = ({
                 </select>
 
                 <select
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
+                    value={brand.brand_id || ""}
+                    onChange={(e) => {
+                        const selectedId = e.target.value
+                            ? parseInt(e.target.value, 10)
+                            : "";
+                        const selectedBrand = filteredBrands.find(
+                            (brand) => brand.brand_id === selectedId
+                        ) || { brand_id: "", brand_name: "" };
+
+                        setBrand(selectedBrand);
+                    }}
                     className="form-input-text"
                     required
                 >
@@ -367,7 +381,7 @@ const VisitForm = ({
                             : "Selecione uma Marca"}
                     </option>
                     {filteredBrands.map((brand) => (
-                        <option key={brand.id} value={brand.id}>
+                        <option key={brand.brand_id} value={brand.brand_id}>
                             {brand.brand_name.toUpperCase()}
                         </option>
                     ))}
@@ -584,8 +598,16 @@ const VisitForm = ({
                                                 {visit.store_display.toUpperCase()}
                                             </td>
                                             <td>
-                                                {visit.brand_name.toUpperCase()}
+                                                {brands
+                                                    .find(
+                                                        (b) =>
+                                                            b.brand_id ===
+                                                            visit.brand
+                                                    )
+                                                    ?.brand_name.toUpperCase() ||
+                                                    "N/A"}
                                             </td>
+
                                             <td>
                                                 {new Date(
                                                     visit.visit_date

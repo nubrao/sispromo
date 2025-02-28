@@ -18,7 +18,7 @@ const BrandForm = ({
     setDataLoaded,
 }) => {
     const [brandName, setBrandName] = useState("");
-    const [selectedStore, setSelectedStore] = useState("");
+    const [selectedStore, setSelectedStore] = useState({ id: "", name: "" });
     const [visitFrequency, setVisitFrequency] = useState("");
 
     const [stores, setStores] = useState([]);
@@ -30,7 +30,7 @@ const BrandForm = ({
 
     const [editingId, setEditingId] = useState(null);
     const [editBrandName, setEditBrandName] = useState("");
-    const [editStore, setEditStore] = useState("");
+    const [editStore, setEditStore] = useState({ id: "", name: "" });
     const [editVisitFrequency, setEditVisitFrequency] = useState("");
 
     const API_URL = import.meta.env.VITE_API_URL;
@@ -137,7 +137,7 @@ const BrandForm = ({
     const createBrand = async () => {
         const body = {
             brand_name: brandName.trim(),
-            store_name: selectedStore,
+            store_id: selectedStore.id,
             visit_frequency: parseInt(visitFrequency, 10),
         };
 
@@ -165,8 +165,8 @@ const BrandForm = ({
         setEditingId(brand.brand_id);
         setEditBrandName(brand.brand_name);
 
-        const store = stores.find((s) => s.name === brand.store_name);
-        setEditStore(store ? store.id : "");
+        const store = stores.find((s) => s.id === brand.store_id);
+        setEditStore(store || { id: "", name: "" });
 
         setEditVisitFrequency(brand.visit_frequency);
     };
@@ -177,7 +177,7 @@ const BrandForm = ({
                 `${API_URL}/api/brands/${id}/`,
                 {
                     brand_name: editBrandName.trim(),
-                    store_name: editStore,
+                    store_id: editStore.id,
                     visit_frequency: parseInt(editVisitFrequency, 10),
                 },
                 {
@@ -194,6 +194,7 @@ const BrandForm = ({
 
     const handleCancelEdit = () => {
         setEditingId(null);
+        setEditStore({ id: "", name: "" });
     };
 
     const handleDelete = async (id) => {
@@ -222,14 +223,23 @@ const BrandForm = ({
                 />
 
                 <select
-                    value={selectedStore}
-                    onChange={(e) => setSelectedStore(e.target.value)}
+                    value={selectedStore.id}
+                    onChange={(e) => {
+                        const selected = stores.find(
+                            (store) => store.id === parseInt(e.target.value)
+                        );
+                        setSelectedStore(
+                            selected
+                                ? { id: selected.id, name: selected.name }
+                                : { id: "", name: "" }
+                        );
+                    }}
                     className="form-input-text"
                     required
                 >
                     <option value="">Selecione a Loja</option>
                     {stores.map((store) => (
-                        <option key={store.id} value={store.name.toUpperCase()}>
+                        <option key={store.id} value={store.id}>
                             {store.name.toUpperCase()} - {store.number}
                         </option>
                     ))}
@@ -328,12 +338,26 @@ const BrandForm = ({
                                                 {editingId ===
                                                 brand.brand_id ? (
                                                     <select
-                                                        value={editStore}
-                                                        onChange={(e) =>
+                                                        value={editStore.id} // Agora pegamos apenas o ID da loja
+                                                        onChange={(e) => {
+                                                            const selectedStore =
+                                                                stores.find(
+                                                                    (store) =>
+                                                                        store.id ===
+                                                                        parseInt(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                            10
+                                                                        )
+                                                                );
                                                             setEditStore(
-                                                                e.target.value
-                                                            )
-                                                        }
+                                                                selectedStore || {
+                                                                    id: "",
+                                                                    name: "",
+                                                                }
+                                                            );
+                                                        }}
                                                         className="form-input-text"
                                                     >
                                                         <option value="">
