@@ -7,5 +7,8 @@ from core.infrastructure.models.brand_model import BrandModel
 class VisitModel(models.Model):
     promoter = models.ForeignKey(PromoterModel, on_delete=models.CASCADE)
     store = models.ForeignKey(StoreModel, on_delete=models.CASCADE)
-    brand = models.ForeignKey(BrandModel, on_delete=models.CASCADE)
-    visit_date = models.DateTimeField()
+    brand = models.ForeignKey(BrandModel, on_delete=models.CASCADE, null=False)
+    visit_date = models.DateField()
+
+    def __str__(self):
+        return f"{self.promoter.name} - {self.store.name} - {self.brand.name} ({self.visit_date})"

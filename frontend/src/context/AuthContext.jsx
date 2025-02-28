@@ -47,9 +47,9 @@ const AuthProvider = ({ children }) => {
         };
 
         verifyToken();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Intercepta respostas do Axios para capturar token expirado (401)
     useEffect(() => {
         const interceptor = axios.interceptors.response.use(
             (response) => response,
@@ -65,6 +65,7 @@ const AuthProvider = ({ children }) => {
         return () => {
             axios.interceptors.response.eject(interceptor);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const login = async (username, password) => {

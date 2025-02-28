@@ -1,0 +1,1112 @@
+openapi: 3.0.3
+info:
+  title: SisPromo API
+  version: 1.0.0
+  description: Documentação da API do SisPromo
+paths:
+  /api/brands/:
+    get:
+      operationId: api_brands_list
+      description: Lista todas as marcas com suas lojas e periodicidade
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Brand'
+          description: ''
+    post:
+      operationId: api_brands_create
+      description: Cria uma nova marca e associa a uma loja
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Brand'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Brand'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+          description: ''
+  /api/brands/{id}/:
+    get:
+      operationId: api_brands_retrieve
+      description: ViewSet para gerenciar Marcas e seu relacionamento com Lojas
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this brand model.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+          description: ''
+    put:
+      operationId: api_brands_update
+      description: Atualiza uma marca existente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this brand model.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Brand'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Brand'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+          description: ''
+    patch:
+      operationId: api_brands_partial_update
+      description: ViewSet para gerenciar Marcas e seu relacionamento com Lojas
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this brand model.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBrand'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBrand'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+          description: ''
+    delete:
+      operationId: api_brands_destroy
+      description: ViewSet para gerenciar Marcas e seu relacionamento com Lojas
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this brand model.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/logout/:
+    post:
+      operationId: api_logout_create
+      description: |-
+        Invalida o refresh token e desloga o usuário.
+
+        Retorna:
+        - 200: {"message": "Logout realizado com sucesso."}
+        - 400: {"error": "Nenhum token de atualização fornecido."} ou {"error": "Token inválido ou já expirado."}
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logout'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+  /api/promoters/:
+    get:
+      operationId: api_promoters_list
+      description: Lista todos os promotores
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Promoter'
+          description: ''
+    post:
+      operationId: api_promoters_create
+      description: Cria um novo promotor
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Promoter'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Promoter'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Promoter'
+          description: ''
+  /api/promoters/{id}/:
+    get:
+      operationId: api_promoters_retrieve
+      description: ViewSet para gerenciar Promotores
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this promoter model.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Promoter'
+          description: ''
+    put:
+      operationId: api_promoters_update
+      description: Atualiza um promotor existente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this promoter model.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Promoter'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Promoter'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Promoter'
+          description: ''
+    patch:
+      operationId: api_promoters_partial_update
+      description: ViewSet para gerenciar Promotores
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this promoter model.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPromoter'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPromoter'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Promoter'
+          description: ''
+    delete:
+      operationId: api_promoters_destroy
+      description: Deleta um promotor
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this promoter model.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/schema/:
+    get:
+      operationId: api_schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/states/:
+    get:
+      operationId: api_states_retrieve
+      description: |-
+        Retorna uma lista de estados.
+
+        Resposta esperada:
+        - 200: {"states": [["SP", "São Paulo"], ["RJ", "Rio de Janeiro"], ...]}
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/State'
+          description: ''
+  /api/stores/:
+    get:
+      operationId: api_stores_list
+      description: Lista todas as lojas
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Store'
+          description: ''
+    post:
+      operationId: api_stores_create
+      description: Cria uma nova loja
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Store'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Store'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Store'
+          description: ''
+  /api/stores/{id}/:
+    get:
+      operationId: api_stores_retrieve
+      description: ViewSet para gerenciar Lojas
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this store model.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Store'
+          description: ''
+    put:
+      operationId: api_stores_update
+      description: Atualiza uma loja existente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this store model.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Store'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Store'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Store'
+          description: ''
+    patch:
+      operationId: api_stores_partial_update
+      description: ViewSet para gerenciar Lojas
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this store model.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStore'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStore'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Store'
+          description: ''
+    delete:
+      operationId: api_stores_destroy
+      description: Deleta uma loja
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this store model.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/token/:
+    post:
+      operationId: api_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/token/refresh/:
+    post:
+      operationId: api_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/visits/:
+    get:
+      operationId: api_visits_list
+      description: Lista todas as visitas
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Visit'
+          description: ''
+    post:
+      operationId: api_visits_create
+      description: Cria uma nova visita
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Visit'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+  /api/visits/{id}/:
+    get:
+      operationId: api_visits_retrieve
+      description: ViewSet para gerenciar Visitas
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this visit model.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+    put:
+      operationId: api_visits_update
+      description: Atualiza uma visita existente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this visit model.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Visit'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+    patch:
+      operationId: api_visits_partial_update
+      description: ViewSet para gerenciar Visitas
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this visit model.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVisit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVisit'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+    delete:
+      operationId: api_visits_destroy
+      description: Deleta uma visita
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this visit model.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    Brand:
+      type: object
+      properties:
+        brand_id:
+          type: integer
+          readOnly: true
+        brand_name:
+          type: string
+        store_id:
+          type: integer
+          writeOnly: true
+        visit_frequency:
+          type: integer
+          writeOnly: true
+        stores:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrandStore'
+          readOnly: true
+      required:
+      - brand_id
+      - brand_name
+      - store_id
+      - stores
+      - visit_frequency
+    BrandStore:
+      type: object
+      properties:
+        store_id:
+          type: integer
+        store_name:
+          type: string
+          readOnly: true
+        visit_frequency:
+          type: integer
+      required:
+      - store_id
+      - store_name
+      - visit_frequency
+    Logout:
+      type: object
+      description: Serializer para documentar a resposta do logout
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    PatchedBrand:
+      type: object
+      properties:
+        brand_id:
+          type: integer
+          readOnly: true
+        brand_name:
+          type: string
+        store_id:
+          type: integer
+          writeOnly: true
+        visit_frequency:
+          type: integer
+          writeOnly: true
+        stores:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrandStore'
+          readOnly: true
+    PatchedPromoter:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        cpf:
+          type: string
+          maxLength: 11
+          minLength: 11
+        phone:
+          type: string
+          maxLength: 15
+          minLength: 10
+    PatchedStore:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        city:
+          type: string
+          maxLength: 100
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        cnpj:
+          type: string
+          maxLength: 18
+          minLength: 14
+    PatchedVisit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        promoter:
+          type: integer
+        store:
+          type: integer
+        brand:
+          type: integer
+        promoter_name:
+          type: string
+          readOnly: true
+        store_display:
+          type: string
+          readOnly: true
+        visit_date:
+          type: string
+          format: date
+    Promoter:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        cpf:
+          type: string
+          maxLength: 11
+          minLength: 11
+        phone:
+          type: string
+          maxLength: 15
+          minLength: 10
+      required:
+      - cpf
+      - id
+      - name
+      - phone
+    State:
+      type: object
+      description: Serializer para documentar a resposta da lista de estados
+      properties:
+        states:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+      required:
+      - states
+    StateEnum:
+      enum:
+      - AC
+      - AL
+      - AP
+      - AM
+      - BA
+      - CE
+      - DF
+      - ES
+      - GO
+      - MA
+      - MT
+      - MS
+      - MG
+      - PA
+      - PB
+      - PR
+      - PE
+      - PI
+      - RJ
+      - RN
+      - RS
+      - RO
+      - RR
+      - SC
+      - SP
+      - SE
+      - TO
+      type: string
+      description: |-
+        * `AC` - Acre
+        * `AL` - Alagoas
+        * `AP` - Amapá
+        * `AM` - Amazonas
+        * `BA` - Bahia
+        * `CE` - Ceará
+        * `DF` - Distrito Federal
+        * `ES` - Espírito Santo
+        * `GO` - Goiás
+        * `MA` - Maranhão
+        * `MT` - Mato Grosso
+        * `MS` - Mato Grosso do Sul
+        * `MG` - Minas Gerais
+        * `PA` - Pará
+        * `PB` - Paraíba
+        * `PR` - Paraná
+        * `PE` - Pernambuco
+        * `PI` - Piauí
+        * `RJ` - Rio de Janeiro
+        * `RN` - Rio Grande do Norte
+        * `RS` - Rio Grande do Sul
+        * `RO` - Rondônia
+        * `RR` - Roraima
+        * `SC` - Santa Catarina
+        * `SP` - São Paulo
+        * `SE` - Sergipe
+        * `TO` - Tocantins
+    Store:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        city:
+          type: string
+          maxLength: 100
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        cnpj:
+          type: string
+          maxLength: 18
+          minLength: 14
+      required:
+      - city
+      - cnpj
+      - id
+      - name
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    Visit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        promoter:
+          type: integer
+        store:
+          type: integer
+        brand:
+          type: integer
+        promoter_name:
+          type: string
+          readOnly: true
+        store_display:
+          type: string
+          readOnly: true
+        visit_date:
+          type: string
+          format: date
+      required:
+      - brand
+      - id
+      - promoter
+      - promoter_name
+      - store
+      - store_display
+      - visit_date
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

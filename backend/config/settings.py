@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     "rest_framework_simplejwt",
     "corsheaders",
     "core",
@@ -132,11 +134,22 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
         "rest_framework.parsers.FormParser",
-        'rest_framework.permissions.IsAuthenticated',
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "SisPromo API",
+    "DESCRIPTION": "Documentação da API do SisPromo",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": True,
 }
 
 SIMPLE_JWT = {
