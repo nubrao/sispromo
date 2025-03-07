@@ -192,8 +192,8 @@ const StoreForm = ({
         const { status, data } = error.response;
 
         if (!isEditing && status === 400) {
-            return data?.cnpj
-                ? await translateMessage(data.cnpj[0])
+            return data?.error.cnpj
+                ? await translateMessage(data.error.cnpj[0])
                 : "Erro ao cadastrar loja. Verifique os dados.";
         }
 
