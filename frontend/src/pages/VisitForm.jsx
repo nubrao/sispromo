@@ -141,17 +141,14 @@ const VisitForm = ({
 
             const isSameDate = !filterDate || visitDate === filterDate;
 
-            console.log(visit);
-            console.log(visit.promoter_name, visit.store_display, visit.brand);
-
             return (
-                visit.promoter_name
+                visit?.promoter?.name
                     .toLowerCase()
                     .includes(filterPromoter.toLowerCase()) &&
-                visit.store_display
+                visit?.store?.name
                     .toLowerCase()
                     .includes(filterStore.toLowerCase()) &&
-                visit.brand?.toString().includes(filterBrand.toString()) &&
+                visit?.brand?.name.toString().includes(filterBrand.toString()) &&
                 isSameDate
             );
         });
@@ -592,19 +589,14 @@ const VisitForm = ({
                                     ) : (
                                         <>
                                             <td>
-                                                {visit.promoter_name.toUpperCase()}
+                                                {visit.promoter.name.toUpperCase()}
                                             </td>
                                             <td>
-                                                {visit.store_display.toUpperCase()}
+                                                {visit.store.name.toUpperCase()} -{" "}
+                                                {visit.store.number}
                                             </td>
                                             <td>
-                                                {brands
-                                                    .find(
-                                                        (b) =>
-                                                            b.brand_id ===
-                                                            visit.brand
-                                                    )
-                                                    ?.brand_name.toUpperCase() ||
+                                                {visit.brand.name.toUpperCase() ||
                                                     "N/A"}
                                             </td>
 

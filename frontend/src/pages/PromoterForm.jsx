@@ -122,8 +122,8 @@ const PromoterForm = ({
     const getErrorMessage = async (error) => {
         if (!error.response) return "Erro ao conectar com o servidor.";
 
-        return error.response.status === 400 && error.response.data.cpf
-            ? await translateMessage(error.response.data.cpf[0])
+        return error.response.status === 400 && error.response.data.error.cpf
+            ? await translateMessage(error.response.data.error.cpf[0])
             : "Erro ao cadastrar promotor. Verifique os dados.";
     };
 

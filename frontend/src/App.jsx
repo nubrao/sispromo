@@ -9,6 +9,7 @@ import VisitForm from "./pages/VisitForm";
 import Navbar from "./components/Navbar";
 import PropTypes from "prop-types";
 import BrandForm from "./pages/BrandForm";
+import Reports from "./pages/Reports";
 
 const PrivateRoute = ({ children }) => {
     const authContext = useContext(AuthContext);
@@ -130,6 +131,7 @@ function App() {
                             </PrivateRoute>
                         }
                     />
+                    <Route path="/reports" element={<Reports />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </div>
