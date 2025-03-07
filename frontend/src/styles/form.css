@@ -32,6 +32,47 @@
     box-sizing: border-box;
 }
 
+.report-filters {
+    display: flex;
+    flex-direction: column;
+    width: 400px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+@media screen and (max-width: 768px) {
+    .report-filters {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        padding: 0px 0px 10px 0px;
+        box-sizing: border-box;
+    }
+}
+
+.report-dates {
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+@media screen and (max-width: 768px) {
+    .report-dates {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        gap: 10px;
+        padding: 0px 10px 10px 10px;
+        box-sizing: border-box;
+        justify-content: space-evenly;
+        width: -webkit-fill-available;
+    }
+}
+
 .form-input-text {
     display: flex;
     flex-direction: column;
@@ -45,6 +86,14 @@
     box-sizing: border-box;
 }
 
+.form-button-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    width: auto;
+}
+
 .form-button {
     background-color: #89b789;
     color: white;
@@ -52,6 +101,7 @@
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.3s;
+    margin: 5px 5px;
 }
 
 .form-actions {
@@ -81,6 +131,15 @@
     cursor: pointer;
     font-size: 16px;
     transition: background 0.3s;
+}
+
+.export-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    min-width: 40px;
+    gap: 10px;
+    width: -webkit-fill-available;
 }
 
 .edit-button:hover,
@@ -216,6 +275,45 @@
         width: 100%;
     }
 }
+
+/* @media screen and (max-width: 1024px) {
+    .filter-container {
+        flex-grow: 1;
+        flex-direction: column;
+        width: 100%;
+        max-width: 400px;
+        gap: 0px;
+        margin-bottom: 24px;
+    }
+
+    .form-input-text select {
+        flex: 1;
+        min-width: 150px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        height: 40px;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 400px;
+        padding: 10px;
+        margin: 5px 0 5px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+    }
+
+    .report-filters {
+        padding: 0px;
+    }
+
+    .report-dates {
+        padding: 0px;
+        gap: 10px;
+        flex-direction: row;
+    }
+} */
 
 .clear-button {
     background-color: #ff6363;
