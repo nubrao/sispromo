@@ -8,9 +8,9 @@ SisPromo é um sistema desenvolvido para gerenciar visitas de promotores em loja
 ✅ Cadastro de **Lojas** e suas respectivas redes 
 ✅ Registro de **Visitas** realizadas pelos promotores, incluindo fotos 
 ✅ Geração de **relatórios** com dados detalhados por promotor, loja e marca 
-✅ Exportação dos relatórios para **Excel** 
+✅ Exportação dos relatórios para **Excel** e **PDF** 
 ✅ **Autenticação JWT** para segurança no acesso ao sistema 
-✅ **Interface responsiva e amigável** para secretárias e gestores
+✅ **Interface responsiva e amigável**
 
 ---
 
@@ -23,6 +23,7 @@ SisPromo é um sistema desenvolvido para gerenciar visitas de promotores em loja
 - Django Simple JWT (Autenticação JWT)
 - PostgreSQL / SQLite (banco de dados)
 - Pandas (Geração de relatórios em Excel)
+- BytesIO (Geração de relatórios em PDF)
 
 ### **Frontend**
 
