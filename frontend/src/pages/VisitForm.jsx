@@ -148,7 +148,9 @@ const VisitForm = ({
                 visit?.store?.name
                     .toLowerCase()
                     .includes(filterStore.toLowerCase()) &&
-                visit?.brand?.name.toString().includes(filterBrand.toString()) &&
+                visit?.brand?.name
+                    .toString()
+                    .includes(filterBrand.toString()) &&
                 isSameDate
             );
         });
@@ -384,13 +386,16 @@ const VisitForm = ({
                     ))}
                 </select>
 
-                <input
-                    type="date"
-                    value={visitDate}
-                    onChange={(e) => setVisitDate(e.target.value)}
-                    className="form-input-text"
-                    required
-                />
+                <div className="form-dates">
+                    <label className="form-label">Data da Visita:</label>
+                    <input
+                        type="date"
+                        value={visitDate}
+                        onChange={(e) => setVisitDate(e.target.value)}
+                        className="form-input-text date-input"
+                        required
+                    />
+                </div>
 
                 <button type="submit" className="form-button">
                     Cadastrar
@@ -432,13 +437,16 @@ const VisitForm = ({
                     className="form-input-text"
                 />
 
-                <input
-                    type="date"
-                    placeholder="Filtrar Data"
-                    value={filterDate}
-                    onChange={(e) => setFilterDate(e.target.value)}
-                    className="form-input-text"
-                />
+                <div className="form-dates">
+                    <label className="form-label">Data da Visita:</label>
+                    <input
+                        type="date"
+                        placeholder="Filtrar Data"
+                        value={filterDate}
+                        onChange={(e) => setFilterDate(e.target.value)}
+                        className="form-input-text date-input"
+                    />
+                </div>
 
                 <button
                     onClick={clearFilters}
@@ -592,8 +600,8 @@ const VisitForm = ({
                                                 {visit.promoter.name.toUpperCase()}
                                             </td>
                                             <td>
-                                                {visit.store.name.toUpperCase()} -{" "}
-                                                {visit.store.number}
+                                                {visit.store.name.toUpperCase()}{" "}
+                                                - {visit.store.number}
                                             </td>
                                             <td>
                                                 {visit.brand.name.toUpperCase() ||

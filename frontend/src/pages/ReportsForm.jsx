@@ -155,22 +155,28 @@ const Reports = () => {
                 </section>
 
                 <section className="report-dates">
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="form-input-text"
-                    />
+                    <div>
+                        <label className="form-label">Data Inicial:</label>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="form-input-text"
+                        />
+                    </div>
 
-                    <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="form-input-text"
-                    />
+                    <div>
+                        <label className="form-label">Data Final:</label>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="form-input-text"
+                        />
+                    </div>
                 </section>
 
-                <section className="form-button-container">
+                <section className="report-button-container">
                     <button onClick={fetchReports} className="form-button">
                         Gerar Relatório
                     </button>

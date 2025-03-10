@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from core.infrastructure.models.visit_model import VisitModel
-from core.infrastructure.models.brand_model import BrandModel
 from drf_spectacular.utils import extend_schema_field
 
 
