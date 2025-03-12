@@ -30,7 +30,7 @@ const Navbar = () => {
         <>
             <div className="navbar">
                 <Hamburger className="hamburger" onClick={toggleSidebar} />
-                
+
                 {isMobile && <span className="navbar-title">SisPromo</span>}
 
                 <nav className="navbar-links">
@@ -46,6 +46,9 @@ const Navbar = () => {
                         </li>
                         <li>
                             <Link to="/brands">Marcas</Link>
+                        </li>
+                        <li>
+                            <Link to="/visit-prices">Preços das Visitas</Link>
                         </li>
                         <li>
                             <Link to="/visits">Visitas</Link>
@@ -68,34 +71,25 @@ const Navbar = () => {
                 <nav className="sidebar-links">
                     <ul>
                         <li>
-                            <Link to="/home" onClick={closeSidebar}>
-                                Início
-                            </Link>
+                            <Link to="/home">Início</Link>
                         </li>
                         <li>
-                            <Link to="/promoters" onClick={closeSidebar}>
-                                Promotores
-                            </Link>
+                            <Link to="/promoters">Promotores</Link>
                         </li>
                         <li>
-                            <Link to="/stores" onClick={closeSidebar}>
-                                Lojas
-                            </Link>
+                            <Link to="/stores">Lojas</Link>
                         </li>
                         <li>
-                            <Link to="/brands" onClick={closeSidebar}>
-                                Marcas
-                            </Link>
+                            <Link to="/brands">Marcas</Link>
                         </li>
                         <li>
-                            <Link to="/visits" onClick={closeSidebar}>
-                                Visitas
-                            </Link>
+                            <Link to="/visit-prices">Preços das Visitas</Link>
                         </li>
                         <li>
-                            <Link to="/reports" onClick={closeSidebar}>
-                                Relatórios
-                            </Link>
+                            <Link to="/visits">Visitas</Link>
+                        </li>
+                        <li>
+                            <Link to="/reports">Relatórios</Link>
                         </li>
                     </ul>
                 </nav>

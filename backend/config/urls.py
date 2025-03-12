@@ -26,13 +26,19 @@ from core.infrastructure.views.visit_view import VisitViewSet
 from core.infrastructure.views.auth_view import LogoutView
 from core.infrastructure.views.state_view import StateListView
 from core.infrastructure.views.brand_view import BrandViewSet
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from core.infrastructure.views.visit_price_view import VisitPriceViewSet
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
 
 router = DefaultRouter()
 router.register(r"promoters", PromoterViewSet)
 router.register(r"stores", StoreViewSet)
 router.register(r"visits", VisitViewSet)
 router.register(r'brands', BrandViewSet)
+router.register(r"visit-prices", VisitPriceViewSet, basename="visit-prices")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -53,5 +59,9 @@ urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("swagger/", SpectacularSwaggerView.as_view(url_name="schema"),
          name="swagger-ui"),
-    path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc-ui"),
+    path(
+        "redoc/",
+        SpectacularRedocView.as_view(url_name="schema"),
+        name="redoc-ui"
+    ),
 ]

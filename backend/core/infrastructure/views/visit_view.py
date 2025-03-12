@@ -1,5 +1,3 @@
-import pandas as pd
-import logging
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +8,9 @@ from reportlab.pdfgen import canvas
 from io import BytesIO
 from rest_framework.decorators import action
 from django.utils.dateparse import parse_date
+from decimal import Decimal
+import pandas as pd
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,8 @@ class VisitViewSet(viewsets.ModelViewSet):
     """ ViewSet para gerenciar Visitas """
 
     queryset = VisitModel.objects.select_related(
-        "promoter", "store", "brand").all()
+        "promoter", "store", "brand"
+    ).all()
     serializer_class = VisitSerializer
 
     def get_permissions(self):
@@ -104,7 +106,7 @@ class VisitViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="reports")
     def get_report(self, request):
         """
-        Gera um relatório filtrado com base nos parâmetros passados:
+        Gera um relatório filtrado e agrupado por promotor com base nos parâmetros:
         - promoter: ID do promotor
         - store: ID da loja
         - brand: ID da marca
@@ -131,10 +133,36 @@ class VisitViewSet(viewsets.ModelViewSet):
         if end_date:
             queryset = queryset.filter(visit_date__lte=parse_date(end_date))
 
-        queryset = queryset.order_by("visit_date")
+        # Ordena por data e promotor
+        queryset = queryset.order_by("promoter", "visit_date")
 
-        serializer = VisitSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Agrupa as visitas por promotor para calcular totais
+        promoter_totals = {}
+        visits_data = []
+
+        for visit in queryset:
+            promoter_id = visit.promoter.id
+            visit_price = Decimal(
+                str(self.get_serializer().get_visit_price(visit)))
+
+            if promoter_id not in promoter_totals:
+                promoter_totals[promoter_id] = {
+                    'total_visits': 0,
+                    'total_value': Decimal('0.00'),
+                    'promoter_name': visit.promoter.name
+                }
+
+            promoter_totals[promoter_id]['total_visits'] += 1
+            promoter_totals[promoter_id]['total_value'] += visit_price
+
+            visit_data = self.get_serializer(visit).data
+            visit_data['promoter_total_visits'] = promoter_totals[promoter_id]['total_visits']
+            visit_data['promoter_total_value'] = float(
+                promoter_totals[promoter_id]['total_value'])
+            visit_data['visit_price'] = float(visit_price)
+            visits_data.append(visit_data)
+
+        return Response(visits_data, status=status.HTTP_200_OK)
 
     def _filter_visits(self, request):
         """Aplica os filtros na busca de visitas"""
@@ -162,46 +190,181 @@ class VisitViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def export_excel(self, request):
-        """Exporta visitas filtradas para Excel"""
+        """Exporta visitas filtradas para Excel com totais por promotor"""
         visits = self._filter_visits(request)
-        df = pd.DataFrame([
-            {
-                "ID": visit.id,
+
+        # Ordenar por promotor e data
+        visits = visits.order_by('promoter__name', 'visit_date')
+
+        # Preparar dados com totais por promotor
+        data = []
+        promoter_totals = {}
+
+        for visit in visits:
+            visit_price = float(self.get_serializer().get_visit_price(visit))
+            promoter_id = visit.promoter.id
+
+            if promoter_id not in promoter_totals:
+                promoter_totals[promoter_id] = {
+                    'name': visit.promoter.name,
+                    'total': 0
+                }
+
+            promoter_totals[promoter_id]['total'] += visit_price
+
+            data.append({
+                "Data": visit.visit_date.strftime("%d/%m/%Y"),
                 "Promotor": visit.promoter.name,
                 "Loja": f"{visit.store.name} - {visit.store.number}",
                 "Marca": visit.brand.name if visit.brand else "N/A",
-                "Data": visit.visit_date.strftime("%d/%m/%Y"),
-            }
-            for visit in visits
-        ])
+                "Valor da Visita (R$)": f"R$ {visit_price:.2f}",
+            })
+
+            # Adiciona linha de total após a última visita de cada promotor
+            next_visit = visits.filter(id__gt=visit.id).first()
+            if not next_visit or next_visit.promoter.id != promoter_id:
+                data.append({
+                    "Data": "",
+                    "Promotor": (
+                        f"Total Acumulado ({visit.promoter.name})"
+                    ),
+                    "Loja": "",
+                    "Marca": "",
+                    "Valor da Visita (R$)": (
+                        f"R$ {promoter_totals[promoter_id]['total']:.2f}"
+                    ),
+                })
+                # Adiciona uma linha em branco após o total
+                data.append({
+                    "Data": "",
+                    "Promotor": "",
+                    "Loja": "",
+                    "Marca": "",
+                    "Valor da Visita (R$)": "",
+                })
+
+        df = pd.DataFrame(data)
 
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, sheet_name="Relatório", index=False)
 
-        response = HttpResponse(output.getvalue(
-        ), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        response['Content-Disposition'] = 'attachment; filename="relatorio_visitas.xlsx"'
+            # Ajustar formatação
+            workbook = writer.book
+            worksheet = writer.sheets["Relatório"]
+
+            # Formato para linhas de total
+            total_format = workbook.add_format({
+                'bold': True,
+                'bg_color': '#F0F0F0'
+            })
+
+            # Aplicar formatação nas linhas de total
+            for row_num in range(len(data)):
+                if "Total Acumulado" in str(df.iloc[row_num]["Promotor"]):
+                    worksheet.set_row(row_num + 1, None, total_format)
+
+            # Ajustar largura das colunas
+            for i, col in enumerate(df.columns):
+                max_length = max(
+                    df[col].astype(str).apply(len).max(),
+                    len(col)
+                ) + 2
+                worksheet.set_column(i, i, max_length)
+
+        response = HttpResponse(
+            output.getvalue(),
+            content_type=(
+                "application/vnd.openxmlformats-officedocument"
+                ".spreadsheetml.sheet"
+            )
+        )
+        filename = 'attachment; filename="relatorio_visitas.xlsx"'
+        response['Content-Disposition'] = filename
         return response
 
     @action(detail=False, methods=['get'])
     def export_pdf(self, request):
-        """Exporta visitas filtradas para PDF"""
+        """Exporta visitas filtradas para PDF com totais por promotor"""
         visits = self._filter_visits(request)
+
+        # Ordenar por promotor e data
+        visits = visits.order_by('promoter__name', 'visit_date')
 
         buffer = BytesIO()
         pdf = canvas.Canvas(buffer)
-        pdf.drawString(100, 800, "Relatório de Visitas")
 
-        y = 780
+        # Configurações iniciais do PDF
+        pdf.setTitle("Relatório de Visitas")
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawString(50, 800, "Relatório de Visitas")
+
+        # Configurações para o conteúdo
+        pdf.setFont("Helvetica", 10)
+        y = 750  # Posição inicial Y
+        line_height = 20  # Altura de cada linha
+
+        current_promoter = None
+        promoter_total = 0
+
         for visit in visits:
-            pdf.drawString(
-                100, y, f"{visit.visit_date.strftime('%d/%m/%Y')} - {visit.promoter.name} - {visit.store.name} ({visit.brand.name if visit.brand else 'N/A'})")
-            y -= 20
+            # Se mudou o promotor, imprime o total do promoter anterior
+            if current_promoter and current_promoter != visit.promoter:
+                pdf.setFont("Helvetica-Bold", 10)
+                total_text = (
+                    f"Total Acumulado ({current_promoter.name}): "
+                    f"R$ {promoter_total:.2f}"
+                )
+                pdf.drawString(50, y, total_text)
+                y -= line_height * 2  # Espaço extra após o total
+                promoter_total = 0
+
+                # Nova página se necessário
+                if y < 50:
+                    pdf.showPage()
+                    pdf.setFont("Helvetica", 10)
+                    y = 750
+
+            # Atualiza o promoter atual
+            current_promoter = visit.promoter
+            visit_price = float(
+                self.get_serializer().get_visit_price(visit)
+            )
+            promoter_total += visit_price
+
+            # Formata a data
+            visit_date = visit.visit_date.strftime("%d/%m/%Y")
+
+            # Informações da visita
+            pdf.setFont("Helvetica", 10)
+            visit_text = (
+                f"{visit_date} - {visit.promoter.name} - "
+                f"{visit.store.name} ({visit.store.number}) - "
+                f"{visit.brand.name} - R$ {visit_price:.2f}"
+            )
+
+            # Nova página se necessário
+            if y < 50:
+                pdf.showPage()
+                pdf.setFont("Helvetica", 10)
+                y = 750
+
+            pdf.drawString(50, y, visit_text)
+            y -= line_height
+
+        # Imprime o total do último promoter
+        if current_promoter:
+            pdf.setFont("Helvetica-Bold", 10)
+            total_text = (
+                f"Total Acumulado ({current_promoter.name}): "
+                f"R$ {promoter_total:.2f}"
+            )
+            pdf.drawString(50, y, total_text)
 
         pdf.save()
         buffer.seek(0)
 
         response = HttpResponse(buffer, content_type="application/pdf")
-        response['Content-Disposition'] = 'attachment; filename="relatorio_visitas.pdf"'
+        filename = 'attachment; filename="relatorio_visitas.pdf"'
+        response['Content-Disposition'] = filename
         return response

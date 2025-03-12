@@ -219,7 +219,7 @@ const VisitForm = ({
         const visitData = {
             promoter: promoterId,
             store: storeId,
-            brand: brand.brand_id,
+            brand: brand.id,
             visit_date: visitDate,
         };
 
@@ -244,7 +244,7 @@ const VisitForm = ({
     const resetForm = () => {
         setPromoterId("");
         setStoreId("");
-        setBrand("");
+        setBrand({ id: "", name: "" });
         setVisitDate("");
     };
 
@@ -360,7 +360,7 @@ const VisitForm = ({
                 </select>
 
                 <select
-                    value={brand.brand_id || ""}
+                    value={brand.id || ""}
                     onChange={(e) => {
                         const selectedId = e.target.value
                             ? parseInt(e.target.value, 10)
@@ -369,7 +369,10 @@ const VisitForm = ({
                             (brand) => brand.brand_id === selectedId
                         ) || { brand_id: "", brand_name: "" };
 
-                        setBrand(selectedBrand);
+                        setBrand({
+                            id: selectedBrand.brand_id,
+                            name: selectedBrand.brand_name,
+                        });
                     }}
                     className="form-input-text"
                     required

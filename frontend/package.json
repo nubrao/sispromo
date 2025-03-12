@@ -18,8 +18,10 @@
     "lucide-react": "^0.475.0",
     "mui": "^0.0.1",
     "react": "^19.0.0",
+    "react-calendar": "^5.1.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.1.5",
+    "react-select": "^5.10.1",
     "react-svg-resizer": "^0.2.5",
     "vite-plugin-mpa": "^1.2.0"
   },

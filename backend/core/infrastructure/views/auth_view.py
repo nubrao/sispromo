@@ -27,7 +27,7 @@ class LogoutView(APIView):
         request=None,  # O logout não precisa de dados no request
         responses={
             200: LogoutSerializer,
-            400: serializers.DictField(),  # Erros são dicionários com mensagens
+            400: LogoutSerializer,
         }
     )
     def post(self, request):
@@ -36,7 +36,8 @@ class LogoutView(APIView):
 
         Retorna:
         - 200: {"message": "Logout realizado com sucesso."}
-        - 400: {"error": "Nenhum token de atualização fornecido."} ou {"error": "Token inválido ou já expirado."}
+        - 400: {"error": "Nenhum token de atualização fornecido."} ou
+          {"error": "Token inválido ou já expirado."}
         """
         try:
             refresh_token = request.data.get("refresh")
