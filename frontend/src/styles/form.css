@@ -36,8 +36,6 @@
     display: flex;
     flex-direction: column;
     width: 400px;
-    padding: 10px;
-    margin-bottom: 10px;
     box-sizing: border-box;
 }
 
@@ -46,7 +44,7 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        padding: 0px 0px 10px 0px;
+        padding-bottom: 10px;
         box-sizing: border-box;
     }
 }
@@ -55,9 +53,15 @@
     display: flex;
     flex-direction: column;
     width: auto;
-    padding: 10px;
-    margin-bottom: 10px;
     box-sizing: border-box;
+}
+
+.form-label {
+    width: 40%;
+}
+
+.date-input {
+    width: 60%;
 }
 
 @media screen and (max-width: 768px) {
@@ -66,11 +70,20 @@
         align-items: center;
         flex-direction: row;
         gap: 10px;
-        padding: 0px 10px 10px 10px;
+        padding-bottom: 10px;
         box-sizing: border-box;
         justify-content: space-evenly;
         width: -webkit-fill-available;
     }
+}
+
+.form-dates {
+    display: flex;
+    flex-direction: row;
+    box-sizing: border-box;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .form-input-text {
@@ -86,7 +99,7 @@
     box-sizing: border-box;
 }
 
-.form-button-container {
+.report-button-container {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -101,7 +114,7 @@
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.3s;
-    margin: 5px 5px;
+    margin: 5px 0px 5px 0px;
 }
 
 .form-actions {
@@ -172,18 +185,6 @@
 .table {
     width: 100%;
     border-collapse: collapse;
-
-    th {
-        color: var(--text-dark);
-    }
-}
-
-.form {
-    display: flex;
-    width: 50vw;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
 }
 
 .table th,
@@ -197,6 +198,7 @@
 
 .table th {
     background-color: #444;
+    color: white;
 }
 
 .table td {
@@ -206,6 +208,32 @@
 
 .table tr {
     height: auto;
+}
+
+/* Estilos para a linha de total */
+.total-row {
+    font-weight: bold;
+    background-color: #f5f5f5;
+}
+
+.total-label {
+    text-align: right;
+    padding-right: 20px;
+}
+
+.total-value {
+    color: #006600;
+}
+
+/* Tema escuro */
+@media (prefers-color-scheme: dark) {
+    .total-row {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .total-value {
+        color: #90ee90;
+    }
 }
 
 .error-message {
@@ -268,52 +296,72 @@
         width: 400px;
         gap: 0px;
         margin-bottom: 24px;
-        overflow-x: auto;
     }
 
     .clear-button {
         width: 100%;
     }
+
+    .form-dates {
+        padding-bottom: 10px;
+        gap: 10px;
+        display: flex;
+        flex-direction: row;
+        width: -webkit-fill-available;
+    }
+
+    .form-label {
+        width: 40%;
+    }
+
+    .date-input {
+        width: 60%;
+    }
 }
 
-/* @media screen and (max-width: 1024px) {
+@media screen and (min-width: 769px) and (max-width: 1024px) {
     .filter-container {
         flex-grow: 1;
         flex-direction: column;
-        width: 100%;
-        max-width: 400px;
         gap: 0px;
         margin-bottom: 24px;
-    }
-
-    .form-input-text select {
-        flex: 1;
-        min-width: 150px;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        height: 40px;
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        max-width: 400px;
-        padding: 10px;
-        margin: 5px 0 5px 0;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        box-sizing: border-box;
+        min-width: 400px;
     }
 
     .report-filters {
-        padding: 0px;
+        padding-bottom: 10px;
     }
 
     .report-dates {
-        padding: 0px;
+        padding-bottom: 10px;
         gap: 10px;
+        display: flex;
         flex-direction: row;
+        padding-bottom: 10px;
+        justify-content: space-evenly;
+        width: -webkit-fill-available;
     }
-} */
+
+    .form-label {
+        width: 40%;
+    }
+
+    .clear-button {
+        width: 100%;
+    }
+
+    .form-dates {
+        padding-bottom: 10px;
+        gap: 10px;
+        display: flex;
+        flex-direction: row;
+        width: -webkit-fill-available;
+    }
+
+    .date-input {
+        width: 60%;
+    }
+}
 
 .clear-button {
     background-color: #ff6363;
@@ -339,4 +387,224 @@
 
 .loading-container-button {
     height: 40px;
+}
+
+/* Estilos para o relatório */
+.table-container {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+.table-container.calendar {
+    overflow-x: visible;
+}
+
+.calendar-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.promoter-calendar {
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.promoter-calendar h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.2em;
+}
+
+.calendar-stats {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.calendar-stats p {
+    margin: 5px 0;
+    font-size: 0.9em;
+}
+
+.has-visits {
+    background-color: #e6ffe6 !important;
+    font-weight: bold;
+}
+
+.visit-day-content {
+    font-size: 0.8em;
+    margin-top: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    text-align: center;
+}
+
+.view-mode-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.view-mode-buttons .form-button {
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
+
+.view-mode-buttons .form-button.active {
+    background-color: #004d00;
+    color: white;
+}
+
+/* Customização do Calendário React */
+.react-calendar {
+    width: 100% !important;
+    border: none !important;
+    min-width: 350px !important;
+}
+
+.react-calendar__tile {
+    padding: 10px !important;
+    height: 60px !important;
+    min-width: 40px !important;
+}
+
+.react-calendar__month-view__days__day {
+    position: relative;
+}
+
+.react-calendar__navigation button {
+    font-size: 1.1em !important;
+}
+
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+    background-color: transparent !important;
+}
+
+.react-calendar__tile--active {
+    background-color: transparent !important;
+    color: inherit !important;
+}
+
+.react-calendar__tile--now {
+    background-color: transparent !important;
+}
+
+.react-calendar__tile--now:enabled:hover,
+.react-calendar__tile--now:enabled:focus {
+    background-color: transparent !important;
+}
+
+/* Tema escuro */
+@media (prefers-color-scheme: dark) {
+    .react-calendar {
+        background-color: transparent !important;
+        color: white !important;
+    }
+
+    .react-calendar__navigation button {
+        color: white !important;
+    }
+
+    .react-calendar__month-view__weekdays {
+        color: white !important;
+    }
+
+    .react-calendar__tile {
+        color: white !important;
+    }
+
+    .has-visits {
+        background-color: rgba(0, 102, 0, 0.3) !important;
+        color: white !important;
+    }
+
+    .visit-day-content {
+        color: #90ee90 !important;
+    }
+
+    .calendar-stats {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .calendar-stats p {
+        color: white;
+    }
+
+    .promoter-calendar h3 {
+        color: white;
+    }
+}
+
+/* Tema claro */
+@media (prefers-color-scheme: light) {
+    .react-calendar {
+        background-color: transparent !important;
+        color: black !important;
+    }
+
+    .react-calendar__navigation button {
+        color: black !important;
+    }
+
+    .react-calendar__month-view__weekdays {
+        color: black !important;
+    }
+
+    .react-calendar__tile {
+        color: black !important;
+    }
+
+    .has-visits {
+        background-color: rgba(0, 102, 0, 0.1) !important;
+        color: black !important;
+    }
+
+    .visit-day-content {
+        color: #006600 !important;
+    }
+
+    .calendar-stats {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .calendar-stats p {
+        color: black;
+    }
+
+    .promoter-calendar h3 {
+        color: black;
+    }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .calendar-view {
+        grid-template-columns: 1fr;
+    }
+
+    .promoter-calendar {
+        padding: 10px;
+    }
+
+    .react-calendar__tile {
+        padding: 5px !important;
+        height: 50px !important;
+        font-size: 0.9em;
+    }
+
+    .visit-day-content {
+        font-size: 0.7em;
+    }
+}
+
+.react-calendar button {
+    cursor: default !important;
 }

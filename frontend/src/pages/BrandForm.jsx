@@ -4,6 +4,7 @@ import "../styles/form.css";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
 import LoadingModal from "../components/LoadingModal";
+import Select from "react-select";
 
 const BrandForm = ({
     loading,
@@ -28,6 +29,7 @@ const BrandForm = ({
     const [filterVisitFrequency, setFilterVisitFrequency] = useState("");
     const [filteredBrands, setFilteredBrands] = useState([]);
 
+    const [brandId, setBrandId] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [editBrandName, setEditBrandName] = useState("");
     const [editStore, setEditStore] = useState({ id: "", name: "" });
@@ -123,7 +125,20 @@ const BrandForm = ({
         }
 
         try {
-            await createBrand();
+            let brand_id = brandId;
+            
+            if (!brand_id) {
+                const existingBrand = brands.find(
+                    (brand) =>
+                        brand.brand_name.toLowerCase() ===
+                        brandName.toLowerCase()
+                );
+                if (existingBrand) {
+                    brand_id = existingBrand.id;
+                }
+            }
+
+            await createBrand(brand_id);
             await fetchBrands();
             resetForm();
             setSuccess(true);
@@ -134,8 +149,9 @@ const BrandForm = ({
         }
     };
 
-    const createBrand = async () => {
+    const createBrand = async (brand_id) => {
         const body = {
+            brand_id: brand_id,
             brand_name: brandName.trim(),
             store_id: selectedStore.id,
             visit_frequency: parseInt(visitFrequency, 10),
@@ -213,13 +229,20 @@ const BrandForm = ({
         <div className="form-container">
             <h2 className="form-title">Cadastro de Marcas</h2>
             <form onSubmit={handleSubmit} className="form-input">
-                <input
-                    type="text"
-                    placeholder="Nome da Marca"
-                    value={brandName}
-                    onChange={(e) => setBrandName(e.target.value)}
-                    className="form-input-text"
-                    required
+                <Select
+                    options={brands.map((brand) => ({
+                        value: brand.brand_id,
+                        label: brand.brand_name,
+                    }))}
+                    value={
+                        brandId ? { value: brandId, label: brandName } : null
+                    }
+                    onChange={(selectedOption) => {
+                        setBrandId(selectedOption.value);
+                        setBrandName(selectedOption.label);
+                    }}
+                    placeholder="Selecione uma Marca"
+                    className="form-input-select"
                 />
 
                 <select

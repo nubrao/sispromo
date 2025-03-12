@@ -10,6 +10,7 @@ import Navbar from "./components/Navbar";
 import PropTypes from "prop-types";
 import BrandForm from "./pages/BrandForm";
 import Reports from "./pages/ReportsForm";
+import VisitPriceForm from "./pages/VisitPriceForm";
 
 const PrivateRoute = ({ children }) => {
     const authContext = useContext(AuthContext);
@@ -98,6 +99,25 @@ function App() {
                         element={
                             <PrivateRoute>
                                 <BrandForm
+                                    loading={loading}
+                                    setLoading={setLoading}
+                                    modalOpen={modalOpen}
+                                    setModalOpen={setModalOpen}
+                                    success={success}
+                                    setSuccess={setSuccess}
+                                    errorMessage={errorMessage}
+                                    setErrorMessage={setErrorMessage}
+                                    dataLoaded={dataLoaded}
+                                    setDataLoaded={setDataLoaded}
+                                />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/visit-prices"
+                        element={
+                            <PrivateRoute>
+                                <VisitPriceForm
                                     loading={loading}
                                     setLoading={setLoading}
                                     modalOpen={modalOpen}
