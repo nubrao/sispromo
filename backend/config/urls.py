@@ -35,9 +35,9 @@ from drf_spectacular.views import (
 )
 
 router = DefaultRouter()
-router.register(r"promoters", PromoterViewSet)
+router.register(r"promoters", PromoterViewSet, basename="promoter")
 router.register(r"stores", StoreViewSet)
-router.register(r"visits", VisitViewSet)
+router.register(r"visits", VisitViewSet, basename="visit")
 router.register(r'brands', BrandViewSet)
 router.register(r"visit-prices", VisitPriceViewSet, basename="visit-prices")
 router.register(r"users", UserViewSet, basename="user")

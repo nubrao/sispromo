@@ -70,6 +70,14 @@ class StoreViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         return [IsAuthenticated()]
 
+    def check_manager_analyst_permission(self):
+        """Verifica se o usuário é gerente ou analista"""
+        user_role = self.request.user.userprofile.role
+        if user_role not in ['manager', 'analyst']:
+            raise PermissionError(
+                "Apenas gerentes e analistas podem realizar esta operação."
+            )
+
     def list(self, request, *args, **kwargs):
         """ Lista todas as lojas """
         try:
@@ -85,6 +93,14 @@ class StoreViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """ Cria uma nova loja """
+        try:
+            self.check_manager_analyst_permission()
+        except PermissionError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
@@ -110,6 +126,14 @@ class StoreViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """ Atualiza uma loja existente """
+        try:
+            self.check_manager_analyst_permission()
+        except PermissionError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         instance = self.get_object()
         serializer = self.get_serializer(
             instance, data=request.data, partial=True)
@@ -137,6 +161,14 @@ class StoreViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """ Deleta uma loja """
+        try:
+            self.check_manager_analyst_permission()
+        except PermissionError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         instance = self.get_object()
 
         try:

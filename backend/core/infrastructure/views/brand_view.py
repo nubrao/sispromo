@@ -90,6 +90,14 @@ class BrandViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         return [IsAuthenticated()]
 
+    def check_manager_analyst_permission(self):
+        """Verifica se o usuário é gerente ou analista"""
+        user_role = self.request.user.userprofile.role
+        if user_role not in ['manager', 'analyst']:
+            raise PermissionError(
+                "Apenas gerentes e analistas podem realizar esta operação."
+            )
+
     def list(self, request, *args, **kwargs):
         """ Lista todas as marcas com suas lojas e periodicidade """
         try:
@@ -118,6 +126,14 @@ class BrandViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """ Cria uma nova marca e associa a uma loja """
+        try:
+            self.check_manager_analyst_permission()
+        except PermissionError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
@@ -138,6 +154,14 @@ class BrandViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """ Atualiza uma marca existente """
+        try:
+            self.check_manager_analyst_permission()
+        except PermissionError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         instance = self.get_object()
         data = request.data.copy()
 
@@ -173,5 +197,30 @@ class BrandViewSet(viewsets.ModelViewSet):
             logger.error(f"Erro ao atualizar marca: {e}")
             return Response(
                 {"error": "Erro ao atualizar marca."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def destroy(self, request, *args, **kwargs):
+        """ Deleta uma marca """
+        try:
+            self.check_manager_analyst_permission()
+        except PermissionError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        instance = self.get_object()
+
+        try:
+            instance.delete()
+            return Response(
+                {"message": "Marca excluída com sucesso."},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        except Exception as e:
+            logger.error(f"Erro ao excluir marca: {e}")
+            return Response(
+                {"error": "Erro ao excluir marca."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

@@ -230,11 +230,16 @@ const Reports = () => {
                                                 ""}
                                         </td>
                                         <td>
-                                            {visit?.store?.name?.toUpperCase() ||
-                                                ""}
+                                            {visit?.store?.name &&
+                                            visit?.store?.number
+                                                ? `${visit.store.name.toUpperCase()} - ${
+                                                      visit.store.number
+                                                  }`
+                                                : ""}
                                         </td>
+
                                         <td>
-                                            {visit?.brand?.brand_name?.toUpperCase() ||
+                                            {visit?.brand?.name?.toUpperCase() ||
                                                 ""}
                                         </td>
                                         <td>
@@ -378,28 +383,51 @@ const Reports = () => {
 
             <div className="filter-container">
                 <section className="report-filters">
-                    <select
-                        value={selectedPromoter}
-                        onChange={(e) => setSelectedPromoter(e.target.value)}
-                        className="form-input-text"
-                    >
-                        <option value="">Selecione um Promotor</option>
-                        {promoters.map((promoter) => (
-                            <option
-                                key={`promoter-${promoter.id}`}
-                                value={promoter.id}
+                    {!isPromoter() && (
+                        <div className="form-group">
+                            <select
+                                id="promoter"
+                                value={selectedPromoter}
+                                onChange={(e) =>
+                                    setSelectedPromoter(e.target.value)
+                                }
+                                className="form-input-text"
                             >
-                                {promoter?.name?.toUpperCase() || ""}
-                            </option>
-                        ))}
-                    </select>
-
+                                <option value="">Todos</option>
+                                {promoters.map((promoter) => (
+                                    <option
+                                        key={promoter.id}
+                                        value={promoter.id}
+                                    >
+                                        {promoter.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                    <div className="form-group">
+                        <select
+                            id="store"
+                            value={selectedStore}
+                            onChange={(e) => setSelectedStore(e.target.value)}
+                            className="form-input-text"
+                        >
+                            <option value="">Todas as Lojas</option>
+                            {stores.map((store) => (
+                                <option key={store.id} value={store.id}>
+                                    {store.name.toUpperCase()}
+                                    {store.number &&
+                                        ` - ${store.number}`}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <select
                         value={selectedBrand}
                         onChange={handleBrandChange}
                         className="form-input-text"
                     >
-                        <option value="">Selecione uma Marca</option>
+                        <option value="">Todas as Marcas</option>
                         {brands
                             .filter(
                                 (brand, index, self) =>
@@ -416,20 +444,6 @@ const Reports = () => {
                                     {brand?.brand_name?.toUpperCase() || ""}
                                 </option>
                             ))}
-                    </select>
-
-                    <select
-                        value={selectedStore}
-                        onChange={(e) => setSelectedStore(e.target.value)}
-                        className="form-input-text"
-                    >
-                        <option value="">Selecione uma Loja</option>
-                        {stores.map((store) => (
-                            <option key={`store-${store.id}`} value={store.id}>
-                                {store?.name?.toUpperCase()} -{" "}
-                                {store?.number || ""}
-                            </option>
-                        ))}
                     </select>
                 </section>
 
@@ -464,6 +478,14 @@ const Reports = () => {
                             }`}
                         >
                             Visualização em Tabela
+                        </button>
+                        <button
+                            onClick={() => setViewMode("calendar")}
+                            className={`form-button ${
+                                viewMode === "calendar" ? "active" : ""
+                            }`}
+                        >
+                            Visualização em Calendário
                         </button>
                     </div>
 

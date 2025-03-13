@@ -51,6 +51,12 @@ const VisitForm = ({
             setDataLoaded(false);
 
             try {
+                // Se for promotor, define a data atual
+                if (isPromoter()) {
+                    const today = new Date().toISOString().split("T")[0];
+                    setVisitDate(today);
+                }
+
                 // Busca os dados do usuário atual primeiro
                 if (isPromoter()) {
                     const userResponse = await axios.get(
@@ -60,7 +66,56 @@ const VisitForm = ({
                         }
                     );
                     setCurrentUser(userResponse.data);
-                    setPromoterId(userResponse.data.promoter_id);
+
+                    // Busca o promotor associado ao usuário
+                    const promoterResponse = await axios.get(
+                        `${API_URL}/api/promoters/`,
+                        {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }
+                    );
+
+                    // Procura o promotor vinculado ao perfil do usuário
+                    const promoter = promoterResponse.data.find(
+                        (p) =>
+                            p.user_profile === userResponse.data.userprofile_id
+                    );
+
+                    if (promoter) {
+                        setPromoterId(promoter.id);
+                    } else {
+                        // Se não encontrar o promotor vinculado, tenta vincular
+                        const availablePromoter = promoterResponse.data.find(
+                            (p) => !p.user_profile
+                        );
+
+                        if (availablePromoter) {
+                            try {
+                                await axios.post(
+                                    `${API_URL}/api/promoters/${availablePromoter.id}/link_user/`,
+                                    { user_id: userResponse.data.id },
+                                    {
+                                        headers: {
+                                            Authorization: `Bearer ${token}`,
+                                        },
+                                    }
+                                );
+                                setPromoterId(availablePromoter.id);
+                            } catch (error) {
+                                console.error(
+                                    "Erro ao vincular promotor:",
+                                    error
+                                );
+                                setErrorMessage(
+                                    "Erro ao vincular promotor ao usuário."
+                                );
+                            }
+                        } else {
+                            setErrorMessage(
+                                "Nenhum promotor disponível para vinculação."
+                            );
+                        }
+                    }
                 }
 
                 await Promise.all([
@@ -71,6 +126,7 @@ const VisitForm = ({
                 ]);
             } catch (error) {
                 console.error("Erro ao buscar dados:", error);
+                setErrorMessage("Erro ao buscar dados do usuário.");
             } finally {
                 setLoading(false);
                 setDataLoaded(true);
@@ -185,11 +241,22 @@ const VisitForm = ({
         setLoading(true);
 
         const visitData = {
-            promoter: promoterId,
             store: storeId,
             brand: brand.id,
-            visit_date: visitDate,
         };
+
+        // Se for promotor, usa o promotor vinculado
+        if (isPromoter()) {
+            visitData.promoter = currentUser?.promoter_id;
+        } else {
+            // Se for gestor ou analista, usa o promotor selecionado
+            visitData.promoter = promoterId;
+        }
+
+        // Só adiciona o campo de data se não for promotor
+        if (!isPromoter()) {
+            visitData.visit_date = visitDate;
+        }
 
         try {
             // Verifica se já existe uma visita com os mesmos dados no mesmo dia
@@ -387,6 +454,7 @@ const VisitForm = ({
                         className="form-input-text date-input"
                         max={new Date().toISOString().split("T")[0]}
                         required
+                        disabled={isPromoter()}
                     />
                 </div>
 
@@ -478,7 +546,7 @@ const VisitForm = ({
                                     </td>
                                     <td>
                                         {new Date(
-                                            visit.visit_date
+                                            visit.visit_date + "T00:00:00"
                                         ).toLocaleDateString("pt-BR")}
                                     </td>
                                     <td>

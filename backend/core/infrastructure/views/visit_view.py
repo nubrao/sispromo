@@ -13,11 +13,13 @@ import pandas as pd
 import logging
 from datetime import datetime, timedelta
 from core.infrastructure.models.brand_model import BrandModel
+from core.infrastructure.models.promoter_model import PromoterModel
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
     OpenApiParameter
 )
+from rest_framework import serializers
 
 logger = logging.getLogger(__name__)
 
@@ -77,13 +79,32 @@ logger = logging.getLogger(__name__)
 class VisitViewSet(viewsets.ModelViewSet):
     """ ViewSet para gerenciar Visitas """
 
-    queryset = VisitModel.objects.select_related(
-        "promoter", "store", "brand"
-    ).all()
     serializer_class = VisitSerializer
 
     def get_permissions(self):
         return [IsAuthenticated()]
+
+    def get_queryset(self):
+        """
+        Retorna o queryset de visitas filtrado com base no papel do usuário.
+        Se o usuário for um promotor, retorna apenas suas visitas.
+        Se for analista ou gerente, retorna todas as visitas.
+        """
+        user = self.request.user
+        queryset = VisitModel.objects.select_related(
+            "promoter", "store", "brand")
+
+        # Se o usuário for um promotor, filtra apenas suas visitas
+        if user.userprofile.role == 'promoter':
+            try:
+                promoter = PromoterModel.objects.get(
+                    user_profile=user.userprofile)
+                queryset = queryset.filter(promoter=promoter)
+            except PromoterModel.DoesNotExist:
+                # Se o promotor não existir, retorna um queryset vazio
+                return VisitModel.objects.none()
+
+        return queryset
 
     @extend_schema(
         description=(
@@ -133,20 +154,32 @@ class VisitViewSet(viewsets.ModelViewSet):
     def get_report(self, request):
         """
         Gera um relatório filtrado e agrupado por promotor com base nos parâmetros:
-        - promoter: ID do promotor
+        - promoter: ID do promotor (apenas para analistas/gerentes)
         - store: ID da loja
         - brand: ID da marca
         - start_date: Data inicial (YYYY-MM-DD)
         - end_date: Data final (YYYY-MM-DD)
         """
-        promoter_id = request.query_params.get("promoter")
+        # Se for promotor, força o filtro para mostrar apenas suas visitas
+        if request.user.userprofile.role == 'promoter':
+            try:
+                promoter = PromoterModel.objects.get(
+                    user_profile=request.user.userprofile)
+                promoter_id = promoter.id
+            except PromoterModel.DoesNotExist:
+                return Response(
+                    {"error": "Usuário não possui um promotor associado."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            promoter_id = request.query_params.get("promoter")
+
         store_id = request.query_params.get("store")
         brand_id = request.query_params.get("brand")
         start_date = request.query_params.get("start_date")
         end_date = request.query_params.get("end_date")
 
-        queryset = VisitModel.objects.select_related(
-            "promoter", "store", "brand").all()
+        queryset = self.get_queryset()
 
         if promoter_id:
             queryset = queryset.filter(promoter_id=promoter_id)
@@ -192,8 +225,7 @@ class VisitViewSet(viewsets.ModelViewSet):
 
     def _filter_visits(self, request):
         """Aplica os filtros na busca de visitas"""
-        queryset = VisitModel.objects.select_related(
-            "promoter", "store", "brand").all()
+        queryset = self.get_queryset()
 
         promoter_id = request.GET.get('promoter')
         store_id = request.GET.get('store')
@@ -542,10 +574,10 @@ class VisitViewSet(viewsets.ModelViewSet):
             end_of_week = start_of_week + \
                 timedelta(days=6, hours=23, minutes=59, seconds=59)
 
-            visits = VisitModel.objects.filter(
+            visits = self.get_queryset().filter(
                 visit_date__gte=start_of_week,
                 visit_date__lte=end_of_week
-            ).select_related('brand', 'store')
+            )
 
             # Prepara os dados para o dashboard
             dashboard_data = []
@@ -605,3 +637,30 @@ class VisitViewSet(viewsets.ModelViewSet):
                 {"error": "Erro ao gerar dados do dashboard."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    def perform_create(self, serializer):
+        # Se o usuário for promotor, associa o promotor atual à visita
+        if self.request.user.userprofile.role == 'promoter':
+            try:
+                promoter = PromoterModel.get_promoter_by_user(
+                    self.request.user)
+                if not promoter:
+                    raise serializers.ValidationError(
+                        "Usuário não possui um promotor associado.")
+                serializer.save(promoter=promoter)
+            except PromoterModel.DoesNotExist:
+                raise serializers.ValidationError(
+                    "Usuário não possui um promotor associado.")
+        else:
+            # Se for gestor ou analista, usa o promotor selecionado
+            promoter_id = self.request.data.get('promoter')
+            if not promoter_id:
+                raise serializers.ValidationError(
+                    "ID do promotor não fornecido.")
+
+            try:
+                promoter = PromoterModel.objects.get(id=promoter_id)
+                serializer.save(promoter=promoter)
+            except PromoterModel.DoesNotExist:
+                raise serializers.ValidationError(
+                    "Promotor não encontrado.")
