@@ -29,6 +29,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         applyFilters();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dashboardData, filterBrand, filterStore]);
 
     const fetchDashboardData = async () => {
@@ -85,9 +86,9 @@ const Dashboard = () => {
                 <h3>{brand.brand_name.toUpperCase()}</h3>
                 <div className="brand-quick-stats">
                     <span>
-                        {brand.total_visits_done}/{brand.total_visits_expected}
+                        {brand.total_visits_done}/{brand.total_visits_expected}{" "}
+                        visitas
                     </span>
-                    <span>{brand.total_progress.toFixed(1)}%</span>
                 </div>
             </div>
             <div className="progress-bar">
@@ -171,7 +172,7 @@ const Dashboard = () => {
 
     const renderCharts = () => {
         const chartData = filteredData.map((brand) => ({
-            name: brand.brand_name,
+            name: brand.brand_name.toUpperCase(),
             visitasRealizadas: brand.total_visits_done,
             visitasEsperadas: brand.total_visits_expected,
             progresso: brand.total_progress,
@@ -209,46 +210,6 @@ const Dashboard = () => {
         <div className="dashboard-container">
             <h2 className="dashboard-title">Dashboard de Visitas</h2>
 
-            <div className="dashboard-controls">
-                <div className="filters">
-                    <input
-                        type="text"
-                        placeholder="Filtrar por marca"
-                        value={filterBrand}
-                        onChange={(e) => setFilterBrand(e.target.value)}
-                        className="filter-input"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Filtrar por loja"
-                        value={filterStore}
-                        onChange={(e) => setFilterStore(e.target.value)}
-                        className="filter-input"
-                    />
-                    <button onClick={clearFilters} className="clear-button">
-                        Limpar Filtros
-                    </button>
-                </div>
-                <div className="view-mode-buttons">
-                    <button
-                        className={`view-mode-button ${
-                            viewMode === "detalhado" ? "active" : ""
-                        }`}
-                        onClick={() => setViewMode("detalhado")}
-                    >
-                        Visão Detalhada
-                    </button>
-                    <button
-                        className={`view-mode-button ${
-                            viewMode === "simplificado" ? "active" : ""
-                        }`}
-                        onClick={() => setViewMode("simplificado")}
-                    >
-                        Visão Simplificada
-                    </button>
-                </div>
-            </div>
-
             <div className="dashboard-content">
                 {loading ? (
                     <div className="dashboard-content-loading">
@@ -257,6 +218,55 @@ const Dashboard = () => {
                 ) : (
                     <>
                         {renderCharts()}
+
+                        <div className="dashboard-controls">
+                            <div className="filters">
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar por marca"
+                                    value={filterBrand}
+                                    onChange={(e) =>
+                                        setFilterBrand(e.target.value)
+                                    }
+                                    className="filter-input"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar por loja"
+                                    value={filterStore}
+                                    onChange={(e) =>
+                                        setFilterStore(e.target.value)
+                                    }
+                                    className="filter-input"
+                                />
+                                <button
+                                    onClick={clearFilters}
+                                    className="clear-button"
+                                >
+                                    Limpar Filtros
+                                </button>
+                            </div>
+                            <div className="view-mode-buttons">
+                                <button
+                                    className={`view-mode-button ${
+                                        viewMode === "detalhado" ? "active" : ""
+                                    }`}
+                                    onClick={() => setViewMode("detalhado")}
+                                >
+                                    Visão Detalhada
+                                </button>
+                                <button
+                                    className={`view-mode-button ${
+                                        viewMode === "simplificado"
+                                            ? "active"
+                                            : ""
+                                    }`}
+                                    onClick={() => setViewMode("simplificado")}
+                                >
+                                    Visão Simplificada
+                                </button>
+                            </div>
+                        </div>
                         <div className={`brands-grid ${viewMode}`}>
                             {filteredData.map((brand) =>
                                 viewMode === "simplificado"

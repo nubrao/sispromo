@@ -1,0 +1,177 @@
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.contrib.auth.models import User
+from rest_framework.decorators import action
+from drf_spectacular.utils import extend_schema, extend_schema_view
+import logging
+from ..serializers.user_profile_serializer import UserSerializer
+from ..models.user_profile_model import UserProfile
+
+logger = logging.getLogger(__name__)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        description="Lista todos os usuários",
+        responses={
+            200: UserSerializer(many=True),
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    update=extend_schema(
+        description="Atualiza um usuário existente",
+        request=UserSerializer,
+        responses={
+            200: UserSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
+)
+class UserViewSet(viewsets.ModelViewSet):
+    """ViewSet para gerenciar Usuários"""
+
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    http_method_names = ['get', 'post', 'patch']  # Permite GET, POST e PATCH
+
+    def get_permissions(self):
+        if self.action == 'register':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def list(self, request):
+        """Lista todos os usuários"""
+        try:
+            users = self.get_queryset()
+            serializer = self.get_serializer(users, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f"Erro ao listar usuários: {str(e)}")
+            return Response(
+                {"error": "Erro ao listar usuários"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def partial_update(self, request, *args, **kwargs):
+        """Atualiza parcialmente um usuário"""
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(
+                instance,
+                data=request.data,
+                partial=True
+            )
+
+            if serializer.is_valid():
+                user = serializer.save()
+                return Response(
+                    self.get_serializer(user).data,
+                    status=status.HTTP_200_OK
+                )
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Erro ao atualizar usuário: {e}")
+            return Response(
+                {"error": "Erro ao atualizar usuário."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @extend_schema(
+        description="Atualiza o papel do usuário",
+        request=UserSerializer,
+        responses={
+            200: UserSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
+    @action(detail=True, methods=['patch'])
+    def update_role(self, request, pk=None):
+        try:
+            user = self.get_object()
+            new_role = request.data.get('role')
+
+            if new_role not in dict(UserProfile.ROLE_CHOICES):
+                return Response(
+                    {"error": "Papel inválido"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            profile = user.userprofile
+            profile.role = new_role
+            profile.save()
+
+            serializer = self.get_serializer(user)
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f"Erro ao atualizar papel do usuário: {str(e)}")
+            return Response(
+                {"error": "Erro ao atualizar papel do usuário"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @extend_schema(
+        description="Retorna os dados do usuário logado",
+        responses={200: UserSerializer}
+    )
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        """Retorna os dados do usuário logado"""
+        try:
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f"Erro ao obter dados do usuário: {str(e)}")
+            return Response(
+                {"error": "Erro ao obter dados do usuário"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @extend_schema(
+        description="Registra um novo usuário",
+        request=UserSerializer,
+        responses={
+            201: UserSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
+    @action(detail=False, methods=['post'])
+    def register(self, request):
+        """Registra um novo usuário"""
+        try:
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                user = serializer.save()
+                return Response(
+                    self.get_serializer(user).data,
+                    status=status.HTTP_201_CREATED
+                )
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Erro ao registrar usuário: {str(e)}")
+            return Response(
+                {"error": "Erro ao registrar usuário"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

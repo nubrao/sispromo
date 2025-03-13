@@ -22,7 +22,7 @@ const VisitPriceForm = ({
     const [selectedBrand, setSelectedBrand] = useState("");
     const [price, setPrice] = useState("");
     const [editingId, setEditingId] = useState(null);
-    const [filteredBrands, setFilteredBrands] = useState([]);
+    const [filteredStores, setFilteredStores] = useState([]);
 
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
@@ -33,15 +33,20 @@ const VisitPriceForm = ({
     }, []);
 
     useEffect(() => {
-        if (selectedStore) {
-            const filtered = brands.filter(
-                (brand) => brand.store_id === parseInt(selectedStore, 10)
+        if (selectedBrand) {
+            // Filtra as lojas que estão vinculadas à marca selecionada
+            const storesForBrand = brands
+                .filter((b) => b.brand_id === parseInt(selectedBrand, 10))
+                .map((b) => b.store_id);
+
+            const filtered = stores.filter((store) =>
+                storesForBrand.includes(store.id)
             );
-            setFilteredBrands(filtered);
+            setFilteredStores(filtered);
         } else {
-            setFilteredBrands([]);
+            setFilteredStores([]);
         }
-    }, [selectedStore, brands]);
+    }, [selectedBrand, brands, stores]);
 
     const fetchData = async () => {
         try {
@@ -66,6 +71,11 @@ const VisitPriceForm = ({
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleBrandChange = (e) => {
+        setSelectedBrand(e.target.value);
+        setSelectedStore(""); // Limpa a loja selecionada quando trocar a marca
     };
 
     const handleSubmit = async (e) => {
@@ -153,8 +163,11 @@ const VisitPriceForm = ({
 
     const handleEdit = (price) => {
         setEditingId(price.id);
-        setSelectedStore(price.store);
         setSelectedBrand(price.brand);
+        // Aguarda o useEffect atualizar as lojas filtradas antes de definir a loja
+        setTimeout(() => {
+            setSelectedStore(price.store);
+        }, 0);
         setPrice(price.price.toString());
     };
 
@@ -177,34 +190,42 @@ const VisitPriceForm = ({
 
             <form onSubmit={handleSubmit} className="form-input">
                 <select
+                    value={selectedBrand}
+                    onChange={handleBrandChange}
+                    className="form-input-text"
+                    required
+                >
+                    <option value="">Selecione uma Marca</option>
+                    {brands
+                        .filter(
+                            (brand, index, self) =>
+                                index ===
+                                self.findIndex(
+                                    (b) => b.brand_id === brand.brand_id
+                                )
+                        )
+                        .map((brand) => (
+                            <option key={brand.brand_id} value={brand.brand_id}>
+                                {brand.brand_name.toUpperCase()}
+                            </option>
+                        ))}
+                </select>
+
+                <select
                     value={selectedStore}
                     onChange={(e) => setSelectedStore(e.target.value)}
                     className="form-input-text"
                     required
-                >
-                    <option value="">Selecione uma Loja</option>
-                    {stores.map((store) => (
-                        <option key={store.id} value={store.id}>
-                            {store.name.toUpperCase()} - {store.number}
-                        </option>
-                    ))}
-                </select>
-
-                <select
-                    value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
-                    className="form-input-text"
-                    required
-                    disabled={!selectedStore}
+                    disabled={!selectedBrand}
                 >
                     <option value="">
-                        {!selectedStore
-                            ? "Selecione uma Loja primeiro"
-                            : "Selecione uma Marca"}
+                        {!selectedBrand
+                            ? "Selecione uma Marca primeiro"
+                            : "Selecione uma Loja"}
                     </option>
-                    {filteredBrands.map((brand) => (
-                        <option key={brand.brand_id} value={brand.brand_id}>
-                            {brand.brand_name.toUpperCase()}
+                    {filteredStores.map((store) => (
+                        <option key={store.id} value={store.id}>
+                            {store.name.toUpperCase()} - {store.number}
                         </option>
                     ))}
                 </select>
@@ -243,8 +264,8 @@ const VisitPriceForm = ({
                         <table className="table">
                             <thead>
                                 <tr>
-                                    <th>Loja</th>
                                     <th>Marca</th>
+                                    <th>Loja</th>
                                     <th>Valor</th>
                                     <th>Ações</th>
                                 </tr>
@@ -256,13 +277,13 @@ const VisitPriceForm = ({
                                         id={`price-row-${price.id}`}
                                     >
                                         <td>
+                                            {price.brand_name.toUpperCase()}
+                                        </td>
+                                        <td>
                                             {price.store_name.toUpperCase()}{" "}
                                             {price.store_number
                                                 ? `- ${price.store_number}`
                                                 : ""}
-                                        </td>
-                                        <td>
-                                            {price.brand_name.toUpperCase()}
                                         </td>
                                         <td>
                                             {typeof price.price === "number"

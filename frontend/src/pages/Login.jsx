@@ -1,5 +1,6 @@
 import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 import "../styles/login.css";
 import { useNavigate } from "react-router-dom";
 import Logo from "../assets/img/logo";
@@ -9,20 +10,24 @@ const Login = () => {
     const { login } = useContext(AuthContext);
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
-        setLoading(true);
         e.preventDefault();
+        setError("");
+        setLoading(true);
+
         const success = await login(username, password);
         if (success) {
             navigate("/home");
-            setLoading(false);
         } else {
-            alert("Login failed. Check your credentials.");
-            setLoading(false);
+            setError(
+                "Usuário ou senha incorretos. Por favor, tente novamente."
+            );
         }
+        setLoading(false);
     };
 
     return (
@@ -53,9 +58,23 @@ const Login = () => {
                                 className="login-input"
                                 required
                             />
+                            {error && (
+                                <div className="error-message">{error}</div>
+                            )}
                             <button type="submit" className="login-button">
                                 Entrar
                             </button>
+                            <div className="auth-links">
+                                <Link to="/register" className="auth-link">
+                                    Ainda não tem uma conta? Cadastre-se aqui
+                                </Link>
+                                <Link
+                                    to="/reset-password"
+                                    className="auth-link"
+                                >
+                                    Esqueceu sua senha?
+                                </Link>
+                            </div>
                         </>
                     )}
                 </form>

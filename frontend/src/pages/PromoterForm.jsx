@@ -32,9 +32,17 @@ const PromoterForm = ({
     const [editCPF, setEditCPF] = useState("");
     const [editPhone, setEditPhone] = useState("");
 
+    // Novo estado para a data da visita
+    const [visitDate, setVisitDate] = useState(
+        new Date().toISOString().split("T")[0]
+    ); // Data de hoje
+
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
+
+    // Adicione uma nova variável para armazenar o ID do promotor logado
+    const promoterId = localStorage.getItem("promoterId"); // Supondo que o ID do promotor esteja armazenado no localStorage
 
     useEffect(() => {
         setLoading(true);
@@ -94,6 +102,8 @@ const PromoterForm = ({
             name,
             cpf: cleanInput(cpf),
             phone: cleanInput(phone),
+            promoter_id: promoterId, // Incluindo o ID do promotor logado no payload
+            visit_date: visitDate, // Incluindo a data da visita no payload
         };
 
         try {
@@ -117,6 +127,7 @@ const PromoterForm = ({
         setName("");
         setCPF("");
         setPhone("");
+        setVisitDate(new Date().toISOString().split("T")[0]); // Resetando a data para hoje
     };
 
     const getErrorMessage = async (error) => {
@@ -221,6 +232,12 @@ const PromoterForm = ({
                     onChange={(e) => setPhone(formatPhone(e.target.value))}
                     className="form-input-text"
                     required
+                />
+                <input
+                    type="date"
+                    value={visitDate}
+                    disabled={localStorage.getItem("userRole") === "promoter"} // Desabilita se o usuário for promotor
+                    className="form-input-text"
                 />
                 <button type="submit" className="form-button">
                     Cadastrar

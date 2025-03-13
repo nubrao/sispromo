@@ -24,15 +24,30 @@ class VisitSerializer(serializers.ModelSerializer):
         Converte os dados recebidos para o formato interno do Django.
         """
         internal_data = {}
-        if "promoter" in data:
-            internal_data["promoter_id"] = data["promoter"]
         if "store" in data:
             internal_data["store_id"] = data["store"]
         if "brand" in data:
             internal_data["brand_id"] = data["brand"]
-        if "visit_date" in data:
+
+        # Se o usuário for promotor, usa a data atual
+        if self.context['request'].user.userprofile.role == 'promoter':
+            from datetime import date
+            internal_data["visit_date"] = date.today()
+        elif "visit_date" in data:
             internal_data["visit_date"] = data["visit_date"]
+
         return internal_data
+
+    def validate(self, data):
+        """
+        Validação adicional para garantir que promotores não possam criar visitas retroativas
+        """
+        if self.context['request'].user.userprofile.role == 'promoter':
+            from datetime import date
+            if data.get('visit_date') != date.today():
+                raise serializers.ValidationError(
+                    "Promotores não podem criar visitas retroativas.")
+        return data
 
     @extend_schema_field(serializers.DictField())
     def get_promoter(self, obj) -> dict:

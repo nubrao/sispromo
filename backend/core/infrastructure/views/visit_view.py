@@ -13,11 +13,13 @@ import pandas as pd
 import logging
 from datetime import datetime, timedelta
 from core.infrastructure.models.brand_model import BrandModel
+from core.infrastructure.models.promoter_model import PromoterModel
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
     OpenApiParameter
 )
+from rest_framework import serializers
 
 logger = logging.getLogger(__name__)
 
@@ -77,13 +79,32 @@ logger = logging.getLogger(__name__)
 class VisitViewSet(viewsets.ModelViewSet):
     """ ViewSet para gerenciar Visitas """
 
-    queryset = VisitModel.objects.select_related(
-        "promoter", "store", "brand"
-    ).all()
     serializer_class = VisitSerializer
 
     def get_permissions(self):
         return [IsAuthenticated()]
+
+    def get_queryset(self):
+        """
+        Retorna o queryset de visitas filtrado com base no papel do usuário.
+        Se o usuário for um promotor, retorna apenas suas visitas.
+        Se for analista ou gerente, retorna todas as visitas.
+        """
+        user = self.request.user
+        queryset = VisitModel.objects.select_related(
+            "promoter", "store", "brand")
+
+        # Se o usuário for um promotor, filtra apenas suas visitas
+        if user.userprofile.role == 'promoter':
+            try:
+                promoter = PromoterModel.objects.get(
+                    user_profile=user.userprofile)
+                queryset = queryset.filter(promoter=promoter)
+            except PromoterModel.DoesNotExist:
+                # Se o promotor não existir, retorna um queryset vazio
+                return VisitModel.objects.none()
+
+        return queryset
 
     @extend_schema(
         description=(
@@ -133,20 +154,32 @@ class VisitViewSet(viewsets.ModelViewSet):
     def get_report(self, request):
         """
         Gera um relatório filtrado e agrupado por promotor com base nos parâmetros:
-        - promoter: ID do promotor
+        - promoter: ID do promotor (apenas para analistas/gerentes)
         - store: ID da loja
         - brand: ID da marca
         - start_date: Data inicial (YYYY-MM-DD)
         - end_date: Data final (YYYY-MM-DD)
         """
-        promoter_id = request.query_params.get("promoter")
+        # Se for promotor, força o filtro para mostrar apenas suas visitas
+        if request.user.userprofile.role == 'promoter':
+            try:
+                promoter = PromoterModel.objects.get(
+                    user_profile=request.user.userprofile)
+                promoter_id = promoter.id
+            except PromoterModel.DoesNotExist:
+                return Response(
+                    {"error": "Usuário não possui um promotor associado."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            promoter_id = request.query_params.get("promoter")
+
         store_id = request.query_params.get("store")
         brand_id = request.query_params.get("brand")
         start_date = request.query_params.get("start_date")
         end_date = request.query_params.get("end_date")
 
-        queryset = VisitModel.objects.select_related(
-            "promoter", "store", "brand").all()
+        queryset = self.get_queryset()
 
         if promoter_id:
             queryset = queryset.filter(promoter_id=promoter_id)
@@ -192,8 +225,7 @@ class VisitViewSet(viewsets.ModelViewSet):
 
     def _filter_visits(self, request):
         """Aplica os filtros na busca de visitas"""
-        queryset = VisitModel.objects.select_related(
-            "promoter", "store", "brand").all()
+        queryset = self.get_queryset()
 
         promoter_id = request.GET.get('promoter')
         store_id = request.GET.get('store')
@@ -270,15 +302,15 @@ class VisitViewSet(viewsets.ModelViewSet):
 
         for visit in visits:
             visit_price = float(self.get_serializer().get_visit_price(visit))
-            promoter_id = visit.promoter.id
+            promoter_name = visit.promoter.name.upper()
 
-            if promoter_id not in promoter_totals:
-                promoter_totals[promoter_id] = {
+            if promoter_name not in promoter_totals:
+                promoter_totals[promoter_name] = {
                     'name': visit.promoter.name.upper(),
                     'total': 0
                 }
 
-            promoter_totals[promoter_id]['total'] += visit_price
+            promoter_totals[promoter_name]['total'] += visit_price
 
             data.append({
                 "Data": visit.visit_date.strftime("%d/%m/%Y"),
@@ -290,16 +322,16 @@ class VisitViewSet(viewsets.ModelViewSet):
 
             # Adiciona linha de total após a última visita de cada promotor
             next_visit = visits.filter(id__gt=visit.id).first()
-            if not next_visit or next_visit.promoter.id != promoter_id:
+            if not next_visit or next_visit.promoter.name.upper() != promoter_name:
                 data.append({
                     "Data": "",
                     "Promotor": (
-                        f"Total Acumulado ({visit.promoter.name.upper()})"
+                        f"Total Acumulado ({promoter_name})"
                     ),
                     "Loja": "",
                     "Marca": "",
                     "Valor da Visita (R$)": (
-                        f"R$ {promoter_totals[promoter_id]['total']:.2f}"
+                        f"R$ {promoter_totals[promoter_name]['total']:.2f}"
                     ),
                 })
                 # Adiciona uma linha em branco após o total
@@ -411,18 +443,19 @@ class VisitViewSet(viewsets.ModelViewSet):
 
         # Configurações para o conteúdo
         pdf.setFont("Helvetica", 10)
-        y = 750  # Posição inicial Y
+        y = 750
         line_height = 20  # Altura de cada linha
 
-        current_promoter = None
+        current_promoter_name = None
         promoter_total = 0
 
         for visit in visits:
             # Se mudou o promotor, imprime o total do promoter anterior
-            if current_promoter and current_promoter != visit.promoter:
+            visit_promoter_name = visit.promoter.name.upper()
+            if current_promoter_name and current_promoter_name != visit_promoter_name:
                 pdf.setFont("Helvetica-Bold", 10)
                 total_text = (
-                    f"Total Acumulado ({current_promoter.name.upper()}): "
+                    f"Total Acumulado ({current_promoter_name}): "
                     f"R$ {promoter_total:.2f}"
                 )
                 pdf.drawString(50, y, total_text)
@@ -436,7 +469,7 @@ class VisitViewSet(viewsets.ModelViewSet):
                     y = 750
 
             # Atualiza o promoter atual
-            current_promoter = visit.promoter
+            current_promoter_name = visit_promoter_name
             visit_price = float(
                 self.get_serializer().get_visit_price(visit)
             )
@@ -463,10 +496,10 @@ class VisitViewSet(viewsets.ModelViewSet):
             y -= line_height
 
         # Imprime o total do último promoter
-        if current_promoter:
+        if current_promoter_name:
             pdf.setFont("Helvetica-Bold", 10)
             total_text = (
-                f"Total Acumulado ({current_promoter.name.upper()}): "
+                f"Total Acumulado ({current_promoter_name}): "
                 f"R$ {promoter_total:.2f}"
             )
             pdf.drawString(50, y, total_text)
@@ -531,16 +564,20 @@ class VisitViewSet(viewsets.ModelViewSet):
             brands = BrandModel.objects.prefetch_related(
                 'brandstore_set__store').all()
 
-            # Obtém todas as visitas do mês atual
+            # Obtém todas as visitas da semana atual
             today = datetime.now()
-            first_day = today.replace(day=1)
-            last_day = (first_day + timedelta(days=32)
-                        ).replace(day=1) - timedelta(days=1)
+            # Encontra o início da semana (segunda-feira)
+            start_of_week = today - timedelta(days=today.weekday())
+            start_of_week = start_of_week.replace(
+                hour=0, minute=0, second=0, microsecond=0)
+            # Encontra o fim da semana (domingo)
+            end_of_week = start_of_week + \
+                timedelta(days=6, hours=23, minutes=59, seconds=59)
 
-            visits = VisitModel.objects.filter(
-                visit_date__gte=first_day,
-                visit_date__lte=last_day
-            ).select_related('brand', 'store')
+            visits = self.get_queryset().filter(
+                visit_date__gte=start_of_week,
+                visit_date__lte=end_of_week
+            )
 
             # Prepara os dados para o dashboard
             dashboard_data = []
@@ -585,8 +622,10 @@ class VisitViewSet(viewsets.ModelViewSet):
                     store['visits_done'] for store in brand_data['stores'])
                 brand_data['total_visits_expected'] = sum(
                     store['visit_frequency'] for store in brand_data['stores'])
-                brand_data['total_progress'] = min(
-                    100, (brand_data['total_visits_done'] / brand_data['total_visits_expected'] * 100)) if brand_data['total_visits_expected'] > 0 else 0
+                brand_data['total_progress'] = (
+                    (brand_data['total_visits_done'] /
+                     brand_data['total_visits_expected']) * 100
+                ) if brand_data['total_visits_expected'] > 0 else 0
 
                 dashboard_data.append(brand_data)
 
@@ -598,3 +637,30 @@ class VisitViewSet(viewsets.ModelViewSet):
                 {"error": "Erro ao gerar dados do dashboard."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    def perform_create(self, serializer):
+        # Se o usuário for promotor, associa o promotor atual à visita
+        if self.request.user.userprofile.role == 'promoter':
+            try:
+                promoter = PromoterModel.get_promoter_by_user(
+                    self.request.user)
+                if not promoter:
+                    raise serializers.ValidationError(
+                        "Usuário não possui um promotor associado.")
+                serializer.save(promoter=promoter)
+            except PromoterModel.DoesNotExist:
+                raise serializers.ValidationError(
+                    "Usuário não possui um promotor associado.")
+        else:
+            # Se for gestor ou analista, usa o promotor selecionado
+            promoter_id = self.request.data.get('promoter')
+            if not promoter_id:
+                raise serializers.ValidationError(
+                    "ID do promotor não fornecido.")
+
+            try:
+                promoter = PromoterModel.objects.get(id=promoter_id)
+                serializer.save(promoter=promoter)
+            except PromoterModel.DoesNotExist:
+                raise serializers.ValidationError(
+                    "Promotor não encontrado.")
