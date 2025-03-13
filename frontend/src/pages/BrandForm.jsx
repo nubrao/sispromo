@@ -4,7 +4,7 @@ import "../styles/form.css";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
 import LoadingModal from "../components/LoadingModal";
-import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 
 const BrandForm = ({
     loading,
@@ -18,9 +18,9 @@ const BrandForm = ({
     dataLoaded,
     setDataLoaded,
 }) => {
-    const [brandName, setBrandName] = useState("");
     const [selectedStore, setSelectedStore] = useState({ id: "", name: "" });
     const [visitFrequency, setVisitFrequency] = useState("");
+    const [selectedBrand, setSelectedBrand] = useState(null);
 
     const [stores, setStores] = useState([]);
     const [brands, setBrands] = useState([]);
@@ -29,7 +29,6 @@ const BrandForm = ({
     const [filterVisitFrequency, setFilterVisitFrequency] = useState("");
     const [filteredBrands, setFilteredBrands] = useState([]);
 
-    const [brandId, setBrandId] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [editBrandName, setEditBrandName] = useState("");
     const [editStore, setEditStore] = useState({ id: "", name: "" });
@@ -118,53 +117,96 @@ const BrandForm = ({
         setModalOpen(true);
         setLoading(true);
 
-        if (!brandName.trim()) {
-            console.error("Nome da marca é obrigatório.");
+        if (!selectedBrand) {
+            setErrorMessage("Por favor, selecione ou crie uma marca");
             setLoading(false);
+            setModalOpen(false);
+            return;
+        }
+
+        if (!selectedStore.id) {
+            setErrorMessage("Por favor, selecione uma loja");
+            setLoading(false);
+            setModalOpen(false);
             return;
         }
 
         try {
-            let brand_id = brandId;
-            
-            if (!brand_id) {
-                const existingBrand = brands.find(
-                    (brand) =>
-                        brand.brand_name.toLowerCase() ===
-                        brandName.toLowerCase()
+            // Normaliza o nome da marca para uppercase
+            const normalizedBrandName = selectedBrand.label
+                .trim()
+                .toUpperCase();
+
+            // Verifica se já existe uma marca com o mesmo nome (case insensitive)
+            const existingBrand = brands.find(
+                (brand) =>
+                    brand.brand_name.toUpperCase() === normalizedBrandName
+            );
+
+            // Verifica se já existe a combinação marca/loja
+            const existingBrandStore = brands.find(
+                (brand) =>
+                    brand.brand_name.toUpperCase() === normalizedBrandName &&
+                    brand.store_id === selectedStore.id
+            );
+
+            if (existingBrandStore) {
+                setErrorMessage(
+                    `Esta marca já está cadastrada para esta loja. Você pode editar o registro existente com periodicidade ${existingBrandStore.visit_frequency}x.`
                 );
-                if (existingBrand) {
-                    brand_id = existingBrand.id;
+                setLoading(false);
+                setModalOpen(false);
+
+                // Rola a tela até o registro existente
+                const element = document.getElementById(
+                    `brand-row-${existingBrandStore.brand_id}`
+                );
+                if (element) {
+                    element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                    });
+                    element.style.backgroundColor = "#646cff33";
+                    setTimeout(() => {
+                        element.style.backgroundColor = "";
+                    }, 3000);
                 }
+                return;
             }
 
-            await createBrand(brand_id);
+            const brandToUse = existingBrand
+                ? {
+                      brand_id: existingBrand.brand_id,
+                      brand_name: existingBrand.brand_name,
+                  }
+                : { brand_name: normalizedBrandName };
+
+            const body = {
+                ...brandToUse,
+                store_id: selectedStore.id,
+                visit_frequency: parseInt(visitFrequency, 10),
+            };
+
+            await axios.post(`${API_URL}/api/brands/`, body, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
             await fetchBrands();
             resetForm();
             setSuccess(true);
         } catch (error) {
             console.error("Erro ao cadastrar marca", error);
+            setErrorMessage(
+                error.response?.data?.[0] || "Erro ao cadastrar marca"
+            );
         } finally {
             finalizeModal();
         }
     };
 
-    const createBrand = async (brand_id) => {
-        const body = {
-            brand_id: brand_id,
-            brand_name: brandName.trim(),
-            store_id: selectedStore.id,
-            visit_frequency: parseInt(visitFrequency, 10),
-        };
-
-        await axios.post(`${API_URL}/api/brands/`, body, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-    };
-
     const resetForm = () => {
-        setBrandName("");
-        setSelectedStore("");
+        setSelectedBrand(null);
+        setSelectedStore({ id: "", name: "" });
         setVisitFrequency("");
     };
 
@@ -189,10 +231,25 @@ const BrandForm = ({
 
     const handleSaveEdit = async (id) => {
         try {
+            // Normaliza o nome da marca para uppercase
+            const normalizedBrandName = editBrandName.trim().toUpperCase();
+
+            // Verifica se já existe outra marca com o mesmo nome (excluindo a marca atual)
+            const existingBrand = brands.find(
+                (brand) =>
+                    brand.brand_id !== id &&
+                    brand.brand_name.toUpperCase() === normalizedBrandName
+            );
+
+            if (existingBrand) {
+                setErrorMessage("Já existe uma marca com este nome");
+                return;
+            }
+
             await axios.put(
                 `${API_URL}/api/brands/${id}/`,
                 {
-                    brand_name: editBrandName.trim(),
+                    brand_name: normalizedBrandName,
                     store_id: editStore.id,
                     visit_frequency: parseInt(editVisitFrequency, 10),
                 },
@@ -205,6 +262,7 @@ const BrandForm = ({
             fetchBrands();
         } catch (error) {
             console.error("Erro ao editar marca", error);
+            setErrorMessage("Erro ao editar marca");
         }
     };
 
@@ -229,20 +287,87 @@ const BrandForm = ({
         <div className="form-container">
             <h2 className="form-title">Cadastro de Marcas</h2>
             <form onSubmit={handleSubmit} className="form-input">
-                <Select
-                    options={brands.map((brand) => ({
-                        value: brand.brand_id,
-                        label: brand.brand_name,
-                    }))}
-                    value={
-                        brandId ? { value: brandId, label: brandName } : null
-                    }
-                    onChange={(selectedOption) => {
-                        setBrandId(selectedOption.value);
-                        setBrandName(selectedOption.label);
-                    }}
-                    placeholder="Selecione uma Marca"
+                <CreatableSelect
+                    isClearable
+                    options={brands
+                        // Remove duplicatas baseado no nome da marca (case insensitive)
+                        .filter(
+                            (brand, index, self) =>
+                                index ===
+                                self.findIndex(
+                                    (b) =>
+                                        b.brand_name.toUpperCase() ===
+                                        brand.brand_name.toUpperCase()
+                                )
+                        )
+                        .map((brand) => ({
+                            value: brand.brand_id,
+                            label: brand.brand_name.toUpperCase(),
+                        }))}
+                    value={selectedBrand}
+                    onChange={(newValue) => setSelectedBrand(newValue)}
+                    placeholder="Selecione ou crie uma marca"
                     className="form-input-select"
+                    formatCreateLabel={(inputValue) =>
+                        `Criar marca "${inputValue}"`
+                    }
+                    styles={{
+                        control: (baseStyles, state) => ({
+                            ...baseStyles,
+                            backgroundColor: "#1a1a1a",
+                            borderColor: state.isFocused
+                                ? "#646cff"
+                                : "#3f3f3f",
+                            color: "white",
+                            "&:hover": {
+                                borderColor: "#646cff",
+                            },
+                        }),
+                        input: (baseStyles) => ({
+                            ...baseStyles,
+                            color: "white",
+                        }),
+                        placeholder: (baseStyles) => ({
+                            ...baseStyles,
+                            color: "#9ca3af",
+                        }),
+                        singleValue: (baseStyles) => ({
+                            ...baseStyles,
+                            color: "white",
+                        }),
+                        option: (baseStyles, { isFocused, isSelected }) => ({
+                            ...baseStyles,
+                            backgroundColor: isSelected
+                                ? "#646cff"
+                                : isFocused
+                                ? "#3f3f3f"
+                                : "#1a1a1a",
+                            color: "white",
+                            cursor: "pointer",
+                            ":active": {
+                                backgroundColor: "#646cff",
+                            },
+                        }),
+                        menu: (baseStyles) => ({
+                            ...baseStyles,
+                            backgroundColor: "#1a1a1a",
+                            border: "1px solid #3f3f3f",
+                        }),
+                        dropdownIndicator: (baseStyles) => ({
+                            ...baseStyles,
+                            color: "#9ca3af",
+                            "&:hover": {
+                                color: "white",
+                            },
+                        }),
+                        clearIndicator: (baseStyles) => ({
+                            ...baseStyles,
+                            color: "#9ca3af",
+                            "&:hover": {
+                                color: "white",
+                            },
+                        }),
+                    }}
                 />
 
                 <select
@@ -342,7 +467,10 @@ const BrandForm = ({
                         </thead>
                         <tbody>
                             {filteredBrands.map((brand) => (
-                                <tr key={brand.brand_id}>
+                                <tr
+                                    key={`${brand.brand_id}-${brand.store_id}`}
+                                    id={`brand-row-${brand.brand_id}`}
+                                >
                                     {editingId === brand.brand_id ? (
                                         <>
                                             <td>

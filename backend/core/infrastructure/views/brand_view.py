@@ -4,11 +4,83 @@ from rest_framework.permissions import IsAuthenticated
 from core.infrastructure.models.brand_model import BrandModel, BrandStore
 from core.infrastructure.models.store_model import StoreModel
 from core.infrastructure.serializers.brand_serializer import BrandSerializer
+from drf_spectacular.utils import extend_schema, extend_schema_view
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        description="Lista todas as marcas com suas lojas e periodicidade",
+        responses={
+            200: {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "brand_id": {"type": "integer"},
+                        "brand_name": {"type": "string"},
+                        "store_id": {"type": "integer"},
+                        "store_name": {"type": "string"},
+                        "visit_frequency": {"type": "integer"}
+                    }
+                }
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    create=extend_schema(
+        description="Cria uma nova marca",
+        request=BrandSerializer,
+        responses={
+            201: BrandSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    update=extend_schema(
+        description="Atualiza uma marca existente",
+        request={
+            "type": "object",
+            "properties": {
+                "brand_name": {"type": "string"},
+                "store_id": {"type": "integer"},
+                "visit_frequency": {"type": "integer"}
+            }
+        },
+        responses={
+            200: BrandSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    destroy=extend_schema(
+        description="Deleta uma marca",
+        responses={
+            204: None,
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
+)
 class BrandViewSet(viewsets.ModelViewSet):
     """ ViewSet para gerenciar Marcas e seu relacionamento com Lojas """
 

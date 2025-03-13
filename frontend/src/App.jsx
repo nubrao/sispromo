@@ -2,7 +2,6 @@ import { useContext, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 import Login from "./pages/Login";
-import Home from "./pages/Home";
 import PromoterForm from "./pages/PromoterForm";
 import StoreForm from "./pages/StoreForm";
 import VisitForm from "./pages/VisitForm";
@@ -11,6 +10,7 @@ import PropTypes from "prop-types";
 import BrandForm from "./pages/BrandForm";
 import Reports from "./pages/ReportsForm";
 import VisitPriceForm from "./pages/VisitPriceForm";
+import Dashboard from "./pages/Dashboard";
 
 const PrivateRoute = ({ children }) => {
     const authContext = useContext(AuthContext);
@@ -27,7 +27,7 @@ function App() {
     const [loading, setLoading] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");    
+    const [errorMessage, setErrorMessage] = useState("");
     const [dataLoaded, setDataLoaded] = useState(false);
 
     return (
@@ -54,7 +54,7 @@ function App() {
                         path="/home"
                         element={
                             <PrivateRoute>
-                                <Home />
+                                <Dashboard />
                             </PrivateRoute>
                         }
                     />
@@ -151,7 +151,14 @@ function App() {
                             </PrivateRoute>
                         }
                     />
-                    <Route path="/reports" element={<Reports />} />
+                    <Route
+                        path="/reports"
+                        element={
+                            <PrivateRoute>
+                                <Reports />
+                            </PrivateRoute>
+                        }
+                    />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </div>

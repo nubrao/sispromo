@@ -5,11 +5,64 @@ from core.infrastructure.models.visit_price_model import VisitPriceModel
 from core.infrastructure.serializers.visit_price_serializer import (
     VisitPriceSerializer,
 )
+from drf_spectacular.utils import extend_schema, extend_schema_view
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        description="Lista todos os preços de visita cadastrados",
+        responses={
+            200: VisitPriceSerializer(many=True),
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    create=extend_schema(
+        description="Cria um novo preço de visita",
+        request=VisitPriceSerializer,
+        responses={
+            201: VisitPriceSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    update=extend_schema(
+        description="Atualiza um preço de visita existente",
+        request=VisitPriceSerializer,
+        responses={
+            200: VisitPriceSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    destroy=extend_schema(
+        description="Deleta um preço de visita",
+        responses={
+            204: None,
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
+)
 class VisitPriceViewSet(viewsets.ModelViewSet):
     """ ViewSet para gerenciar Preços de Visita """
 

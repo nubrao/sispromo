@@ -3,11 +3,64 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from core.infrastructure.models.promoter_model import PromoterModel
 from core.infrastructure.serializers.promoter_serializer import PromoterSerializer
+from drf_spectacular.utils import extend_schema, extend_schema_view
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        description="Lista todos os promotores cadastrados",
+        responses={
+            200: PromoterSerializer(many=True),
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    create=extend_schema(
+        description="Cria um novo promotor",
+        request=PromoterSerializer,
+        responses={
+            201: PromoterSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    update=extend_schema(
+        description="Atualiza um promotor existente",
+        request=PromoterSerializer,
+        responses={
+            200: PromoterSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    destroy=extend_schema(
+        description="Deleta um promotor",
+        responses={
+            204: None,
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
+)
 class PromoterViewSet(viewsets.ModelViewSet):
     """ ViewSet para gerenciar Promotores """
 

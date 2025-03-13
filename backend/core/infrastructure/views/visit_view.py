@@ -11,10 +11,69 @@ from django.utils.dateparse import parse_date
 from decimal import Decimal
 import pandas as pd
 import logging
+from datetime import datetime, timedelta
+from core.infrastructure.models.brand_model import BrandModel
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter
+)
 
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        description="Lista todas as visitas cadastradas",
+        responses={
+            200: VisitSerializer(many=True),
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    create=extend_schema(
+        description="Cria uma nova visita",
+        request=VisitSerializer,
+        responses={
+            201: VisitSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    update=extend_schema(
+        description="Atualiza uma visita existente",
+        request=VisitSerializer,
+        responses={
+            200: VisitSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    destroy=extend_schema(
+        description="Deleta uma visita",
+        responses={
+            204: None,
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
+)
 class VisitViewSet(viewsets.ModelViewSet):
     """ ViewSet para gerenciar Visitas """
 
@@ -26,83 +85,50 @@ class VisitViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         return [IsAuthenticated()]
 
-    def list(self, request, *args, **kwargs):
-        """ Lista todas as visitas """
-        try:
-            visits = self.get_queryset()
-            serializer = self.get_serializer(visits, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.error(f"Erro ao listar visitas: {e}")
-            return Response(
-                {"error": "Erro ao buscar visitas."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    @extend_schema(
+        description=(
+            "Gera um relatório de visitas com filtros e totais por promotor"
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="promoter",
+                description="ID do promotor para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="store",
+                description="ID da loja para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="brand",
+                description="ID da marca para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Data inicial (YYYY-MM-DD)",
+                required=False,
+                type=str
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="Data final (YYYY-MM-DD)",
+                required=False,
+                type=str
             )
-
-    def create(self, request, *args, **kwargs):
-        """ Cria uma nova visita """
-        serializer = self.get_serializer(data=request.data)
-
-        if serializer.is_valid():
-            try:
-                visit = serializer.save()
-                return Response(
-                    self
-                    .get_serializer(visit)
-                    .data, status=status.HTTP_201_CREATED)
-            except Exception as e:
-                logger.error(f"Erro ao criar visita: {e}")
-                return Response(
-                    {"error": "Erro ao criar visita."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        else:
-            logger.warning(
-                f"Erro de validação ao criar visita: {serializer.errors}")
-            return Response(
-                {"error": serializer.errors}, status=status
-                .HTTP_400_BAD_REQUEST)
-
-    def update(self, request, *args, **kwargs):
-        """ Atualiza uma visita existente """
-        instance = self.get_object()
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            try:
-                visit = serializer.save()
-                return Response(self
-                                .get_serializer(visit)
-                                .data, status=status.HTTP_200_OK)
-            except Exception as e:
-                logger.error(f"Erro ao atualizar visita: {e}")
-                return Response(
-                    {"error": "Erro ao atualizar visita."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        else:
-            logger.warning(
-                f"Erro de validação ao atualizar visita: {serializer.errors}")
-            return Response({"error": serializer.errors}, status=status
-                            .HTTP_400_BAD_REQUEST)
-
-    def destroy(self, request, *args, **kwargs):
-        """ Deleta uma visita """
-        instance = self.get_object()
-
-        try:
-            instance.delete()
-            return Response(
-                {"message": "Visita excluída com sucesso."}, status=status
-                .HTTP_204_NO_CONTENT)
-        except Exception as e:
-            logger.error(f"Erro ao excluir visita: {e}")
-            return Response(
-                {"error": "Erro ao excluir visita."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
+        ],
+        responses={
+            200: VisitSerializer(many=True),
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
     @action(detail=False, methods=["get"], url_path="reports")
     def get_report(self, request):
         """
@@ -188,6 +214,48 @@ class VisitViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(
+        description="Exporta relatório de visitas para Excel",
+        parameters=[
+            OpenApiParameter(
+                name="promoter",
+                description="ID do promotor para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="store",
+                description="ID da loja para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="brand",
+                description="ID da marca para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Data inicial (YYYY-MM-DD)",
+                required=False,
+                type=str
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="Data final (YYYY-MM-DD)",
+                required=False,
+                type=str
+            )
+        ],
+        responses={
+            200: {"type": "string", "format": "binary"},
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
     @action(detail=False, methods=['get'])
     def export_excel(self, request):
         """Exporta visitas filtradas para Excel com totais por promotor"""
@@ -206,7 +274,7 @@ class VisitViewSet(viewsets.ModelViewSet):
 
             if promoter_id not in promoter_totals:
                 promoter_totals[promoter_id] = {
-                    'name': visit.promoter.name,
+                    'name': visit.promoter.name.upper(),
                     'total': 0
                 }
 
@@ -214,9 +282,9 @@ class VisitViewSet(viewsets.ModelViewSet):
 
             data.append({
                 "Data": visit.visit_date.strftime("%d/%m/%Y"),
-                "Promotor": visit.promoter.name,
-                "Loja": f"{visit.store.name} - {visit.store.number}",
-                "Marca": visit.brand.name if visit.brand else "N/A",
+                "Promotor": visit.promoter.name.upper(),
+                "Loja": f"{visit.store.name.upper()} - {visit.store.number}",
+                "Marca": visit.brand.name.upper() if visit.brand else "N/A",
                 "Valor da Visita (R$)": f"R$ {visit_price:.2f}",
             })
 
@@ -226,7 +294,7 @@ class VisitViewSet(viewsets.ModelViewSet):
                 data.append({
                     "Data": "",
                     "Promotor": (
-                        f"Total Acumulado ({visit.promoter.name})"
+                        f"Total Acumulado ({visit.promoter.name.upper()})"
                     ),
                     "Loja": "",
                     "Marca": "",
@@ -283,6 +351,48 @@ class VisitViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = filename
         return response
 
+    @extend_schema(
+        description="Exporta relatório de visitas para PDF",
+        parameters=[
+            OpenApiParameter(
+                name="promoter",
+                description="ID do promotor para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="store",
+                description="ID da loja para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="brand",
+                description="ID da marca para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Data inicial (YYYY-MM-DD)",
+                required=False,
+                type=str
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="Data final (YYYY-MM-DD)",
+                required=False,
+                type=str
+            )
+        ],
+        responses={
+            200: {"type": "string", "format": "binary"},
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
     @action(detail=False, methods=['get'])
     def export_pdf(self, request):
         """Exporta visitas filtradas para PDF com totais por promotor"""
@@ -312,7 +422,7 @@ class VisitViewSet(viewsets.ModelViewSet):
             if current_promoter and current_promoter != visit.promoter:
                 pdf.setFont("Helvetica-Bold", 10)
                 total_text = (
-                    f"Total Acumulado ({current_promoter.name}): "
+                    f"Total Acumulado ({current_promoter.name.upper()}): "
                     f"R$ {promoter_total:.2f}"
                 )
                 pdf.drawString(50, y, total_text)
@@ -338,9 +448,9 @@ class VisitViewSet(viewsets.ModelViewSet):
             # Informações da visita
             pdf.setFont("Helvetica", 10)
             visit_text = (
-                f"{visit_date} - {visit.promoter.name} - "
-                f"{visit.store.name} ({visit.store.number}) - "
-                f"{visit.brand.name} - R$ {visit_price:.2f}"
+                f"{visit_date} - {visit.promoter.name.upper()} - "
+                f"{visit.store.name.upper()} ({visit.store.number}) - "
+                f"{visit.brand.name.upper()} - R$ {visit_price:.2f}"
             )
 
             # Nova página se necessário
@@ -356,7 +466,7 @@ class VisitViewSet(viewsets.ModelViewSet):
         if current_promoter:
             pdf.setFont("Helvetica-Bold", 10)
             total_text = (
-                f"Total Acumulado ({current_promoter.name}): "
+                f"Total Acumulado ({current_promoter.name.upper()}): "
                 f"R$ {promoter_total:.2f}"
             )
             pdf.drawString(50, y, total_text)
@@ -368,3 +478,123 @@ class VisitViewSet(viewsets.ModelViewSet):
         filename = 'attachment; filename="relatorio_visitas.pdf"'
         response['Content-Disposition'] = filename
         return response
+
+    @extend_schema(
+        description=(
+            "Retorna dados para o dashboard com métricas de visitas por marca e loja"
+        ),
+        responses={
+            200: {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "brand_id": {"type": "integer"},
+                        "brand_name": {"type": "string"},
+                        "total_stores": {"type": "integer"},
+                        "total_visits_done": {"type": "integer"},
+                        "total_visits_expected": {"type": "integer"},
+                        "total_progress": {"type": "number"},
+                        "stores": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "store_id": {"type": "integer"},
+                                    "store_name": {"type": "string"},
+                                    "store_number": {"type": "string"},
+                                    "visit_frequency": {"type": "integer"},
+                                    "visits_done": {"type": "integer"},
+                                    "visits_remaining": {"type": "integer"},
+                                    "progress": {"type": "number"},
+                                    "last_visit": {
+                                        "type": "string",
+                                        "format": "date"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
+    @action(detail=False, methods=['get'])
+    def dashboard(self, request):
+        """Retorna dados para o dashboard"""
+        try:
+            # Obtém todas as marcas com suas lojas e periodicidade
+            brands = BrandModel.objects.prefetch_related(
+                'brandstore_set__store').all()
+
+            # Obtém todas as visitas do mês atual
+            today = datetime.now()
+            first_day = today.replace(day=1)
+            last_day = (first_day + timedelta(days=32)
+                        ).replace(day=1) - timedelta(days=1)
+
+            visits = VisitModel.objects.filter(
+                visit_date__gte=first_day,
+                visit_date__lte=last_day
+            ).select_related('brand', 'store')
+
+            # Prepara os dados para o dashboard
+            dashboard_data = []
+
+            for brand in brands:
+                brand_data = {
+                    'brand_id': brand.id,
+                    'brand_name': brand.name,
+                    'stores': []
+                }
+
+                for brand_store in brand.brandstore_set.all():
+                    store_visits = visits.filter(
+                        brand=brand,
+                        store=brand_store.store
+                    )
+
+                    # Calcula o número de visitas realizadas e esperadas
+                    visits_done = store_visits.count()
+                    expected_visits = brand_store.visit_frequency
+
+                    # Calcula o progresso
+                    progress = min(100, (visits_done / expected_visits)
+                                   * 100) if expected_visits > 0 else 0
+
+                    store_data = {
+                        'store_id': brand_store.store.id,
+                        'store_name': brand_store.store.name,
+                        'store_number': brand_store.store.number,
+                        'visit_frequency': brand_store.visit_frequency,
+                        'visits_done': visits_done,
+                        'visits_remaining': max(0, expected_visits - visits_done),
+                        'progress': progress,
+                        'last_visit': store_visits.order_by('-visit_date').first().visit_date if store_visits.exists() else None
+                    }
+
+                    brand_data['stores'].append(store_data)
+
+                # Calcula totais para a marca
+                brand_data['total_stores'] = len(brand_data['stores'])
+                brand_data['total_visits_done'] = sum(
+                    store['visits_done'] for store in brand_data['stores'])
+                brand_data['total_visits_expected'] = sum(
+                    store['visit_frequency'] for store in brand_data['stores'])
+                brand_data['total_progress'] = min(
+                    100, (brand_data['total_visits_done'] / brand_data['total_visits_expected'] * 100)) if brand_data['total_visits_expected'] > 0 else 0
+
+                dashboard_data.append(brand_data)
+
+            return Response(dashboard_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Erro ao gerar dados do dashboard: {e}")
+            return Response(
+                {"error": "Erro ao gerar dados do dashboard."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

@@ -5,9 +5,11 @@ from validate_docbr import CNPJ
 
 
 def validate_cnpj(value):
+    if not value:  # Se o valor for vazio, retorna sem validar
+        return
     cnpj = CNPJ()
     if not cnpj.validate(value):
-        raise ValidationError("Invalid CNPJ.")
+        raise ValidationError("CNPJ inválido.")
 
 
 class StoreModel(models.Model):
@@ -19,8 +21,9 @@ class StoreModel(models.Model):
         choices=StateChoices.choices,
         default=StateChoices.SP
     )
-    cnpj = models.CharField(max_length=20, unique=True,
+    cnpj = models.CharField(max_length=20, unique=True, null=True, blank=True,
                             validators=[validate_cnpj])
 
     def __str__(self):
-        return f"{self.name} - {self.state}"
+        store_number = f" - {self.number}" if self.number else ""
+        return f"{self.name}{store_number} - {self.city}/{self.state}"

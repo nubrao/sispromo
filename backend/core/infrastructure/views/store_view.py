@@ -3,11 +3,64 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from core.infrastructure.models.store_model import StoreModel
 from core.infrastructure.serializers.store_serializer import StoreSerializer
+from drf_spectacular.utils import extend_schema, extend_schema_view
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        description="Lista todas as lojas cadastradas",
+        responses={
+            200: StoreSerializer(many=True),
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    create=extend_schema(
+        description="Cria uma nova loja",
+        request=StoreSerializer,
+        responses={
+            201: StoreSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    update=extend_schema(
+        description="Atualiza uma loja existente",
+        request=StoreSerializer,
+        responses={
+            200: StoreSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    destroy=extend_schema(
+        description="Deleta uma loja",
+        responses={
+            204: None,
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
+)
 class StoreViewSet(viewsets.ModelViewSet):
     """ ViewSet para gerenciar Lojas """
 
