@@ -54,6 +54,7 @@ const Reports = () => {
         };
 
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [API_URL, token, isPromoter]);
 
     const fetchPromoters = async () => {

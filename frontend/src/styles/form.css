@@ -225,6 +225,8 @@
     overflow-x: visible;
     border: none;
     padding: 0;
+    display: flex;
+    justify-content: center;
 }
 
 @media screen and (max-width: 768px) {
@@ -455,15 +457,26 @@
 }
 
 .calendar-view {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 20px;
+    justify-content: center;
+    width: 100%;
     padding: 20px;
+    box-sizing: border-box;
 }
 
 .promoter-calendar {
+    flex: 1;
+    min-width: 300px;
+    max-width: 320px;
+    border: 1px solid #ccc;
     border-radius: 8px;
-    padding: 20px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .promoter-calendar h3 {
@@ -641,11 +654,14 @@
 /* Responsividade */
 @media (max-width: 768px) {
     .calendar-view {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
     }
 
     .promoter-calendar {
-        padding: 10px;
+        width: 100%;
+        max-width: 100%;
     }
 
     .react-calendar__tile {

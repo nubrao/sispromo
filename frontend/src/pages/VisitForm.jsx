@@ -134,6 +134,7 @@ const VisitForm = ({
         };
 
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [API_URL, token, isPromoter, setLoading, setDataLoaded]);
 
     useEffect(() => {
