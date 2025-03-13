@@ -1,110 +1,205 @@
-# 🛒 SisPromo - Sistema de Gestão de Visitas de Promotores
+# Sistema de Gestão de Visitas - MVP1
 
-SisPromo é um sistema desenvolvido para gerenciar visitas de promotores em lojas, permitindo o registro, consulta e análise de dados para tomada de decisões estratégicas.
+Sistema para gerenciamento de visitas de promotores em lojas, desenvolvido com Django e React.
 
-## 📌 **Principais Funcionalidades**
+## Funcionalidades Implementadas (MVP1)
 
-✅ Cadastro e gerenciamento de **Promotores** 
-✅ Cadastro de **Lojas** e suas respectivas redes 
-✅ Registro de **Visitas** realizadas pelos promotores, incluindo fotos 
-✅ Geração de **relatórios** com dados detalhados por promotor, loja e marca 
-✅ Exportação dos relatórios para **Excel** e **PDF** 
-✅ **Autenticação JWT** para segurança no acesso ao sistema 
-✅ **Interface responsiva e amigável**
+### Autenticação e Autorização
+- Login e logout de usuários
+- Três níveis de acesso:
+  - Promotor: Acesso limitado às suas próprias visitas
+  - Analista: Acesso a todas as visitas e relatórios
+  - Gestor: Acesso total ao sistema
 
----
+### Gestão de Promotores
+- Cadastro de promotores com validação de CPF
+- Vinculação automática de promotores a usuários
+- Visualização de promotores cadastrados
+- Edição e exclusão de promotores
 
-## 🛠 **Tecnologias Utilizadas**
+### Gestão de Lojas
+- Cadastro de lojas com informações básicas
+- Visualização de lojas cadastradas
+- Edição e exclusão de lojas
 
-### **Backend**
+### Gestão de Marcas
+- Cadastro de marcas
+- Vinculação de marcas com lojas
+- Visualização de marcas cadastradas
+- Edição e exclusão de marcas
 
-- Python + Django
-- Django REST Framework (DRF)
-- Django Simple JWT (Autenticação JWT)
-- PostgreSQL / SQLite (banco de dados)
-- Pandas (Geração de relatórios em Excel)
-- BytesIO (Geração de relatórios em PDF)
+### Gestão de Visitas
+- Registro de visitas por promotor
+- Data automática para promotores (dia atual)
+- Seleção manual de data para gestores/analistas
+- Validação de visitas duplicadas
+- Visualização de visitas em formato de tabela
+- Exclusão de visitas
 
-### **Frontend**
+### Relatórios
+- Visualização de visitas em formato de tabela
+- Visualização de visitas em formato de calendário
+- Filtros por:
+  - Promotor
+  - Marca
+  - Loja
+  - Data
+- Exportação de relatórios em Excel e PDF
+- Cálculo automático de totais por promotor
 
-- React.js + Vite
-- React Router Dom (Navegação)
-- Axios (Consumo de API)
-- TailwindCSS (Estilização)
+### Dashboard
+- Visão geral das visitas por marca
+- Progresso de visitas por loja
+- Métricas de visitas realizadas vs. esperadas
+- Visualização em cards com cores indicativas
 
----
+## Tecnologias Utilizadas
 
-## 🚀 **Como Rodar o Projeto**
+### Backend
+- Python 3.11
+- Django 5.0
+- Django REST Framework
+- PostgreSQL
+- Django CORS Headers
+- Django Spectacular (Documentação API)
 
-### 🔹 **1️⃣ Configurar o Backend (Django)**
+### Frontend
+- React 18
+- Vite
+- Axios
+- React Router DOM
+- React Calendar
+- Context API
+- PropTypes
 
-```sh
-# Clone o repositório
+## Requisitos do Sistema
+
+- Python 3.11 ou superior
+- Node.js 18 ou superior
+- PostgreSQL 14 ou superior
+- NPM ou Yarn
+
+## Instalação
+
+1. Clone o repositório:
+```bash
 git clone https://github.com/seu-usuario/sispromo.git
-cd sispromo/backend
+cd sispromo
+```
 
-# Criar ambiente virtual
+2. Configure o ambiente virtual Python:
+```bash
 python -m venv venv
-source venv/bin/activate  # No Windows: venv\Scripts\activate
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+```
 
-# Instalar dependências
+3. Instale as dependências do backend:
+```bash
+cd backend
 pip install -r requirements.txt
+```
 
-# Criar banco de dados e aplicar migrações
+4. Configure as variáveis de ambiente do backend:
+```bash
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
+```
+
+5. Execute as migrações do banco de dados:
+```bash
 python manage.py migrate
+```
 
-# Criar superusuário para login (opcional)
-python manage.py createsuperuser
+6. Instale as dependências do frontend:
+```bash
+cd ../frontend
+npm install
+```
 
-# Rodar o servidor
+7. Configure as variáveis de ambiente do frontend:
+```bash
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
+```
+
+## Executando o Projeto
+
+1. Inicie o servidor backend:
+```bash
+cd backend
 python manage.py runserver
 ```
 
-### 🔹 **2️⃣ Configurar o Frontend (React + Vite)**
-
-```sh
-cd ../frontend
-
-# Instalar dependências
-npm install
-
-# Rodar o projeto
+2. Em outro terminal, inicie o servidor frontend:
+```bash
+cd frontend
 npm run dev
 ```
 
-Acesse o frontend no navegador: [http://localhost:5173](http://localhost:5173)
+3. Acesse o sistema em:
+```
+http://localhost:5173
+```
 
----
+## Comandos Úteis
 
-## 🔑 **Autenticação e Acesso**
+### Backend
+- Criar superusuário:
+```bash
+python manage.py createsuperuser
+```
 
-- O sistema utiliza **JWT** para autenticação.
-- O login é feito na página inicial com usuário e senha cadastrados no Django.
-- Após o login, o sistema redireciona automaticamente para o painel de controle.
+- Vincular promotores automaticamente:
+```bash
+python manage.py link_promoters
+```
 
----
+### Frontend
+- Build para produção:
+```bash
+npm run build
+```
 
-## 📊 **Geração de Relatórios**
+- Preview do build:
+```bash
+npm run preview
+```
 
-- Os gestores podem gerar **relatórios diários, semanais e mensais**.
-- Os relatórios podem ser exportados para **Excel**.
-- Análises detalhadas de visitas por **Promotor, Loja e Marca**.
+## Estrutura do Projeto
 
----
+```
+sispromo/
+├── backend/
+│   ├── core/
+│   │   ├── infrastructure/
+│   │   │   ├── models/
+│   │   │   ├── serializers/
+│   │   │   └── views/
+│   │   └── management/
+│   │       └── commands/
+│   ├── requirements.txt
+│   └── manage.py
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   ├── context/
+    │   ├── hooks/
+    │   ├── pages/
+    │   └── styles/
+    ├── package.json
+    └── vite.config.js
+```
 
-## 📌 **Próximos Passos**
+## Contribuição
 
-🔹 Melhorias na segurança do sistema (refinamento de permissões)\
-🔹 Implementação de dashboards gráficos com estatísticas\
-🔹 Aprimoramento da experiência do usuário
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
 
----
+## Licença
 
-## 📞 **Contato**
-
-Caso tenha dúvidas ou sugestões, entre em contato pelo e-mail [brunomcamara@outlook.com](mailto\:brunomcamara@outlook.com) ou abra uma issue neste repositório.
-
----
-
-🚀 **Desenvolvido para facilitar a gestão de visitas de promotores!**
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
