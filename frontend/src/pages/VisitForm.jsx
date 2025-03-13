@@ -224,6 +224,49 @@ const VisitForm = ({
         };
 
         try {
+            // Verifica se já existe uma visita com os mesmos dados no mesmo dia
+            const existingVisit = visits.find(
+                (visit) =>
+                    visit.promoter.id === parseInt(promoterId, 10) &&
+                    visit.store.id === parseInt(storeId, 10) &&
+                    visit.brand.id === parseInt(brand.id, 10) &&
+                    visit.visit_date === visitDate
+            );
+
+            if (existingVisit) {
+                const promoterName =
+                    promoters.find((p) => p.id === parseInt(promoterId, 10))
+                        ?.name || "";
+                const storeName =
+                    stores.find((s) => s.id === parseInt(storeId, 10))?.name ||
+                    "";
+                const brandName =
+                    brands.find((b) => b.brand_id === parseInt(brand.id, 10))
+                        ?.brand_name || "";
+
+                setErrorMessage(
+                    `Já existe uma visita cadastrada para ${promoterName.toUpperCase()} na loja ${storeName.toUpperCase()} para a marca ${brandName.toUpperCase()} nesta data.`
+                );
+                setLoading(false);
+                setModalOpen(false);
+
+                // Rola a tela até o registro existente
+                const element = document.getElementById(
+                    `visit-row-${existingVisit.id}`
+                );
+                if (element) {
+                    element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                    });
+                    element.style.backgroundColor = "#646cff33";
+                    setTimeout(() => {
+                        element.style.backgroundColor = "";
+                    }, 3000);
+                }
+                return;
+            }
+
             await axios.post(`${API_URL}/api/visits/`, visitData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -271,47 +314,6 @@ const VisitForm = ({
             setErrorMessage("");
             setSuccess(false);
         }, 3000);
-    };
-
-    const handleEdit = (visit) => {
-        setEditingId(visit.id);
-        setEditPromoter(visit.promoter);
-        setEditStore(visit.store);
-        setEditVisitDate(visit.visit_date);
-
-        const filteredBrands = brands.filter(
-            (brand) => brand.store_id === parseInt(visit.store, 10)
-        );
-        setEditFilteredBrands(filteredBrands);
-
-        const selectedBrand = filteredBrands.find(
-            (brand) => brand.brand_id === parseInt(visit.brand_name, 10)
-        );
-
-        setEditBrand(
-            selectedBrand
-                ? { id: selectedBrand.brand_id, name: selectedBrand.brand_name }
-                : { id: "", name: "" }
-        );
-    };
-
-    const handleSaveEdit = async (id) => {
-        const updatedVisit = {
-            promoter: editPromoter,
-            store: editStore,
-            brand: editBrand.id,
-            visit_date: editVisitDate,
-        };
-
-        try {
-            await axios.put(`${API_URL}/api/visits/${id}/`, updatedVisit, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setEditingId(null);
-            fetchVisits();
-        } catch (error) {
-            console.error("Erro ao atualizar visita", error);
-        }
     };
 
     const handleDelete = async (id) => {
@@ -396,6 +398,7 @@ const VisitForm = ({
                         value={visitDate}
                         onChange={(e) => setVisitDate(e.target.value)}
                         className="form-input-text date-input"
+                        max={new Date().toISOString().split("T")[0]}
                         required
                     />
                 </div>
@@ -448,6 +451,7 @@ const VisitForm = ({
                         value={filterDate}
                         onChange={(e) => setFilterDate(e.target.value)}
                         className="form-input-text date-input"
+                        max={new Date().toISOString().split("T")[0]}
                     />
                 </div>
 
@@ -476,170 +480,32 @@ const VisitForm = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredVisits.map((visit) => (
-                                <tr key={visit.id}>
-                                    {editingId === visit.id ? (
-                                        <>
-                                            <td>
-                                                <select
-                                                    value={editPromoter}
-                                                    onChange={(e) =>
-                                                        setEditPromoter(
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    className="form-input-text"
-                                                >
-                                                    {promoters.map(
-                                                        (promoter) => (
-                                                            <option
-                                                                key={
-                                                                    promoter.id
-                                                                }
-                                                                value={
-                                                                    promoter.id
-                                                                }
-                                                            >
-                                                                {promoter.name.toUpperCase()}
-                                                            </option>
-                                                        )
-                                                    )}
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <select
-                                                    value={editStore}
-                                                    onChange={(e) =>
-                                                        setEditStore(
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    className="form-input-text"
-                                                >
-                                                    <option value="">
-                                                        Selecione uma Loja
-                                                    </option>
-                                                    {stores.map((store) => (
-                                                        <option
-                                                            key={store.id}
-                                                            value={store.id}
-                                                        >
-                                                            {store.name.toUpperCase()}{" "}
-                                                            - {store.number}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <select
-                                                    value={editBrand || ""}
-                                                    onChange={(e) =>
-                                                        setEditBrand(
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    className="form-input-text"
-                                                    required
-                                                >
-                                                    <option value="">
-                                                        {!editStore
-                                                            ? "Selecione uma Loja primeiro"
-                                                            : "Selecione uma Marca"}
-                                                    </option>
-                                                    {editFilteredBrands.map(
-                                                        (brand) => (
-                                                            <option
-                                                                key={
-                                                                    brand.brand_id
-                                                                }
-                                                                value={
-                                                                    brand.brand_id
-                                                                }
-                                                            >
-                                                                {brand.brand_name.toUpperCase()}
-                                                            </option>
-                                                        )
-                                                    )}
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <input
-                                                    type="date"
-                                                    value={editVisitDate}
-                                                    onChange={(e) =>
-                                                        setEditVisitDate(
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    className="form-input-text"
-                                                />
-                                            </td>
-                                            <td>
-                                                <div className="form-actions">
-                                                    <button
-                                                        onClick={() =>
-                                                            handleSaveEdit(
-                                                                visit.id
-                                                            )
-                                                        }
-                                                        className="form-button save-button"
-                                                    >
-                                                        Salvar
-                                                    </button>
-                                                    <button
-                                                        onClick={() =>
-                                                            setEditingId(null)
-                                                        }
-                                                        className="form-button cancel-button"
-                                                    >
-                                                        Cancelar
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <td>
-                                                {visit.promoter.name.toUpperCase()}
-                                            </td>
-                                            <td>
-                                                {visit.store.name.toUpperCase()}{" "}
-                                                - {visit.store.number}
-                                            </td>
-                                            <td>
-                                                {visit.brand.name.toUpperCase() ||
-                                                    "N/A"}
-                                            </td>
-
-                                            <td>
-                                                {new Date(
-                                                    visit.visit_date
-                                                ).toLocaleDateString()}
-                                            </td>
-                                            <td>
-                                                <div className="form-actions">
-                                                    <button
-                                                        onClick={() =>
-                                                            handleEdit(visit)
-                                                        }
-                                                        className="form-button edit-button"
-                                                    >
-                                                        ✏️
-                                                    </button>
-                                                    <button
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                visit.id
-                                                            )
-                                                        }
-                                                        className="form-button delete-button"
-                                                    >
-                                                        ❌
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </>
-                                    )}
+                            {visits.map((visit) => (
+                                <tr key={visit.id} id={`visit-row-${visit.id}`}>
+                                    <td>{visit.promoter.name.toUpperCase()}</td>
+                                    <td>
+                                        {visit.store.name.toUpperCase()}
+                                        {visit.store.number &&
+                                            ` - ${visit.store.number}`}
+                                    </td>
+                                    <td>{visit.brand.name.toUpperCase()}</td>
+                                    <td>
+                                        {new Date(
+                                            visit.visit_date
+                                        ).toLocaleDateString("pt-BR")}
+                                    </td>
+                                    <td>
+                                        <div className="form-actions">
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(visit.id)
+                                                }
+                                                className="form-button delete-button"
+                                            >
+                                                ❌
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

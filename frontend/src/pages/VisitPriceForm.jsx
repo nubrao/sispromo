@@ -73,13 +73,46 @@ const VisitPriceForm = ({
         setLoading(true);
         setModalOpen(true);
 
-        const body = {
-            store: selectedStore,
-            brand: selectedBrand,
-            price: parseFloat(price),
-        };
-
         try {
+            // Verifica se já existe preço para esta combinação loja/marca
+            const existingPrice = prices.find(
+                (price) =>
+                    price.store === parseInt(selectedStore, 10) &&
+                    price.brand === parseInt(selectedBrand, 10)
+            );
+
+            if (existingPrice && !editingId) {
+                setErrorMessage(
+                    `Já existe um preço cadastrado para esta loja e marca (R$ ${existingPrice.price.toFixed(
+                        2
+                    )}). Você pode editar o registro existente.`
+                );
+                setLoading(false);
+                setModalOpen(false);
+
+                // Rola a tela até o registro existente
+                const element = document.getElementById(
+                    `price-row-${existingPrice.id}`
+                );
+                if (element) {
+                    element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                    });
+                    element.style.backgroundColor = "#646cff33";
+                    setTimeout(() => {
+                        element.style.backgroundColor = "";
+                    }, 3000);
+                }
+                return;
+            }
+
+            const body = {
+                store: selectedStore,
+                brand: selectedBrand,
+                price: parseFloat(price),
+            };
+
             if (editingId) {
                 await axios.put(
                     `${API_URL}/api/visit-prices/${editingId}/`,
@@ -152,7 +185,7 @@ const VisitPriceForm = ({
                     <option value="">Selecione uma Loja</option>
                     {stores.map((store) => (
                         <option key={store.id} value={store.id}>
-                            {store.name} - {store.number}
+                            {store.name.toUpperCase()} - {store.number}
                         </option>
                     ))}
                 </select>
@@ -171,7 +204,7 @@ const VisitPriceForm = ({
                     </option>
                     {filteredBrands.map((brand) => (
                         <option key={brand.brand_id} value={brand.brand_id}>
-                            {brand.brand_name}
+                            {brand.brand_name.toUpperCase()}
                         </option>
                     ))}
                 </select>
@@ -192,62 +225,6 @@ const VisitPriceForm = ({
                 </button>
             </form>
 
-            <div className="visit-prices-list">
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>Loja</th>
-                            <th>Marca</th>
-                            <th>Valor</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {prices.map((price) => (
-                            <tr key={price.id}>
-                                <td>
-                                    {price.store_name}{" "}
-                                    {price.store_number
-                                        ? `- ${price.store_number}`
-                                        : ""}
-                                </td>
-                                <td>{price.brand_name}</td>
-                                <td>
-                                    {typeof price.price === "number"
-                                        ? `R$ ${price.price.toFixed(2)}`
-                                        : `R$ ${parseFloat(price.price).toFixed(
-                                              2
-                                          )}`}
-                                </td>
-                                <td>
-                                    <div className="form-actions">
-                                        <button
-                                            onClick={() => handleEdit(price)}
-                                            className="form-button edit-button"
-                                        >
-                                            ✏️
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                handleDelete(price.id)
-                                            }
-                                            className="form-button delete-button"
-                                        >
-                                            ❌
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {loading && (
-                <div className="loading-container">
-                    <Loader />
-                </div>
-            )}
             <LoadingModal
                 open={modalOpen}
                 success={success}
@@ -255,6 +232,72 @@ const VisitPriceForm = ({
                 errorMessage={errorMessage}
                 onClose={() => setModalOpen(false)}
             />
+
+            <div className="table-container">
+                {loading ? (
+                    <div className="loading-container">
+                        <Loader />
+                    </div>
+                ) : (
+                    <div className="visit-prices-list">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Loja</th>
+                                    <th>Marca</th>
+                                    <th>Valor</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {prices.map((price) => (
+                                    <tr
+                                        key={price.id}
+                                        id={`price-row-${price.id}`}
+                                    >
+                                        <td>
+                                            {price.store_name.toUpperCase()}{" "}
+                                            {price.store_number
+                                                ? `- ${price.store_number}`
+                                                : ""}
+                                        </td>
+                                        <td>
+                                            {price.brand_name.toUpperCase()}
+                                        </td>
+                                        <td>
+                                            {typeof price.price === "number"
+                                                ? `R$ ${price.price.toFixed(2)}`
+                                                : `R$ ${parseFloat(
+                                                      price.price
+                                                  ).toFixed(2)}`}
+                                        </td>
+                                        <td>
+                                            <div className="form-actions">
+                                                <button
+                                                    onClick={() =>
+                                                        handleEdit(price)
+                                                    }
+                                                    className="form-button edit-button"
+                                                >
+                                                    ✏️
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        handleDelete(price.id)
+                                                    }
+                                                    className="form-button delete-button"
+                                                >
+                                                    ❌
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

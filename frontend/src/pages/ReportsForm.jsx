@@ -150,9 +150,9 @@ const Reports = () => {
         // Ordenar por promotor e data
         const sortedReports = [...reports].sort((a, b) => {
             // Primeiro ordena por promotor
-            const promoterCompare = a.promoter.name.localeCompare(
-                b.promoter.name
-            );
+            const promoterCompare = a.promoter.name
+                .toUpperCase()
+                .localeCompare(b.promoter.name.toUpperCase());
             if (promoterCompare !== 0) return promoterCompare;
             // Depois por data
             return new Date(a.visit_date) - new Date(b.visit_date);
@@ -187,17 +187,24 @@ const Reports = () => {
                 <tbody>
                     {Object.entries(groupedByPromoter).map(
                         ([promoterId, { promoter, visits, total }]) => (
-                            <React.Fragment key={`group-${promoterId}`}>
-                                {visits.map((visit) => (
-                                    <tr key={`visit-${visit.id}`}>
+                            <React.Fragment
+                                key={`promoter-group-${promoterId}`}
+                            >
+                                {visits.map((visit, index) => (
+                                    <tr key={`visit-${promoterId}-${index}`}>
+                                        <td>{visit.visit_date}</td>
                                         <td>
-                                            {new Date(
-                                                visit.visit_date
-                                            ).toLocaleDateString()}
+                                            {visit?.promoter?.name?.toUpperCase() ||
+                                                ""}
                                         </td>
-                                        <td>{visit.promoter.name}</td>
-                                        <td>{visit.store.name}</td>
-                                        <td>{visit.brand.name}</td>
+                                        <td>
+                                            {visit?.store?.name?.toUpperCase() ||
+                                                ""}
+                                        </td>
+                                        <td>
+                                            {visit?.brand?.brand_name?.toUpperCase() ||
+                                                ""}
+                                        </td>
                                         <td>
                                             R$ {visit.visit_price.toFixed(2)}
                                         </td>
@@ -208,7 +215,8 @@ const Reports = () => {
                                     key={`total-${promoterId}`}
                                 >
                                     <td colSpan="4" className="total-label">
-                                        Total Acumulado ({promoter.name}):
+                                        Total Acumulado (
+                                        {promoter?.name?.toUpperCase() || ""}):
                                     </td>
                                     <td className="total-value">
                                         R$ {total.toFixed(2)}
@@ -262,7 +270,7 @@ const Reports = () => {
                                 key={`calendar-promoter-${promoterId}`}
                                 className="promoter-calendar"
                             >
-                                <h3>{promoter.name}</h3>
+                                <h3>{promoter?.name?.toUpperCase() || ""}</h3>
                                 <div className="calendar-stats">
                                     <p>
                                         Total em{" "}
@@ -340,15 +348,13 @@ const Reports = () => {
                         onChange={(e) => setSelectedPromoter(e.target.value)}
                         className="form-input-text"
                     >
-                        <option value="" key="select-promoter">
-                            Selecione um Promotor
-                        </option>
+                        <option value="">Selecione um Promotor</option>
                         {promoters.map((promoter) => (
                             <option
-                                key={`select-promoter-${promoter.id}`}
+                                key={`promoter-${promoter.id}`}
                                 value={promoter.id}
                             >
-                                {promoter.name}
+                                {promoter?.name?.toUpperCase() || ""}
                             </option>
                         ))}
                     </select>
@@ -358,15 +364,10 @@ const Reports = () => {
                         onChange={(e) => setSelectedStore(e.target.value)}
                         className="form-input-text"
                     >
-                        <option value="" key="select-store">
-                            Selecione uma Loja
-                        </option>
+                        <option value="">Selecione uma Loja</option>
                         {stores.map((store) => (
-                            <option
-                                key={`select-store-${store.id}`}
-                                value={store.id}
-                            >
-                                {store.name} - {store.number}
+                            <option key={`store-${store.id}`} value={store.id}>
+                                {store?.name?.toUpperCase() || ""}
                             </option>
                         ))}
                     </select>
@@ -376,25 +377,15 @@ const Reports = () => {
                         onChange={(e) => setSelectedBrand(e.target.value)}
                         className="form-input-text"
                     >
-                        <option value="" key="select-brand-default">
-                            Selecione uma Marca
-                        </option>
-                        {brands
-                            .filter(
-                                (brand, index, self) =>
-                                    index ===
-                                    self.findIndex(
-                                        (b) => b.brand_id === brand.brand_id
-                                    )
-                            )
-                            .map((brand) => (
-                                <option
-                                    key={`brand-${brand.brand_id}-${brand.brand_name}`}
-                                    value={brand.brand_id}
-                                >
-                                    {brand.brand_name}
-                                </option>
-                            ))}
+                        <option value="">Selecione uma Marca</option>
+                        {brands.map((brand) => (
+                            <option
+                                key={`brand-${brand.brand_id}-${brand.store_id || 'global'}`}
+                                value={brand.brand_id}
+                            >
+                                {brand?.brand_name?.toUpperCase() || ""}
+                            </option>
+                        ))}
                     </select>
                 </section>
 
@@ -447,13 +438,29 @@ const Reports = () => {
                     <div className="export-buttons">
                         <button
                             onClick={() => handleExport("excel")}
-                            className="form-button"
+                            className={`form-button ${
+                                !reports.length ? "disabled" : ""
+                            }`}
+                            disabled={!reports.length}
+                            title={
+                                !reports.length
+                                    ? "Para exportar em Excel, primeiro gere um relatório usando os filtros"
+                                    : "Exportar relatório em Excel"
+                            }
                         >
                             📊 Exportar Excel
                         </button>
                         <button
                             onClick={() => handleExport("pdf")}
-                            className="form-button"
+                            className={`form-button ${
+                                !reports.length ? "disabled" : ""
+                            }`}
+                            disabled={!reports.length}
+                            title={
+                                !reports.length
+                                    ? "Para exportar em PDF, primeiro gere um relatório usando os filtros"
+                                    : "Exportar relatório em PDF"
+                            }
                         >
                             📄 Exportar PDF
                         </button>
