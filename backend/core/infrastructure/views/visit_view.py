@@ -13,10 +13,67 @@ import pandas as pd
 import logging
 from datetime import datetime, timedelta
 from core.infrastructure.models.brand_model import BrandModel
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter
+)
 
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        description="Lista todas as visitas cadastradas",
+        responses={
+            200: VisitSerializer(many=True),
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    create=extend_schema(
+        description="Cria uma nova visita",
+        request=VisitSerializer,
+        responses={
+            201: VisitSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    update=extend_schema(
+        description="Atualiza uma visita existente",
+        request=VisitSerializer,
+        responses={
+            200: VisitSerializer,
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    destroy=extend_schema(
+        description="Deleta uma visita",
+        responses={
+            204: None,
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
+)
 class VisitViewSet(viewsets.ModelViewSet):
     """ ViewSet para gerenciar Visitas """
 
@@ -28,83 +85,50 @@ class VisitViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         return [IsAuthenticated()]
 
-    def list(self, request, *args, **kwargs):
-        """ Lista todas as visitas """
-        try:
-            visits = self.get_queryset()
-            serializer = self.get_serializer(visits, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.error(f"Erro ao listar visitas: {e}")
-            return Response(
-                {"error": "Erro ao buscar visitas."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    @extend_schema(
+        description=(
+            "Gera um relatório de visitas com filtros e totais por promotor"
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="promoter",
+                description="ID do promotor para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="store",
+                description="ID da loja para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="brand",
+                description="ID da marca para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Data inicial (YYYY-MM-DD)",
+                required=False,
+                type=str
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="Data final (YYYY-MM-DD)",
+                required=False,
+                type=str
             )
-
-    def create(self, request, *args, **kwargs):
-        """ Cria uma nova visita """
-        serializer = self.get_serializer(data=request.data)
-
-        if serializer.is_valid():
-            try:
-                visit = serializer.save()
-                return Response(
-                    self
-                    .get_serializer(visit)
-                    .data, status=status.HTTP_201_CREATED)
-            except Exception as e:
-                logger.error(f"Erro ao criar visita: {e}")
-                return Response(
-                    {"error": "Erro ao criar visita."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        else:
-            logger.warning(
-                f"Erro de validação ao criar visita: {serializer.errors}")
-            return Response(
-                {"error": serializer.errors}, status=status
-                .HTTP_400_BAD_REQUEST)
-
-    def update(self, request, *args, **kwargs):
-        """ Atualiza uma visita existente """
-        instance = self.get_object()
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            try:
-                visit = serializer.save()
-                return Response(self
-                                .get_serializer(visit)
-                                .data, status=status.HTTP_200_OK)
-            except Exception as e:
-                logger.error(f"Erro ao atualizar visita: {e}")
-                return Response(
-                    {"error": "Erro ao atualizar visita."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        else:
-            logger.warning(
-                f"Erro de validação ao atualizar visita: {serializer.errors}")
-            return Response({"error": serializer.errors}, status=status
-                            .HTTP_400_BAD_REQUEST)
-
-    def destroy(self, request, *args, **kwargs):
-        """ Deleta uma visita """
-        instance = self.get_object()
-
-        try:
-            instance.delete()
-            return Response(
-                {"message": "Visita excluída com sucesso."}, status=status
-                .HTTP_204_NO_CONTENT)
-        except Exception as e:
-            logger.error(f"Erro ao excluir visita: {e}")
-            return Response(
-                {"error": "Erro ao excluir visita."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
+        ],
+        responses={
+            200: VisitSerializer(many=True),
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
     @action(detail=False, methods=["get"], url_path="reports")
     def get_report(self, request):
         """
@@ -190,6 +214,48 @@ class VisitViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(
+        description="Exporta relatório de visitas para Excel",
+        parameters=[
+            OpenApiParameter(
+                name="promoter",
+                description="ID do promotor para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="store",
+                description="ID da loja para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="brand",
+                description="ID da marca para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Data inicial (YYYY-MM-DD)",
+                required=False,
+                type=str
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="Data final (YYYY-MM-DD)",
+                required=False,
+                type=str
+            )
+        ],
+        responses={
+            200: {"type": "string", "format": "binary"},
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
     @action(detail=False, methods=['get'])
     def export_excel(self, request):
         """Exporta visitas filtradas para Excel com totais por promotor"""
@@ -285,6 +351,48 @@ class VisitViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = filename
         return response
 
+    @extend_schema(
+        description="Exporta relatório de visitas para PDF",
+        parameters=[
+            OpenApiParameter(
+                name="promoter",
+                description="ID do promotor para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="store",
+                description="ID da loja para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="brand",
+                description="ID da marca para filtrar",
+                required=False,
+                type=int
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Data inicial (YYYY-MM-DD)",
+                required=False,
+                type=str
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="Data final (YYYY-MM-DD)",
+                required=False,
+                type=str
+            )
+        ],
+        responses={
+            200: {"type": "string", "format": "binary"},
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
     @action(detail=False, methods=['get'])
     def export_pdf(self, request):
         """Exporta visitas filtradas para PDF com totais por promotor"""
@@ -371,6 +479,50 @@ class VisitViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = filename
         return response
 
+    @extend_schema(
+        description=(
+            "Retorna dados para o dashboard com métricas de visitas por marca e loja"
+        ),
+        responses={
+            200: {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "brand_id": {"type": "integer"},
+                        "brand_name": {"type": "string"},
+                        "total_stores": {"type": "integer"},
+                        "total_visits_done": {"type": "integer"},
+                        "total_visits_expected": {"type": "integer"},
+                        "total_progress": {"type": "number"},
+                        "stores": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "store_id": {"type": "integer"},
+                                    "store_name": {"type": "string"},
+                                    "store_number": {"type": "string"},
+                                    "visit_frequency": {"type": "integer"},
+                                    "visits_done": {"type": "integer"},
+                                    "visits_remaining": {"type": "integer"},
+                                    "progress": {"type": "number"},
+                                    "last_visit": {
+                                        "type": "string",
+                                        "format": "date"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    )
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Retorna dados para o dashboard"""
