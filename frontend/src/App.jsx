@@ -1,7 +1,10 @@
 import { useContext, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
+import { RoleContext, RoleProvider } from "./context/RoleContext";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 import PromoterForm from "./pages/PromoterForm";
 import StoreForm from "./pages/StoreForm";
 import VisitForm from "./pages/VisitForm";
@@ -11,10 +14,26 @@ import BrandForm from "./pages/BrandForm";
 import Reports from "./pages/ReportsForm";
 import VisitPriceForm from "./pages/VisitPriceForm";
 import Dashboard from "./pages/Dashboard";
+import UserManagement from "./pages/UserManagement";
 
 const PrivateRoute = ({ children }) => {
-    const authContext = useContext(AuthContext);
-    return authContext.token ? children : <Navigate to="/login" />;
+    const { token } = useContext(AuthContext);
+    const { canAccessRoute, loading } = useContext(RoleContext);
+    const location = useLocation();
+
+    if (!token) {
+        return <Navigate to="/login" />;
+    }
+
+    if (loading) {
+        return <div>Carregando...</div>;
+    }
+
+    if (!canAccessRoute(location.pathname)) {
+        return <Navigate to="/home" />;
+    }
+
+    return children;
 };
 
 PrivateRoute.propTypes = {
@@ -31,138 +50,169 @@ function App() {
     const [dataLoaded, setDataLoaded] = useState(false);
 
     return (
-        <div
-            className={`app-container ${
-                location.pathname === "/login" ? "login" : ""
-            }`}
-        >
-            {token && <Navbar />}
+        <RoleProvider>
             <div
-                className={`content ${
+                className={`app-container ${
                     location.pathname === "/login" ? "login" : ""
                 }`}
             >
-                <Routes>
-                    <Route
-                        path="/"
-                        element={
-                            <Navigate to={token ? "/home" : "/login"} replace />
-                        }
-                    />
-                    <Route path="/login" element={<Login />} />
-                    <Route
-                        path="/home"
-                        element={
-                            <PrivateRoute>
-                                <Dashboard />
-                            </PrivateRoute>
-                        }
-                    />
-                    <Route
-                        path="/promoters"
-                        element={
-                            <PrivateRoute>
-                                <PromoterForm
-                                    loading={loading}
-                                    setLoading={setLoading}
-                                    modalOpen={modalOpen}
-                                    setModalOpen={setModalOpen}
-                                    success={success}
-                                    setSuccess={setSuccess}
-                                    errorMessage={errorMessage}
-                                    setErrorMessage={setErrorMessage}
+                {token && <Navbar />}
+                <div
+                    className={`content ${
+                        location.pathname === "/login" ? "login" : ""
+                    }`}
+                >
+                    <Routes>
+                        <Route
+                            path="/"
+                            element={
+                                <Navigate
+                                    to={token ? "/home" : "/login"}
+                                    replace
                                 />
-                            </PrivateRoute>
-                        }
-                    />
-                    <Route
-                        path="/stores"
-                        element={
-                            <PrivateRoute>
-                                <StoreForm
-                                    loading={loading}
-                                    setLoading={setLoading}
-                                    modalOpen={modalOpen}
-                                    setModalOpen={setModalOpen}
-                                    success={success}
-                                    setSuccess={setSuccess}
-                                    errorMessage={errorMessage}
-                                    setErrorMessage={setErrorMessage}
-                                    dataLoaded={dataLoaded}
-                                    setDataLoaded={setDataLoaded}
-                                />
-                            </PrivateRoute>
-                        }
-                    />
-                    <Route
-                        path="/brands"
-                        element={
-                            <PrivateRoute>
-                                <BrandForm
-                                    loading={loading}
-                                    setLoading={setLoading}
-                                    modalOpen={modalOpen}
-                                    setModalOpen={setModalOpen}
-                                    success={success}
-                                    setSuccess={setSuccess}
-                                    errorMessage={errorMessage}
-                                    setErrorMessage={setErrorMessage}
-                                    dataLoaded={dataLoaded}
-                                    setDataLoaded={setDataLoaded}
-                                />
-                            </PrivateRoute>
-                        }
-                    />
-                    <Route
-                        path="/visit-prices"
-                        element={
-                            <PrivateRoute>
-                                <VisitPriceForm
-                                    loading={loading}
-                                    setLoading={setLoading}
-                                    modalOpen={modalOpen}
-                                    setModalOpen={setModalOpen}
-                                    success={success}
-                                    setSuccess={setSuccess}
-                                    errorMessage={errorMessage}
-                                    setErrorMessage={setErrorMessage}
-                                    dataLoaded={dataLoaded}
-                                    setDataLoaded={setDataLoaded}
-                                />
-                            </PrivateRoute>
-                        }
-                    />
-                    <Route
-                        path="/visits"
-                        element={
-                            <PrivateRoute>
-                                <VisitForm
-                                    loading={loading}
-                                    setLoading={setLoading}
-                                    modalOpen={modalOpen}
-                                    setModalOpen={setModalOpen}
-                                    success={success}
-                                    setSuccess={setSuccess}
-                                    errorMessage={errorMessage}
-                                    setErrorMessage={setErrorMessage}
-                                    dataLoaded={dataLoaded}
-                                    setDataLoaded={setDataLoaded}
-                                />
-                            </PrivateRoute>
-                        }
-                    />
-                    <Route
-                        path="/reports"
-                        element={
-                            <PrivateRoute>
-                                <Reports />
-                            </PrivateRoute>
-                        }
-                    />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
+                            }
+                        />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route
+                            path="/reset-password"
+                            element={<ResetPassword />}
+                        />
+                        <Route
+                            path="/home"
+                            element={
+                                <PrivateRoute>
+                                    <Dashboard />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/promoters"
+                            element={
+                                <PrivateRoute>
+                                    <PromoterForm
+                                        loading={loading}
+                                        setLoading={setLoading}
+                                        modalOpen={modalOpen}
+                                        setModalOpen={setModalOpen}
+                                        success={success}
+                                        setSuccess={setSuccess}
+                                        errorMessage={errorMessage}
+                                        setErrorMessage={setErrorMessage}
+                                        dataLoaded={dataLoaded}
+                                        setDataLoaded={setDataLoaded}
+                                    />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/stores"
+                            element={
+                                <PrivateRoute>
+                                    <StoreForm
+                                        loading={loading}
+                                        setLoading={setLoading}
+                                        modalOpen={modalOpen}
+                                        setModalOpen={setModalOpen}
+                                        success={success}
+                                        setSuccess={setSuccess}
+                                        errorMessage={errorMessage}
+                                        setErrorMessage={setErrorMessage}
+                                        dataLoaded={dataLoaded}
+                                        setDataLoaded={setDataLoaded}
+                                    />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/brands"
+                            element={
+                                <PrivateRoute>
+                                    <BrandForm
+                                        loading={loading}
+                                        setLoading={setLoading}
+                                        modalOpen={modalOpen}
+                                        setModalOpen={setModalOpen}
+                                        success={success}
+                                        setSuccess={setSuccess}
+                                        errorMessage={errorMessage}
+                                        setErrorMessage={setErrorMessage}
+                                        dataLoaded={dataLoaded}
+                                        setDataLoaded={setDataLoaded}
+                                    />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/visit-prices"
+                            element={
+                                <PrivateRoute>
+                                    <VisitPriceForm
+                                        loading={loading}
+                                        setLoading={setLoading}
+                                        modalOpen={modalOpen}
+                                        setModalOpen={setModalOpen}
+                                        success={success}
+                                        setSuccess={setSuccess}
+                                        errorMessage={errorMessage}
+                                        setErrorMessage={setErrorMessage}
+                                        dataLoaded={dataLoaded}
+                                        setDataLoaded={setDataLoaded}
+                                    />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/visits"
+                            element={
+                                <PrivateRoute>
+                                    <VisitForm
+                                        loading={loading}
+                                        setLoading={setLoading}
+                                        modalOpen={modalOpen}
+                                        setModalOpen={setModalOpen}
+                                        success={success}
+                                        setSuccess={setSuccess}
+                                        errorMessage={errorMessage}
+                                        setErrorMessage={setErrorMessage}
+                                        dataLoaded={dataLoaded}
+                                        setDataLoaded={setDataLoaded}
+                                    />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/reports"
+                            element={
+                                <PrivateRoute>
+                                    <Reports
+                                        loading={loading}
+                                        setLoading={setLoading}
+                                        modalOpen={modalOpen}
+                                        setModalOpen={setModalOpen}
+                                        success={success}
+                                        setSuccess={setSuccess}
+                                        errorMessage={errorMessage}
+                                        setErrorMessage={setErrorMessage}
+                                        dataLoaded={dataLoaded}
+                                        setDataLoaded={setDataLoaded}
+                                    />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/users"
+                            element={
+                                <PrivateRoute>
+                                    <UserManagement />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </div>
             </div>
-        </div>
+        </RoleProvider>
     );
 }
 

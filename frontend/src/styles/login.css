@@ -159,3 +159,56 @@ body {
         background-color: var(--button-hover-dark);
     }
 }
+
+.auth-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.auth-link {
+    color: #646cff;
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: color 0.3s ease;
+}
+
+.auth-link:hover {
+    color: #535bf2;
+}
+
+.error-message {
+    color: #f44336;
+    margin: 10px 0;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.success-message {
+    color: #4caf50;
+    margin: 20px;
+    text-align: center;
+}
+
+.reset-instructions {
+    color: #666;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+@media (prefers-color-scheme: dark) {
+    .reset-instructions {
+        color: #ccc;
+    }
+
+    .auth-link {
+        color: #818cf8;
+    }
+
+    .auth-link:hover {
+        color: #6366f1;
+    }
+}

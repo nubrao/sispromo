@@ -1,17 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import "../styles/form.css";
 import Loader from "../components/Loader";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import React from "react";
+import { RoleContext } from "../context/RoleContext";
 
 const Reports = () => {
     const [promoters, setPromoters] = useState([]);
     const [stores, setStores] = useState([]);
     const [brands, setBrands] = useState([]);
     const [reports, setReports] = useState([]);
-    const [viewMode, setViewMode] = useState("table"); // 'table' ou 'calendar'
+    const [viewMode, setViewMode] = useState("table");
     const [promoterDates, setPromoterDates] = useState({});
 
     const [selectedPromoter, setSelectedPromoter] = useState("");
@@ -21,38 +22,70 @@ const Reports = () => {
     const [endDate, setEndDate] = useState("");
 
     const [loading, setLoading] = useState(false);
+    const { isPromoter } = useContext(RoleContext);
+
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
 
     useEffect(() => {
-        fetchFilters();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                if (isPromoter()) {
+                    const userResponse = await axios.get(
+                        `${API_URL}/api/users/me/`,
+                        {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }
+                    );
+                    setSelectedPromoter(userResponse.data.promoter_id);
+                }
 
-    const fetchFilters = async () => {
+                await Promise.all([
+                    fetchPromoters(),
+                    fetchStores(),
+                    fetchBrands(),
+                ]);
+            } catch (error) {
+                console.error("Erro ao buscar dados:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [API_URL, token, isPromoter]);
+
+    const fetchPromoters = async () => {
         try {
-            const [promotersRes, storesRes, brandsRes] = await Promise.all([
-                axios.get(`${API_URL}/api/promoters/`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-                axios.get(`${API_URL}/api/stores/`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-                axios.get(`${API_URL}/api/brands/`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-            ]);
-
-            // Remove duplicatas usando Set e mantém apenas uma ocorrência de cada ID
-            const uniqueBrands = Array.from(
-                new Set(brandsRes.data.map(JSON.stringify))
-            ).map(JSON.parse);
-
-            setPromoters(promotersRes.data);
-            setStores(storesRes.data);
-            setBrands(uniqueBrands);
+            const response = await axios.get(`${API_URL}/api/promoters/`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setPromoters(response.data);
         } catch (error) {
-            console.error("Erro ao buscar filtros", error);
+            console.error("Erro ao buscar promotores:", error);
+        }
+    };
+
+    const fetchStores = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/stores/`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setStores(response.data);
+        } catch (error) {
+            console.error("Erro ao buscar lojas:", error);
+        }
+    };
+
+    const fetchBrands = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/brands/`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setBrands(response.data);
+        } catch (error) {
+            console.error("Erro ao buscar marcas:", error);
         }
     };
 
@@ -161,16 +194,15 @@ const Reports = () => {
         // Agrupar por promotor
         const groupedByPromoter = {};
         sortedReports.forEach((visit) => {
-            const promoterId = visit.promoter.id;
-            if (!groupedByPromoter[promoterId]) {
-                groupedByPromoter[promoterId] = {
-                    promoter: visit.promoter,
+            const promoterName = visit.promoter.name.toUpperCase();
+            if (!groupedByPromoter[promoterName]) {
+                groupedByPromoter[promoterName] = {
                     visits: [],
                     total: 0,
                 };
             }
-            groupedByPromoter[promoterId].visits.push(visit);
-            groupedByPromoter[promoterId].total += visit.visit_price;
+            groupedByPromoter[promoterName].visits.push(visit);
+            groupedByPromoter[promoterName].total += visit.visit_price;
         });
 
         return (
@@ -186,12 +218,12 @@ const Reports = () => {
                 </thead>
                 <tbody>
                     {Object.entries(groupedByPromoter).map(
-                        ([promoterId, { promoter, visits, total }]) => (
+                        ([promoterName, { visits, total }]) => (
                             <React.Fragment
-                                key={`promoter-group-${promoterId}`}
+                                key={`promoter-group-${promoterName}`}
                             >
                                 {visits.map((visit, index) => (
-                                    <tr key={`visit-${promoterId}-${index}`}>
+                                    <tr key={`visit-${promoterName}-${index}`}>
                                         <td>{visit.visit_date}</td>
                                         <td>
                                             {visit?.promoter?.name?.toUpperCase() ||
@@ -212,11 +244,10 @@ const Reports = () => {
                                 ))}
                                 <tr
                                     className="total-row"
-                                    key={`total-${promoterId}`}
+                                    key={`total-${promoterName}`}
                                 >
                                     <td colSpan="4" className="total-label">
-                                        Total Acumulado (
-                                        {promoter?.name?.toUpperCase() || ""}):
+                                        Total Acumulado ({promoterName}):
                                     </td>
                                     <td className="total-value">
                                         R$ {total.toFixed(2)}
@@ -337,6 +368,10 @@ const Reports = () => {
         );
     };
 
+    const handleBrandChange = (e) => {
+        setSelectedBrand(e.target.value);
+    };
+
     return (
         <div className="form-container">
             <h2 className="form-title">Relatório de Visitas</h2>
@@ -360,6 +395,30 @@ const Reports = () => {
                     </select>
 
                     <select
+                        value={selectedBrand}
+                        onChange={handleBrandChange}
+                        className="form-input-text"
+                    >
+                        <option value="">Selecione uma Marca</option>
+                        {brands
+                            .filter(
+                                (brand, index, self) =>
+                                    index ===
+                                    self.findIndex(
+                                        (b) => b.brand_id === brand.brand_id
+                                    )
+                            )
+                            .map((brand) => (
+                                <option
+                                    key={`brand-${brand.brand_id}`}
+                                    value={brand.brand_id}
+                                >
+                                    {brand?.brand_name?.toUpperCase() || ""}
+                                </option>
+                            ))}
+                    </select>
+
+                    <select
                         value={selectedStore}
                         onChange={(e) => setSelectedStore(e.target.value)}
                         className="form-input-text"
@@ -367,23 +426,8 @@ const Reports = () => {
                         <option value="">Selecione uma Loja</option>
                         {stores.map((store) => (
                             <option key={`store-${store.id}`} value={store.id}>
-                                {store?.name?.toUpperCase() || ""}
-                            </option>
-                        ))}
-                    </select>
-
-                    <select
-                        value={selectedBrand}
-                        onChange={(e) => setSelectedBrand(e.target.value)}
-                        className="form-input-text"
-                    >
-                        <option value="">Selecione uma Marca</option>
-                        {brands.map((brand) => (
-                            <option
-                                key={`brand-${brand.brand_id}-${brand.store_id || 'global'}`}
-                                value={brand.brand_id}
-                            >
-                                {brand?.brand_name?.toUpperCase() || ""}
+                                {store?.name?.toUpperCase()} -{" "}
+                                {store?.number || ""}
                             </option>
                         ))}
                     </select>
@@ -419,21 +463,33 @@ const Reports = () => {
                                 viewMode === "table" ? "active" : ""
                             }`}
                         >
-                            📋 Tabela
-                        </button>
-                        <button
-                            onClick={() => setViewMode("calendar")}
-                            className={`form-button ${
-                                viewMode === "calendar" ? "active" : ""
-                            }`}
-                        >
-                            📅 Calendário
+                            Visualização em Tabela
                         </button>
                     </div>
 
-                    <button onClick={fetchReports} className="form-button">
-                        Gerar Relatório
-                    </button>
+                    <div className="report-actions">
+                        <button
+                            type="button"
+                            onClick={fetchReports}
+                            className="form-button"
+                        >
+                            Gerar Relatório
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSelectedPromoter("");
+                                setSelectedStore("");
+                                setSelectedBrand("");
+                                setStartDate("");
+                                setEndDate("");
+                            }}
+                            className="form-button clear-button"
+                        >
+                            Limpar Filtros
+                        </button>
+                    </div>
 
                     <div className="export-buttons">
                         <button

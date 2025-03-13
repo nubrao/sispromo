@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import axios from "axios";
 import "../styles/form.css";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
 import LoadingModal from "../components/LoadingModal";
 import useTranslateMessage from "../hooks/useTranslateMessage";
+import { RoleContext } from "../context/RoleContext";
 
 const VisitForm = ({
     loading,
@@ -22,6 +23,7 @@ const VisitForm = ({
     const [storeId, setStoreId] = useState("");
     const [brand, setBrand] = useState({ id: "", name: "" });
     const [visits, setVisits] = useState([]);
+    const [filteredVisits, setFilteredVisits] = useState([]);
     const [visitDate, setVisitDate] = useState("");
     const [promoters, setPromoters] = useState([]);
     const [stores, setStores] = useState([]);
@@ -31,21 +33,14 @@ const VisitForm = ({
     const [filterStore, setFilterStore] = useState("");
     const [filterBrand, setFilterBrand] = useState("");
     const [filterDate, setFilterDate] = useState("");
-    const [filteredVisits, setFilteredVisits] = useState([]);
     const [filteredStores, setFilteredStores] = useState([]);
-    const [filteredBrands, setFilteredBrands] = useState([]);
-
-    const [editFilteredBrands, setEditFilteredBrands] = useState([]);
-    const [editingId, setEditingId] = useState(null);
-    const [editPromoter, setEditPromoter] = useState("");
-    const [editStore, setEditStore] = useState("");
-    const [editBrand, setEditBrand] = useState("");
-    const [editVisitDate, setEditVisitDate] = useState("");
 
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
     const didFetchData = useRef(false);
+    const { isPromoter } = useContext(RoleContext);
+    const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
         if (didFetchData.current) return;
@@ -56,6 +51,18 @@ const VisitForm = ({
             setDataLoaded(false);
 
             try {
+                // Busca os dados do usuário atual primeiro
+                if (isPromoter()) {
+                    const userResponse = await axios.get(
+                        `${API_URL}/api/users/me/`,
+                        {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }
+                    );
+                    setCurrentUser(userResponse.data);
+                    setPromoterId(userResponse.data.promoter_id);
+                }
+
                 await Promise.all([
                     fetchBrands(),
                     fetchStores(),
@@ -71,69 +78,9 @@ const VisitForm = ({
         };
 
         fetchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [API_URL, token, isPromoter, setLoading, setDataLoaded]);
 
     useEffect(() => {
-        applyFilters();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterPromoter, filterStore, filterBrand, filterDate, visits]);
-
-    useEffect(() => {
-        setFilteredStores(stores);
-
-        if (storeId) {
-            const filtered = brands.filter(
-                (brand) => brand.store_id === parseInt(storeId, 10)
-            );
-            setFilteredBrands(filtered);
-        } else {
-            setFilteredBrands([]);
-        }
-    }, [storeId, stores, brands]);
-
-    useEffect(() => {
-        if (editStore) {
-            const filtered = brands.filter(
-                (brand) => brand.store_id === parseInt(editStore, 10)
-            );
-            setEditFilteredBrands(filtered);
-
-            if (!filtered.some((b) => b.brand_id === parseInt(editBrand, 10))) {
-                setEditBrand(filtered.length > 0 ? filtered[0].brand_id : "");
-            }
-        } else {
-            setEditFilteredBrands([]);
-            setEditBrand("");
-        }
-    }, [editStore, brands, stores, editBrand]);
-
-    useEffect(() => {
-        if (editPromoter) {
-            const editPromoterIdNum = parseInt(editPromoter, 10);
-
-            const editBrandsForPromoter = brands.filter(
-                (brand) => brand.promoter_id === editPromoterIdNum
-            );
-
-            setEditFilteredBrands([...editBrandsForPromoter]);
-        } else {
-            setEditFilteredBrands([]);
-        }
-    }, [editPromoter, stores, brands]);
-
-    useEffect(() => {
-        if (
-            editBrand &&
-            !editFilteredBrands.some(
-                (brand) => brand.brand_id === parseInt(editBrand, 10)
-            )
-        ) {
-            setEditBrand("");
-        }
-    }, [editFilteredBrands, editBrand]);
-
-    const applyFilters = () => {
         const filtered = visits.filter((visit) => {
             const visitDate = new Date(visit.visit_date)
                 .toISOString()
@@ -156,14 +103,30 @@ const VisitForm = ({
         });
 
         setFilteredVisits(filtered);
-    };
+    }, [filterPromoter, filterStore, filterBrand, filterDate, visits]);
+
+    useEffect(() => {
+        if (brand.id) {
+            // Filtra as lojas que estão vinculadas à marca selecionada
+            const storesForBrand = brands
+                .filter((b) => b.brand_id === parseInt(brand.id))
+                .map((b) => b.store_id);
+
+            const filtered = stores.filter((store) =>
+                storesForBrand.includes(store.id)
+            );
+            setFilteredStores(filtered);
+        } else {
+            setFilteredStores([]);
+        }
+    }, [brand.id, brands, stores]);
 
     const clearFilters = () => {
         setFilterPromoter("");
         setFilterStore("");
         setFilterBrand("");
         setFilterDate("");
-        setFilteredVisits(visits);
+        fetchVisits();
     };
 
     const fetchPromoters = async () => {
@@ -173,7 +136,7 @@ const VisitForm = ({
             });
             setPromoters(response.data);
         } catch (error) {
-            console.error("Erro ao buscar promotores", error);
+            console.error("Erro ao buscar promotores:", error);
         }
     };
 
@@ -184,18 +147,23 @@ const VisitForm = ({
             });
             setStores(response.data);
         } catch (error) {
-            console.error("Erro ao buscar lojas", error);
+            console.error("Erro ao buscar lojas:", error);
         }
     };
 
     const fetchVisits = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/visits/`, {
+            let url = `${API_URL}/api/visits/`;
+            if (isPromoter() && currentUser) {
+                url += `?promoter_id=${currentUser.promoter_id}`;
+            }
+
+            const response = await axios.get(url, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setVisits(response.data);
         } catch (error) {
-            console.error("Erro ao buscar visitas", error);
+            console.error("Erro ao buscar visitas:", error);
         }
     };
 
@@ -206,7 +174,7 @@ const VisitForm = ({
             });
             setBrands(response.data);
         } catch (error) {
-            console.error("Erro ao buscar marcas", error);
+            console.error("Erro ao buscar marcas:", error);
         }
     };
 
@@ -295,7 +263,7 @@ const VisitForm = ({
         try {
             await fetchVisits();
         } catch (error) {
-            console.error("Erro ao atualizar visitas", error);
+            console.error("Erro ao atualizar visitas:", error);
         }
     };
 
@@ -324,27 +292,71 @@ const VisitForm = ({
                 });
                 fetchVisits();
             } catch (error) {
-                console.error("Erro ao excluir visita", error);
+                console.error("Erro ao excluir visita:", error);
             }
         }
+    };
+
+    const handleBrandChange = (e) => {
+        const selectedId = e.target.value ? parseInt(e.target.value, 10) : "";
+        const selectedBrand = brands.find((b) => b.brand_id === selectedId) || {
+            brand_id: "",
+            brand_name: "",
+        };
+
+        setBrand({
+            id: selectedBrand.brand_id,
+            name: selectedBrand.brand_name,
+        });
+        setStoreId(""); // Limpa a loja selecionada quando trocar a marca
     };
 
     return (
         <div className="form-container">
             <h2 className="form-title">Cadastro de Visitas</h2>
             <form onSubmit={handleSubmit} className="form-input">
+                {isPromoter() ? (
+                    <input
+                        type="hidden"
+                        value={currentUser?.promoter_id || ""}
+                        name="promoterId"
+                    />
+                ) : (
+                    <select
+                        value={promoterId}
+                        onChange={(e) => setPromoterId(e.target.value)}
+                        className="form-input-text"
+                        required
+                    >
+                        <option value="">Selecione um Promotor</option>
+                        {promoters.map((promoter) => (
+                            <option key={promoter.id} value={promoter.id}>
+                                {promoter.name.toUpperCase()}
+                            </option>
+                        ))}
+                    </select>
+                )}
+
                 <select
-                    value={promoterId}
-                    onChange={(e) => setPromoterId(e.target.value)}
+                    value={brand.id || ""}
+                    onChange={handleBrandChange}
                     className="form-input-text"
                     required
                 >
-                    <option value="">Selecione um Promotor</option>
-                    {promoters.map((promoter) => (
-                        <option key={promoter.id} value={promoter.id}>
-                            {promoter.name.toUpperCase()}
-                        </option>
-                    ))}
+                    <option value="">Selecione uma Marca</option>
+                    {brands
+                        .filter(
+                            (brand, index, self) =>
+                                index ===
+                                self.findIndex(
+                                    (b) => b.brand_id === brand.brand_id
+                                )
+                        )
+                        .map((brand) => (
+                            <option key={brand.brand_id} value={brand.brand_id}>
+                                {brand.brand_name.toUpperCase()}
+                            </option>
+                        ))}
                 </select>
 
                 <select
@@ -352,41 +364,16 @@ const VisitForm = ({
                     onChange={(e) => setStoreId(e.target.value)}
                     className="form-input-text"
                     required
+                    disabled={!brand.id}
                 >
-                    <option value="">Selecione uma Loja</option>
+                    <option value="">
+                        {!brand.id
+                            ? "Selecione uma Marca primeiro"
+                            : "Selecione uma Loja"}
+                    </option>
                     {filteredStores.map((store) => (
                         <option key={store.id} value={store.id}>
                             {store.name.toUpperCase()} - {store.number}
-                        </option>
-                    ))}
-                </select>
-
-                <select
-                    value={brand.id || ""}
-                    onChange={(e) => {
-                        const selectedId = e.target.value
-                            ? parseInt(e.target.value, 10)
-                            : "";
-                        const selectedBrand = filteredBrands.find(
-                            (brand) => brand.brand_id === selectedId
-                        ) || { brand_id: "", brand_name: "" };
-
-                        setBrand({
-                            id: selectedBrand.brand_id,
-                            name: selectedBrand.brand_name,
-                        });
-                    }}
-                    className="form-input-text"
-                    required
-                >
-                    <option value="">
-                        {!storeId
-                            ? "Selecione uma Loja primeiro"
-                            : "Selecione uma Marca"}
-                    </option>
-                    {filteredBrands.map((brand) => (
-                        <option key={brand.brand_id} value={brand.brand_id}>
-                            {brand.brand_name.toUpperCase()}
                         </option>
                     ))}
                 </select>
@@ -429,17 +416,17 @@ const VisitForm = ({
 
                 <input
                     type="text"
-                    placeholder="Filtrar Loja"
-                    value={filterStore}
-                    onChange={(e) => setFilterStore(e.target.value)}
+                    placeholder="Filtrar Marca"
+                    value={filterBrand}
+                    onChange={(e) => setFilterBrand(e.target.value)}
                     className="form-input-text"
                 />
 
                 <input
                     type="text"
-                    placeholder="Filtrar Marca"
-                    value={filterBrand}
-                    onChange={(e) => setFilterBrand(e.target.value)}
+                    placeholder="Filtrar Loja"
+                    value={filterStore}
+                    onChange={(e) => setFilterStore(e.target.value)}
                     className="form-input-text"
                 />
 
@@ -473,22 +460,22 @@ const VisitForm = ({
                         <thead>
                             <tr>
                                 <th>Promotor</th>
-                                <th>Loja</th>
                                 <th>Marca</th>
+                                <th>Loja</th>
                                 <th>Data</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {visits.map((visit) => (
+                            {filteredVisits.map((visit) => (
                                 <tr key={visit.id} id={`visit-row-${visit.id}`}>
                                     <td>{visit.promoter.name.toUpperCase()}</td>
+                                    <td>{visit.brand.name.toUpperCase()}</td>
                                     <td>
                                         {visit.store.name.toUpperCase()}
                                         {visit.store.number &&
                                             ` - ${visit.store.number}`}
                                     </td>
-                                    <td>{visit.brand.name.toUpperCase()}</td>
                                     <td>
                                         {new Date(
                                             visit.visit_date

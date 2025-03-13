@@ -270,15 +270,15 @@ class VisitViewSet(viewsets.ModelViewSet):
 
         for visit in visits:
             visit_price = float(self.get_serializer().get_visit_price(visit))
-            promoter_id = visit.promoter.id
+            promoter_name = visit.promoter.name.upper()
 
-            if promoter_id not in promoter_totals:
-                promoter_totals[promoter_id] = {
+            if promoter_name not in promoter_totals:
+                promoter_totals[promoter_name] = {
                     'name': visit.promoter.name.upper(),
                     'total': 0
                 }
 
-            promoter_totals[promoter_id]['total'] += visit_price
+            promoter_totals[promoter_name]['total'] += visit_price
 
             data.append({
                 "Data": visit.visit_date.strftime("%d/%m/%Y"),
@@ -290,16 +290,16 @@ class VisitViewSet(viewsets.ModelViewSet):
 
             # Adiciona linha de total após a última visita de cada promotor
             next_visit = visits.filter(id__gt=visit.id).first()
-            if not next_visit or next_visit.promoter.id != promoter_id:
+            if not next_visit or next_visit.promoter.name.upper() != promoter_name:
                 data.append({
                     "Data": "",
                     "Promotor": (
-                        f"Total Acumulado ({visit.promoter.name.upper()})"
+                        f"Total Acumulado ({promoter_name})"
                     ),
                     "Loja": "",
                     "Marca": "",
                     "Valor da Visita (R$)": (
-                        f"R$ {promoter_totals[promoter_id]['total']:.2f}"
+                        f"R$ {promoter_totals[promoter_name]['total']:.2f}"
                     ),
                 })
                 # Adiciona uma linha em branco após o total
@@ -411,18 +411,19 @@ class VisitViewSet(viewsets.ModelViewSet):
 
         # Configurações para o conteúdo
         pdf.setFont("Helvetica", 10)
-        y = 750  # Posição inicial Y
+        y = 750
         line_height = 20  # Altura de cada linha
 
-        current_promoter = None
+        current_promoter_name = None
         promoter_total = 0
 
         for visit in visits:
             # Se mudou o promotor, imprime o total do promoter anterior
-            if current_promoter and current_promoter != visit.promoter:
+            visit_promoter_name = visit.promoter.name.upper()
+            if current_promoter_name and current_promoter_name != visit_promoter_name:
                 pdf.setFont("Helvetica-Bold", 10)
                 total_text = (
-                    f"Total Acumulado ({current_promoter.name.upper()}): "
+                    f"Total Acumulado ({current_promoter_name}): "
                     f"R$ {promoter_total:.2f}"
                 )
                 pdf.drawString(50, y, total_text)
@@ -436,7 +437,7 @@ class VisitViewSet(viewsets.ModelViewSet):
                     y = 750
 
             # Atualiza o promoter atual
-            current_promoter = visit.promoter
+            current_promoter_name = visit_promoter_name
             visit_price = float(
                 self.get_serializer().get_visit_price(visit)
             )
@@ -463,10 +464,10 @@ class VisitViewSet(viewsets.ModelViewSet):
             y -= line_height
 
         # Imprime o total do último promoter
-        if current_promoter:
+        if current_promoter_name:
             pdf.setFont("Helvetica-Bold", 10)
             total_text = (
-                f"Total Acumulado ({current_promoter.name.upper()}): "
+                f"Total Acumulado ({current_promoter_name}): "
                 f"R$ {promoter_total:.2f}"
             )
             pdf.drawString(50, y, total_text)
@@ -531,15 +532,19 @@ class VisitViewSet(viewsets.ModelViewSet):
             brands = BrandModel.objects.prefetch_related(
                 'brandstore_set__store').all()
 
-            # Obtém todas as visitas do mês atual
+            # Obtém todas as visitas da semana atual
             today = datetime.now()
-            first_day = today.replace(day=1)
-            last_day = (first_day + timedelta(days=32)
-                        ).replace(day=1) - timedelta(days=1)
+            # Encontra o início da semana (segunda-feira)
+            start_of_week = today - timedelta(days=today.weekday())
+            start_of_week = start_of_week.replace(
+                hour=0, minute=0, second=0, microsecond=0)
+            # Encontra o fim da semana (domingo)
+            end_of_week = start_of_week + \
+                timedelta(days=6, hours=23, minutes=59, seconds=59)
 
             visits = VisitModel.objects.filter(
-                visit_date__gte=first_day,
-                visit_date__lte=last_day
+                visit_date__gte=start_of_week,
+                visit_date__lte=end_of_week
             ).select_related('brand', 'store')
 
             # Prepara os dados para o dashboard
@@ -585,8 +590,10 @@ class VisitViewSet(viewsets.ModelViewSet):
                     store['visits_done'] for store in brand_data['stores'])
                 brand_data['total_visits_expected'] = sum(
                     store['visit_frequency'] for store in brand_data['stores'])
-                brand_data['total_progress'] = min(
-                    100, (brand_data['total_visits_done'] / brand_data['total_visits_expected'] * 100)) if brand_data['total_visits_expected'] > 0 else 0
+                brand_data['total_progress'] = (
+                    (brand_data['total_visits_done'] /
+                     brand_data['total_visits_expected']) * 100
+                ) if brand_data['total_visits_expected'] > 0 else 0
 
                 dashboard_data.append(brand_data)
 
