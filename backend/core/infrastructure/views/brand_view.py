@@ -6,6 +6,8 @@ from core.infrastructure.models.store_model import StoreModel
 from core.infrastructure.serializers.brand_serializer import BrandSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view
 import logging
+from rest_framework.decorators import action
+from core.infrastructure.permissions import IsManagerOrAnalyst
 
 logger = logging.getLogger(__name__)
 
@@ -50,14 +52,7 @@ logger = logging.getLogger(__name__)
     ),
     update=extend_schema(
         description="Atualiza uma marca existente",
-        request={
-            "type": "object",
-            "properties": {
-                "brand_name": {"type": "string"},
-                "store_id": {"type": "integer"},
-                "visit_frequency": {"type": "integer"}
-            }
-        },
+        request=BrandSerializer,
         responses={
             200: BrandSerializer,
             400: {
@@ -86,6 +81,7 @@ class BrandViewSet(viewsets.ModelViewSet):
 
     queryset = BrandModel.objects.prefetch_related('stores').all()
     serializer_class = BrandSerializer
+    permission_classes = [IsAuthenticated, IsManagerOrAnalyst]
 
     def get_permissions(self):
         return [IsAuthenticated()]

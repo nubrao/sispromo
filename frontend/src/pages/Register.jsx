@@ -3,226 +3,424 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "../styles/login.css";
 import Logo from "../assets/img/logo";
-import Loader from "../components/Loader";
+import { Button, Input, Form, message } from "antd";
+import {
+    UserOutlined,
+    LockOutlined,
+    MailOutlined,
+    IdcardOutlined,
+    PhoneOutlined,
+} from "@ant-design/icons";
+import { useTranslateMessage } from "../hooks/useTranslateMessage";
+import { LoadingModal } from "../components/LoadingModal";
+import { formatCPF, formatPhone } from "../hooks/useMask";
 
 const Register = () => {
-    const [formData, setFormData] = useState({
-        username: "",
-        email: "",
-        password: "",
-        password_confirm: "",
-        first_name: "",
-        last_name: "",
-        cpf: "",
-        phone: "",
-    });
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [success, setSuccess] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [form] = Form.useForm();
     const navigate = useNavigate();
     const API_URL = import.meta.env.VITE_API_URL;
+    const { translateMessage } = useTranslateMessage();
 
-    const handleChange = (e) => {
-        let value = e.target.value;
-        const name = e.target.name;
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        let formattedValue = value;
 
-        // Formatação do CPF
         if (name === "cpf") {
-            value = value.replace(/\D/g, ""); // Remove não dígitos
-            value = value.replace(/(\d{3})(\d)/, "$1.$2");
-            value = value.replace(/(\d{3})(\d)/, "$1.$2");
-            value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-            value = value.substring(0, 14);
+            formattedValue = formatCPF(value);
+        } else if (name === "phone") {
+            formattedValue = formatPhone(value);
         }
 
-        // Formatação do telefone
-        if (name === "phone") {
-            value = value.replace(/\D/g, ""); // Remove não dígitos
-            if (value.length > 11) value = value.substring(0, 11);
-            if (value.length > 7) {
-                if (value.length > 10) {
-                    value = value.replace(
-                        /^(\d{2})(\d{5})(\d{4}).*/,
-                        "($1) $2-$3"
-                    );
-                } else {
-                    value = value.replace(
-                        /^(\d{2})(\d{4})(\d{0,4}).*/,
-                        "($1) $2-$3"
-                    );
-                }
-            } else if (value.length > 2) {
-                value = value.replace(/^(\d{2})(\d{0,5})/, "($1) $2");
-            } else if (value.length > 0) {
-                value = value.replace(/^(\d*)/, "($1");
-            }
-        }
-
-        setFormData({
-            ...formData,
-            [name]: value,
-        });
+        form.setFieldValue(name, formattedValue);
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError("");
-        setLoading(true);
+    // Função para validar campo quando perder o foco
+    const handleFieldBlur = (field) => {
+        form.validateFields([field]);
+    };
 
-        if (formData.password !== formData.password_confirm) {
-            setError("As senhas não coincidem");
+    const onFinish = async (values) => {
+        setLoading(true);
+        setModalVisible(true);
+        setSuccess(false);
+
+        if (values.password !== values.password_confirm) {
+            form.setFields([
+                {
+                    name: "password_confirm",
+                    errors: [translateMessage("register.password.mismatch")],
+                },
+            ]);
             setLoading(false);
+            setModalVisible(false);
             return;
         }
 
         // Validação do CPF (formato básico)
         const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
-        if (!cpfRegex.test(formData.cpf)) {
-            setError("CPF inválido");
+        if (!cpfRegex.test(values.cpf)) {
+            form.setFields([
+                {
+                    name: "cpf",
+                    errors: [translateMessage("register.cpf.invalid")],
+                },
+            ]);
             setLoading(false);
+            setModalVisible(false);
             return;
         }
 
         // Validação do telefone (formato básico)
-        const phoneRegex = /^\(\d{2}\) \d{4,5}-\d{4}$/;
-        if (!phoneRegex.test(formData.phone)) {
-            setError("Telefone inválido");
+        const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
+        if (!phoneRegex.test(values.phone)) {
+            form.setFields([
+                {
+                    name: "phone",
+                    errors: [translateMessage("register.phone.invalid")],
+                },
+            ]);
             setLoading(false);
+            setModalVisible(false);
             return;
         }
+
+        // Remove caracteres especiais do CPF para usar como username
+        const username = values.cpf.replace(/\D/g, "");
 
         try {
             const response = await axios.post(
                 `${API_URL}/api/users/register/`,
                 {
-                    username: formData.username,
-                    email: formData.email,
-                    password: formData.password,
-                    password_confirm: formData.password_confirm,
-                    first_name: formData.first_name,
-                    last_name: formData.last_name,
-                    cpf: formData.cpf,
-                    phone: formData.phone,
+                    username: username, // Usa o CPF como username
+                    email: values.email,
+                    password: values.password,
+                    password_confirm: values.password_confirm,
+                    first_name: values.first_name,
+                    last_name: values.last_name,
+                    cpf: values.cpf,
+                    phone: values.phone,
                     role: "promoter", // Papel padrão para novos usuários
                 }
             );
 
             if (response.status === 201) {
-                alert(
-                    "Cadastro realizado com sucesso! Você já pode fazer login."
-                );
-                navigate("/login");
+                setSuccess(true);
+                message.success(translateMessage("register.success"));
+                setTimeout(() => {
+                    navigate("/login");
+                }, 2000);
             }
         } catch (error) {
-            if (error.response?.data?.error) {
-                setError(error.response.data.error);
-            } else if (error.response?.data) {
-                // Se houver erros de validação específicos
-                const errors = Object.values(error.response.data).flat();
-                setError(errors[0]); // Mostra o primeiro erro
-            } else {
-                setError("Erro ao criar conta. Por favor, tente novamente.");
+            console.error("Erro ao registrar:", error.response?.data);
+
+            if (error.response?.data) {
+                const errorData = error.response.data;
+                const fieldErrors = [];
+
+                // Função auxiliar para adicionar erro a um campo
+                const addFieldError = (field, message) => {
+                    fieldErrors.push({
+                        name: field,
+                        errors: [translateMessage(message)],
+                    });
+                };
+
+                if (typeof errorData === "object") {
+                    Object.entries(errorData).forEach(([field, errors]) => {
+                        if (Array.isArray(errors)) {
+                            errors.forEach((error) => {
+                                if (error.includes("already exists")) {
+                                    addFieldError("cpf", "register.cpf.exists");
+                                } else if (
+                                    error.includes("CPF deve conter 11 dígitos")
+                                ) {
+                                    addFieldError("cpf", "register.cpf.format");
+                                } else if (
+                                    error.includes(
+                                        "Telefone deve ter entre 10 e 11 dígitos"
+                                    )
+                                ) {
+                                    addFieldError(
+                                        "phone",
+                                        "register.phone.format"
+                                    );
+                                } else if (error.includes("senha")) {
+                                    addFieldError(
+                                        "password",
+                                        "register.password.invalid"
+                                    );
+                                } else if (error.includes("email")) {
+                                    addFieldError(
+                                        "email",
+                                        "register.email.invalid"
+                                    );
+                                } else {
+                                    // Se não conseguir identificar o campo específico
+                                    message.error(translateMessage(error));
+                                }
+                            });
+                        } else if (typeof errors === "string") {
+                            if (errors.includes("CPF deve conter 11 dígitos")) {
+                                addFieldError("cpf", "register.cpf.format");
+                            } else if (
+                                errors.includes(
+                                    "Telefone deve ter entre 10 e 11 dígitos"
+                                )
+                            ) {
+                                addFieldError("phone", "register.phone.format");
+                            } else if (errors.includes("senha")) {
+                                addFieldError(
+                                    "password",
+                                    "register.password.invalid"
+                                );
+                            } else if (errors.includes("email")) {
+                                addFieldError(
+                                    "email",
+                                    "register.email.invalid"
+                                );
+                            } else {
+                                // Se não conseguir identificar o campo específico
+                                message.error(translateMessage(errors));
+                            }
+                        }
+                    });
+                } else {
+                    message.error(translateMessage(errorData));
+                }
+
+                // Define todos os erros de campos de uma vez
+                if (fieldErrors.length > 0) {
+                    form.setFields(fieldErrors);
+                }
             }
+            setSuccess(false);
         } finally {
             setLoading(false);
+            setModalVisible(false);
         }
     };
 
     return (
         <>
-            <span className="welcome">Criar Conta no SisPromo</span>
+            <span className="welcome">
+                {translateMessage("register.title")}
+            </span>
             <div className="login-container">
                 <Logo />
-                <form onSubmit={handleSubmit} className="login-form">
-                    {loading ? (
-                        <div className="loading-container">
-                            <Loader />
-                        </div>
-                    ) : (
-                        <>
-                            <input
-                                type="text"
-                                name="first_name"
-                                placeholder="Nome"
-                                value={formData.first_name}
-                                onChange={handleChange}
-                                className="login-input"
-                                required
-                            />
-                            <input
-                                type="text"
-                                name="last_name"
-                                placeholder="Sobrenome"
-                                value={formData.last_name}
-                                onChange={handleChange}
-                                className="login-input"
-                                required
-                            />
-                            <input
-                                type="text"
-                                name="cpf"
-                                placeholder="CPF (000.000.000-00)"
-                                value={formData.cpf}
-                                onChange={handleChange}
-                                className="login-input"
-                                required
-                            />
-                            <input
-                                type="text"
-                                name="phone"
-                                placeholder="Telefone ((00) 00000-0000)"
-                                value={formData.phone}
-                                onChange={handleChange}
-                                className="login-input"
-                                required
-                            />
-                            <input
-                                type="text"
-                                name="username"
-                                placeholder="Nome de Usuário"
-                                value={formData.username}
-                                onChange={handleChange}
-                                className="login-input"
-                                required
-                            />
-                            <input
-                                type="email"
-                                name="email"
-                                placeholder="E-mail"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className="login-input"
-                                required
-                            />
-                            <input
-                                type="password"
-                                name="password"
-                                placeholder="Senha"
-                                value={formData.password}
-                                onChange={handleChange}
-                                className="login-input"
-                                required
-                            />
-                            <input
-                                type="password"
-                                name="password_confirm"
-                                placeholder="Confirmar Senha"
-                                value={formData.password_confirm}
-                                onChange={handleChange}
-                                className="login-input"
-                                required
-                            />
-                            {error && (
-                                <div className="error-message">{error}</div>
+                <Form
+                    form={form}
+                    name="register"
+                    onFinish={onFinish}
+                    layout="vertical"
+                    className="login-form"
+                    validateTrigger={["onBlur"]}
+                >
+                    <Form.Item
+                        name="first_name"
+                        rules={[
+                            {
+                                required: true,
+                                message: translateMessage(
+                                    "register.firstName.required"
+                                ),
+                            },
+                        ]}
+                    >
+                        <Input
+                            prefix={<UserOutlined />}
+                            placeholder={translateMessage(
+                                "register.firstName.placeholder"
                             )}
-                            <button type="submit" className="login-button">
-                                Criar Conta
-                            </button>
-                            <Link to="/login" className="auth-link">
-                                Já tem uma conta? Faça login
-                            </Link>
-                        </>
-                    )}
-                </form>
+                            onBlur={() => handleFieldBlur("first_name")}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="last_name"
+                        rules={[
+                            {
+                                required: true,
+                                message: translateMessage(
+                                    "register.lastName.required"
+                                ),
+                            },
+                        ]}
+                    >
+                        <Input
+                            prefix={<UserOutlined />}
+                            placeholder={translateMessage(
+                                "register.lastName.placeholder"
+                            )}
+                            onBlur={() => handleFieldBlur("last_name")}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="cpf"
+                        rules={[
+                            {
+                                required: true,
+                                message: translateMessage(
+                                    "register.cpf.required"
+                                ),
+                            },
+                            {
+                                pattern: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
+                                message: translateMessage(
+                                    "register.cpf.invalid"
+                                ),
+                            },
+                        ]}
+                    >
+                        <Input
+                            prefix={<IdcardOutlined />}
+                            placeholder={translateMessage(
+                                "register.cpf.placeholder"
+                            )}
+                            onChange={handleInputChange}
+                            onBlur={() => handleFieldBlur("cpf")}
+                            name="cpf"
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="phone"
+                        rules={[
+                            {
+                                required: true,
+                                message: translateMessage(
+                                    "register.phone.required"
+                                ),
+                            },
+                            {
+                                pattern: /^\(\d{2}\) \d{5}-\d{4}$/,
+                                message: translateMessage(
+                                    "register.phone.invalid"
+                                ),
+                            },
+                        ]}
+                    >
+                        <Input
+                            prefix={<PhoneOutlined />}
+                            placeholder={translateMessage(
+                                "register.phone.placeholder"
+                            )}
+                            onChange={handleInputChange}
+                            onBlur={() => handleFieldBlur("phone")}
+                            name="phone"
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="email"
+                        rules={[
+                            {
+                                required: true,
+                                message: translateMessage(
+                                    "register.email.required"
+                                ),
+                            },
+                            {
+                                type: "email",
+                                message: translateMessage(
+                                    "register.email.invalid"
+                                ),
+                            },
+                        ]}
+                    >
+                        <Input
+                            prefix={<MailOutlined />}
+                            placeholder={translateMessage(
+                                "register.email.placeholder"
+                            )}
+                            onBlur={() => handleFieldBlur("email")}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="password"
+                        rules={[
+                            {
+                                required: true,
+                                message: translateMessage(
+                                    "register.password.required"
+                                ),
+                            },
+                        ]}
+                        validateTrigger={["onChange", "onBlur"]}
+                    >
+                        <Input.Password
+                            prefix={<LockOutlined />}
+                            placeholder={translateMessage(
+                                "register.password.placeholder"
+                            )}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="password_confirm"
+                        dependencies={["password"]}
+                        rules={[
+                            {
+                                required: true,
+                                message: translateMessage(
+                                    "register.confirmPassword.required"
+                                ),
+                            },
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    if (
+                                        !value ||
+                                        getFieldValue("password") === value
+                                    ) {
+                                        return Promise.resolve();
+                                    }
+                                    return Promise.reject(
+                                        translateMessage(
+                                            "register.password.mismatch"
+                                        )
+                                    );
+                                },
+                            }),
+                        ]}
+                        validateTrigger={["onChange", "onBlur"]}
+                    >
+                        <Input.Password
+                            prefix={<LockOutlined />}
+                            placeholder={translateMessage(
+                                "register.confirmPassword.placeholder"
+                            )}
+                        />
+                    </Form.Item>
+
+                    <Form.Item>
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            className="login-button"
+                            loading={loading}
+                        >
+                            {translateMessage("register.submit")}
+                        </Button>
+                    </Form.Item>
+                    <Link to="/login" className="login-form-register">
+                        {translateMessage("register.loginLink")}
+                    </Link>
+                </Form>
+
+                {success && (
+                    <div className="success-message">
+                        {translateMessage("register.success")}
+                    </div>
+                )}
+
+                <LoadingModal
+                    visible={modalVisible}
+                    onCancel={() => setModalVisible(false)}
+                />
             </div>
         </>
     );

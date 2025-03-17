@@ -89,6 +89,7 @@
 .form-input-text {
     display: flex;
     flex-direction: column;
+    height: 40px;
     width: 100%;
     max-width: 400px;
     padding: 10px;
@@ -157,7 +158,8 @@
 }
 
 .edit-button,
-.delete-button {
+.delete-button,
+.password-button {
     height: 32px;
     width: 32px;
     display: flex;
@@ -328,51 +330,72 @@
 .filter-container {
     display: flex;
     gap: 10px;
-    margin-bottom: 10px;
-    padding: 10px;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    box-sizing: border-box;
+    background-color: #f8f9fa;
+    flex-wrap: wrap;
 }
 
-.filter-container input {
+.filter-container input,
+.filter-container select {
     flex: 1;
-    min-width: 150px;
-    padding: 10px;
+    min-width: 200px;
+    padding: 8px 12px;
     border: 1px solid #ccc;
-    border-radius: 5px;
-    height: 40px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.filter-container .clear-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: bold;
+}
+
+.filter-container .clear-button:hover {
+    background-color: #c82333;
+}
+
+/* Tema escuro */
+@media (prefers-color-scheme: dark) {
+    .filter-container {
+        background-color: #2d2d2d;
+        border-color: #444;
+    }
+
+    .filter-container input,
+    .filter-container select {
+        background-color: #3d3d3d;
+        border-color: #444;
+        color: #fff;
+    }
+
+    .filter-container input::placeholder {
+        color: #888;
+    }
+
+    .filter-container select option {
+        background-color: #2d2d2d;
+    }
 }
 
 @media screen and (max-width: 768px) {
     .filter-container {
         flex-direction: column;
-        width: 400px;
-        gap: 0px;
-        margin-bottom: 24px;
-    }
-
-    .clear-button {
-        width: 100%;
-    }
-
-    .form-dates {
-        padding-bottom: 10px;
         gap: 10px;
-        display: flex;
-        flex-direction: row;
-        width: -webkit-fill-available;
     }
 
-    .form-label {
-        width: 40%;
-    }
-
-    .date-input {
-        width: 60%;
+    .filter-container input,
+    .filter-container select,
+    .filter-container .clear-button {
+        width: 100%;
     }
 }
 
@@ -733,4 +756,66 @@ input:checked + .slider:before {
 
 .slider.round:before {
     border-radius: 50%;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.action-buttons button {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: none;
+}
+
+.action-buttons button:hover {
+    transform: scale(1.1);
+}
+
+.action-buttons button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.edit-button {
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.edit-button:hover {
+    background-color: #357abd;
+}
+
+.edit-button:disabled {
+    background-color: #444444;
+    cursor: not-allowed;
+}
+
+.password-button:hover {
+    background-color: #90ee90;
+}
+
+.password-button:disabled {
+    background-color: #444444;
+    cursor: not-allowed;
+}
+
+.delete-button:hover {
+    background-color: #ffcccb;
+}
+
+.delete-button:disabled {
+    background-color: #444444;
+    cursor: not-allowed;
 }

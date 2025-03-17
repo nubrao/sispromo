@@ -1,3 +1,8 @@
+"""
+Este arquivo está sendo descontinuado.
+Os campos do PromoterModel foram movidos para o UserProfile.
+"""
+
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
@@ -12,11 +17,11 @@ def validate_cpf(value):
 
 
 class PromoterModel(models.Model):
-    name = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
     cpf = models.CharField(max_length=14, unique=True,
                            validators=[validate_cpf])
     phone = models.CharField(max_length=20)
-    city = models.CharField(max_length=100, null=True, blank=True)
     user_profile = models.OneToOneField(
         UserProfile,
         on_delete=models.SET_NULL,
@@ -26,8 +31,12 @@ class PromoterModel(models.Model):
     )
 
     def __str__(self):
-        city_str = f" - {self.city}" if self.city else ""
-        return f"{self.name}{city_str} - {self.cpf}"
+        return f"{self.first_name} {self.last_name} - {self.cpf}"
+
+    @property
+    def name(self):
+        """Retorna o nome completo do promotor"""
+        return f"{self.first_name} {self.last_name}".strip()
 
     def save(self, *args, **kwargs):
         # Se o promotor está sendo criado e tem CPF

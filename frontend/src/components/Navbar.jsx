@@ -59,6 +59,11 @@ const Navbar = () => {
                 visible: isManager() || isAnalyst(),
             },
             {
+                path: "/promoter-brands",
+                label: "Atribuir Marcas",
+                visible: isManager() || isAnalyst(),
+            },
+            {
                 path: "/visit-prices",
                 label: "Preços",
                 visible: isManager() || isAnalyst(),
@@ -82,7 +87,7 @@ const Navbar = () => {
 
         const visibleLinks = links.filter((link) => {
             const isVisible = link.visible;
-            
+
             return isVisible;
         });
 
