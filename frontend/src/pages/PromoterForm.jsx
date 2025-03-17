@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/form.css";
 import { formatCPF, formatPhone } from "../hooks/useMask";
-import useTranslateMessage from "../hooks/useTranslateMessage";
+import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
-import LoadingModal from "../components/LoadingModal";
+import { LoadingModal } from "../components/LoadingModal";
 
 const PromoterForm = ({
     loading,
@@ -17,9 +17,11 @@ const PromoterForm = ({
     errorMessage,
     setErrorMessage,
 }) => {
-    const [name, setName] = useState("");
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
     const [cpf, setCPF] = useState("");
     const [phone, setPhone] = useState("");
+    const [email, setEmail] = useState("");
     const [promoters, setPromoters] = useState([]);
 
     const [filteredPromoters, setFilteredPromoters] = useState([]);
@@ -28,21 +30,15 @@ const PromoterForm = ({
     const [filterPhone, setFilterPhone] = useState("");
 
     const [editingId, setEditingId] = useState(null);
-    const [editName, setEditName] = useState("");
+    const [editFirstName, setEditFirstName] = useState("");
+    const [editLastName, setEditLastName] = useState("");
     const [editCPF, setEditCPF] = useState("");
     const [editPhone, setEditPhone] = useState("");
-
-    // Novo estado para a data da visita
-    const [visitDate, setVisitDate] = useState(
-        new Date().toISOString().split("T")[0]
-    ); // Data de hoje
+    const [editEmail, setEditEmail] = useState("");
 
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
-
-    // Adicione uma nova variável para armazenar o ID do promotor logado
-    const promoterId = localStorage.getItem("promoterId"); // Supondo que o ID do promotor esteja armazenado no localStorage
 
     useEffect(() => {
         setLoading(true);
@@ -71,12 +67,13 @@ const PromoterForm = ({
         const lowerCaseName = filterName.toLowerCase();
 
         const formattedCPF = formatCPF(filterCPF).replace(/\D/g, "");
-
         const formattedPhone = formatPhone(filterPhone).replace(/\D/g, "");
 
         const filtered = promoters.filter((promoter) => {
+            const fullName =
+                `${promoter.first_name} ${promoter.last_name}`.toLowerCase();
             return (
-                promoter.name.toLowerCase().includes(lowerCaseName) &&
+                fullName.includes(lowerCaseName) &&
                 promoter.cpf.replace(/\D/g, "").includes(formattedCPF) &&
                 promoter.phone.replace(/\D/g, "").includes(formattedPhone)
             );
@@ -99,11 +96,11 @@ const PromoterForm = ({
         setLoading(true);
 
         const promoterData = {
-            name,
+            first_name: firstName,
+            last_name: lastName,
             cpf: cleanInput(cpf),
             phone: cleanInput(phone),
-            promoter_id: promoterId, // Incluindo o ID do promotor logado no payload
-            visit_date: visitDate, // Incluindo a data da visita no payload
+            email,
         };
 
         try {
@@ -124,10 +121,11 @@ const PromoterForm = ({
     const cleanInput = (value) => value.replace(/\D/g, "");
 
     const resetForm = () => {
-        setName("");
+        setFirstName("");
+        setLastName("");
         setCPF("");
         setPhone("");
-        setVisitDate(new Date().toISOString().split("T")[0]); // Resetando a data para hoje
+        setEmail("");
     };
 
     const getErrorMessage = async (error) => {
@@ -149,9 +147,11 @@ const PromoterForm = ({
 
     const handleEdit = (promoter) => {
         setEditingId(promoter.id);
-        setEditName(promoter.name);
+        setEditFirstName(promoter.first_name);
+        setEditLastName(promoter.last_name);
         setEditCPF(promoter.cpf);
         setEditPhone(promoter.phone);
+        setEditEmail(promoter.email || "");
     };
 
     const handleSaveEdit = async (id) => {
@@ -168,9 +168,11 @@ const PromoterForm = ({
             await axios.put(
                 `${API_URL}/api/promoters/${id}/`,
                 {
-                    name: editName,
+                    first_name: editFirstName,
+                    last_name: editLastName,
                     cpf: cleanedCPF,
                     phone: editPhone.replace(/\D/g, ""),
+                    email: editEmail,
                 },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -209,8 +211,24 @@ const PromoterForm = ({
                 <input
                     type="text"
                     placeholder="Nome"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={firstName.toUpperCase()}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="form-input-text"
+                    required
+                />
+                <input
+                    type="text"
+                    placeholder="Sobrenome"
+                    value={lastName.toLocaleUpperCase()}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="form-input-text"
+                    required
+                />
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email.toLowerCase()}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="form-input-text"
                     required
                 />
@@ -222,9 +240,6 @@ const PromoterForm = ({
                     className="form-input-text"
                     required
                 />
-                {errorMessage && (
-                    <p className="error-message">{errorMessage}</p>
-                )}
                 <input
                     type="text"
                     placeholder="Celular"
@@ -233,23 +248,17 @@ const PromoterForm = ({
                     className="form-input-text"
                     required
                 />
-                <input
-                    type="date"
-                    value={visitDate}
-                    disabled={localStorage.getItem("userRole") === "promoter"} // Desabilita se o usuário for promotor
-                    className="form-input-text"
-                />
                 <button type="submit" className="form-button">
                     Cadastrar
                 </button>
             </form>
 
             <LoadingModal
-                open={modalOpen}
-                success={success}
-                loading={loading}
-                errorMessage={errorMessage}
+                isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
+                loading={loading}
+                success={success}
+                errorMessage={errorMessage}
             />
 
             <h3 className="form-title">Lista de Promotores</h3>
@@ -257,34 +266,28 @@ const PromoterForm = ({
             <div className="filter-container">
                 <input
                     type="text"
-                    placeholder="Filtrar Nome"
+                    placeholder="Filtrar por nome"
                     value={filterName}
                     onChange={(e) => setFilterName(e.target.value)}
                     className="form-input-text"
                 />
-
                 <input
                     type="text"
-                    placeholder="Filtrar CPF"
+                    placeholder="Filtrar por CPF"
                     value={filterCPF}
                     onChange={(e) => setFilterCPF(formatCPF(e.target.value))}
                     className="form-input-text"
                 />
-
                 <input
                     type="text"
-                    placeholder="Filtrar Celular"
+                    placeholder="Filtrar por telefone"
                     value={filterPhone}
                     onChange={(e) =>
                         setFilterPhone(formatPhone(e.target.value))
                     }
                     className="form-input-text"
                 />
-
-                <button
-                    onClick={clearFilters}
-                    className="form-button clear-button"
-                >
+                <button onClick={clearFilters} className="form-button">
                     Limpar Filtros
                 </button>
             </div>
@@ -299,6 +302,7 @@ const PromoterForm = ({
                         <thead>
                             <tr>
                                 <th>Nome</th>
+                                <th>Email</th>
                                 <th>CPF</th>
                                 <th>Celular</th>
                                 <th>Ações</th>
@@ -312,9 +316,31 @@ const PromoterForm = ({
                                             <td>
                                                 <input
                                                     type="text"
-                                                    value={editName.toUpperCase()}
+                                                    value={editFirstName.toUpperCase()}
                                                     onChange={(e) =>
-                                                        setEditName(
+                                                        setEditFirstName(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={editLastName.toUpperCase()}
+                                                    onChange={(e) =>
+                                                        setEditLastName(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="email"
+                                                    value={editEmail.toLowerCase()}
+                                                    onChange={(e) =>
+                                                        setEditEmail(
                                                             e.target.value
                                                         )
                                                     }
@@ -327,16 +353,13 @@ const PromoterForm = ({
                                                     value={formatCPF(editCPF)}
                                                     onChange={(e) =>
                                                         setEditCPF(
-                                                            e.target.value
+                                                            formatCPF(
+                                                                e.target.value
+                                                            )
                                                         )
                                                     }
                                                     className="form-input-text"
                                                 />
-                                                {errorMessage && (
-                                                    <p className="error-message">
-                                                        {errorMessage}
-                                                    </p>
-                                                )}
                                             </td>
                                             <td>
                                                 <input
@@ -346,7 +369,9 @@ const PromoterForm = ({
                                                     )}
                                                     onChange={(e) =>
                                                         setEditPhone(
-                                                            e.target.value
+                                                            formatPhone(
+                                                                e.target.value
+                                                            )
                                                         )
                                                     }
                                                     className="form-input-text"
@@ -380,6 +405,7 @@ const PromoterForm = ({
                                             <td>
                                                 {promoter.name.toUpperCase()}
                                             </td>
+                                            <td>{promoter.email}</td>
                                             <td>{formatCPF(promoter.cpf)}</td>
                                             <td>
                                                 {formatPhone(promoter.phone)}
@@ -402,7 +428,7 @@ const PromoterForm = ({
                                                         }
                                                         className="form-button delete-button"
                                                     >
-                                                        ❌
+                                                        🗑️
                                                     </button>
                                                 </div>
                                             </td>
@@ -425,7 +451,7 @@ PromoterForm.propTypes = {
     setModalOpen: PropTypes.func.isRequired,
     success: PropTypes.bool.isRequired,
     setSuccess: PropTypes.func.isRequired,
-    errorMessage: PropTypes.string,
+    errorMessage: PropTypes.string.isRequired,
     setErrorMessage: PropTypes.func.isRequired,
 };
 

@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "../styles/form.css";
 import { formatCNPJ } from "../hooks/useMask";
-import useTranslateMessage from "../hooks/useTranslateMessage";
+import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
-import LoadingModal from "../components/LoadingModal";
+import { LoadingModal } from "../components/LoadingModal";
 
 const StoreForm = ({
     loading,
@@ -526,7 +526,7 @@ const StoreForm = ({
                                                         }
                                                         className="form-button delete-button"
                                                     >
-                                                        ❌
+                                                        🗑️
                                                     </button>
                                                 </div>
                                             </td>

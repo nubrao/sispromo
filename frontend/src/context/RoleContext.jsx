@@ -7,6 +7,8 @@ export const RoleContext = createContext();
 
 export const RoleProvider = ({ children }) => {
     const [userRole, setUserRole] = useState(null);
+    const [userProfileId, setUserProfileId] = useState(null);
+    const [promoterId, setPromoterId] = useState(null);
     const [loading, setLoading] = useState(true);
     const { token } = useContext(AuthContext);
     const API_URL = import.meta.env.VITE_API_URL;
@@ -15,6 +17,8 @@ export const RoleProvider = ({ children }) => {
         const fetchUserRole = async () => {
             if (!token) {
                 setUserRole(null);
+                setUserProfileId(null);
+                setPromoterId(null);
                 setLoading(false);
                 return;
             }
@@ -23,14 +27,21 @@ export const RoleProvider = ({ children }) => {
                 const response = await axios.get(`${API_URL}/api/users/me/`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                const role = response.data?.profile?.role;
-                setUserRole(role || null);
+
+                // Armazena os dados do usuário
+                const userData = response.data;
+
+                setUserRole(userData.current_role || null);
+                setUserProfileId(userData.userprofile_id || null);
+                setPromoterId(userData.promoter_id || null);
             } catch (error) {
-                console.error("Erro ao buscar papel do usuário:", error);
+                console.error("Erro ao buscar dados do usuário:", error);
                 if (error.response) {
                     console.error("Dados do erro:", error.response.data);
                 }
                 setUserRole(null);
+                setUserProfileId(null);
+                setPromoterId(null);
             } finally {
                 setLoading(false);
             }
@@ -61,7 +72,22 @@ export const RoleProvider = ({ children }) => {
         const isAnalystUser = isAnalyst();
         const isPromoterUser = isPromoter();
 
-        if (isManagerUser || isAnalystUser) return true;
+        if (isManagerUser || isAnalystUser) {
+            const managerAnalystRoutes = [
+                "/home",
+                "/promoters",
+                "/stores",
+                "/brands",
+                "/visit-prices",
+                "/visits",
+                "/reports",
+                "/promoter-brands",
+            ];
+            if (isManagerUser) {
+                managerAnalystRoutes.push("/users");
+            }
+            return managerAnalystRoutes.includes(route);
+        }
         if (isPromoterUser) {
             const promoterRoutes = ["/home", "/visits", "/reports"];
             const hasAccess = promoterRoutes.includes(route);
@@ -74,6 +100,8 @@ export const RoleProvider = ({ children }) => {
         <RoleContext.Provider
             value={{
                 userRole,
+                userProfileId,
+                promoterId,
                 isManager,
                 isAnalyst,
                 isPromoter,

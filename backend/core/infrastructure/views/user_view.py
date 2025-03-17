@@ -36,14 +36,34 @@ logger = logging.getLogger(__name__)
                 "properties": {"error": {"type": "string"}}
             }
         }
+    ),
+    destroy=extend_schema(
+        description="Deleta um usuário",
+        responses={
+            204: None,
+            403: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            },
+            500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
     )
 )
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciar Usuários"""
 
-    queryset = User.objects.all()
     serializer_class = UserSerializer
-    http_method_names = ['get', 'post', 'patch']  # Permite GET, POST e PATCH
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_queryset(self):
+        """
+        Retorna o queryset de usuários com seus perfis relacionados.
+        Garante que os dados venham da tabela core_userprofile.
+        """
+        return User.objects.select_related('userprofile').all()
 
     def get_permissions(self):
         if self.action == 'register':
@@ -53,6 +73,13 @@ class UserViewSet(viewsets.ModelViewSet):
     def list(self, request):
         """Lista todos os usuários"""
         try:
+            # Verifica se o usuário é um gestor
+            if request.user.userprofile.role != 'manager':
+                return Response(
+                    {"error": "Apenas gestores podem listar usuários."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             users = self.get_queryset()
             serializer = self.get_serializer(users, many=True)
             return Response(serializer.data)
@@ -66,6 +93,13 @@ class UserViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         """Atualiza parcialmente um usuário"""
         try:
+            # Verifica se o usuário é um gestor
+            if request.user.userprofile.role != 'manager':
+                return Response(
+                    {"error": "Apenas gestores podem atualizar usuários."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             instance = self.get_object()
             serializer = self.get_serializer(
                 instance,
@@ -75,6 +109,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
             if serializer.is_valid():
                 user = serializer.save()
+                # Recarrega o usuário para garantir que temos os dados atualizados
+                user.refresh_from_db()
                 return Response(
                     self.get_serializer(user).data,
                     status=status.HTTP_200_OK
@@ -87,6 +123,43 @@ class UserViewSet(viewsets.ModelViewSet):
             logger.error(f"Erro ao atualizar usuário: {e}")
             return Response(
                 {"error": "Erro ao atualizar usuário."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def destroy(self, request, *args, **kwargs):
+        """Deleta um usuário"""
+        try:
+            # Verifica se o usuário é um gestor
+            if request.user.userprofile.role != 'manager':
+                return Response(
+                    {"error": "Apenas gestores podem excluir usuários."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            instance = self.get_object()
+
+            # Não permite que o usuário exclua a si mesmo
+            if instance.id == request.user.id:
+                return Response(
+                    {"error": "Você não pode excluir seu próprio usuário."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Se o usuário for um promotor, exclui o promotor associado
+            try:
+                if instance.userprofile.role == 'promoter':
+                    promoter = instance.userprofile.promoter
+                    if promoter:
+                        promoter.delete()
+            except Exception as e:
+                logger.warning(f"Erro ao excluir promotor associado: {e}")
+
+            instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            logger.error(f"Erro ao excluir usuário: {e}")
+            return Response(
+                {"error": "Erro ao excluir usuário."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -104,6 +177,13 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['patch'])
     def update_role(self, request, pk=None):
         try:
+            # Verifica se o usuário é um gestor
+            if request.user.userprofile.role != 'manager':
+                return Response(
+                    {"error": "Apenas gestores podem atualizar papéis de usuários."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             user = self.get_object()
             new_role = request.data.get('role')
 
@@ -113,10 +193,13 @@ class UserViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Atualiza o papel diretamente na tabela core_userprofile
             profile = user.userprofile
             profile.role = new_role
             profile.save()
 
+            # Recarrega o usuário para garantir que temos os dados atualizados
+            user.refresh_from_db()
             serializer = self.get_serializer(user)
             return Response(serializer.data)
         except Exception as e:
@@ -161,6 +244,8 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(data=request.data)
             if serializer.is_valid():
                 user = serializer.save()
+                # Recarrega o usuário para garantir que temos os dados atualizados
+                user.refresh_from_db()
                 return Response(
                     self.get_serializer(user).data,
                     status=status.HTTP_201_CREATED

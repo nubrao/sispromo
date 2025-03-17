@@ -14,6 +14,7 @@ import logging
 from datetime import datetime, timedelta
 from core.infrastructure.models.brand_model import BrandModel
 from core.infrastructure.models.promoter_model import PromoterModel
+from core.infrastructure.models.promoter_brand_model import PromoterBrandModel
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
@@ -560,9 +561,28 @@ class VisitViewSet(viewsets.ModelViewSet):
     def dashboard(self, request):
         """Retorna dados para o dashboard"""
         try:
-            # Obtém todas as marcas com suas lojas e periodicidade
-            brands = BrandModel.objects.prefetch_related(
-                'brandstore_set__store').all()
+            user = request.user
+
+            # Se for promotor, filtra apenas as marcas atribuídas
+            if user.userprofile.role == 'promoter':
+                try:
+                    promoter = PromoterModel.objects.get(
+                        user_profile=user.userprofile)
+                    # Obtém as marcas atribuídas ao promotor
+                    brand_assignments = PromoterBrandModel.objects.filter(
+                        promoter=promoter)
+                    brands = BrandModel.objects.filter(
+                        id__in=brand_assignments.values('brand_id')
+                    ).prefetch_related('brandstore_set__store')
+                except PromoterModel.DoesNotExist:
+                    return Response(
+                        {"error": "Usuário não possui um promotor associado."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            else:
+                # Para gestores e analistas, mostra todas as marcas
+                brands = BrandModel.objects.prefetch_related(
+                    'brandstore_set__store').all()
 
             # Obtém todas as visitas da semana atual
             today = datetime.now()

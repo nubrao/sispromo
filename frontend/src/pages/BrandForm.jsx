@@ -3,7 +3,7 @@ import axios from "axios";
 import "../styles/form.css";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
-import LoadingModal from "../components/LoadingModal";
+import { LoadingModal } from "../components/LoadingModal";
 import CreatableSelect from "react-select/creatable";
 
 const BrandForm = ({
@@ -220,7 +220,8 @@ const BrandForm = ({
     };
 
     const handleEdit = (brand) => {
-        setEditingId(brand.brand_id);
+        // Usamos a combinação de brand_id e store_id como identificador único
+        setEditingId(`${brand.brand_id}-${brand.store_id}`);
         setEditBrandName(brand.brand_name);
 
         const store = stores.find((s) => s.id === brand.store_id);
@@ -229,25 +230,29 @@ const BrandForm = ({
         setEditVisitFrequency(brand.visit_frequency);
     };
 
-    const handleSaveEdit = async (id) => {
+    const handleSaveEdit = async (brandId, storeId) => {
         try {
             // Normaliza o nome da marca para uppercase
             const normalizedBrandName = editBrandName.trim().toUpperCase();
 
-            // Verifica se já existe outra marca com o mesmo nome (excluindo a marca atual)
+            // Verifica se já existe outra marca com o mesmo nome e loja (excluindo o registro atual)
             const existingBrand = brands.find(
                 (brand) =>
-                    brand.brand_id !== id &&
-                    brand.brand_name.toUpperCase() === normalizedBrandName
+                    (brand.brand_id !== parseInt(brandId) ||
+                        brand.store_id !== parseInt(storeId)) &&
+                    brand.brand_name.toUpperCase() === normalizedBrandName &&
+                    brand.store_id === editStore.id
             );
 
             if (existingBrand) {
-                setErrorMessage("Já existe uma marca com este nome");
+                setErrorMessage(
+                    "Já existe uma marca com este nome para esta loja"
+                );
                 return;
             }
 
             await axios.put(
-                `${API_URL}/api/brands/${id}/`,
+                `${API_URL}/api/brands/${brandId}/`,
                 {
                     brand_name: normalizedBrandName,
                     store_id: editStore.id,
@@ -469,9 +474,10 @@ const BrandForm = ({
                             {filteredBrands.map((brand) => (
                                 <tr
                                     key={`${brand.brand_id}-${brand.store_id}`}
-                                    id={`brand-row-${brand.brand_id}`}
+                                    id={`brand-row-${brand.brand_id}-${brand.store_id}`}
                                 >
-                                    {editingId === brand.brand_id ? (
+                                    {editingId ===
+                                    `${brand.brand_id}-${brand.store_id}` ? (
                                         <>
                                             <td>
                                                 <input
@@ -486,55 +492,41 @@ const BrandForm = ({
                                                 />
                                             </td>
                                             <td>
-                                                {editingId ===
-                                                brand.brand_id ? (
-                                                    <select
-                                                        value={editStore.id} // Agora pegamos apenas o ID da loja
-                                                        onChange={(e) => {
-                                                            const selectedStore =
-                                                                stores.find(
-                                                                    (store) =>
-                                                                        store.id ===
-                                                                        parseInt(
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                            10
-                                                                        )
-                                                                );
-                                                            setEditStore(
-                                                                selectedStore || {
-                                                                    id: "",
-                                                                    name: "",
-                                                                }
+                                                <select
+                                                    value={editStore.id}
+                                                    onChange={(e) => {
+                                                        const selectedStore =
+                                                            stores.find(
+                                                                (store) =>
+                                                                    store.id ===
+                                                                    parseInt(
+                                                                        e.target
+                                                                            .value,
+                                                                        10
+                                                                    )
                                                             );
-                                                        }}
-                                                        className="form-input-text"
-                                                    >
-                                                        <option value="">
-                                                            Selecione a Loja
+                                                        setEditStore(
+                                                            selectedStore || {
+                                                                id: "",
+                                                                name: "",
+                                                            }
+                                                        );
+                                                    }}
+                                                    className="form-input-text"
+                                                >
+                                                    <option value="">
+                                                        Selecione a Loja
+                                                    </option>
+                                                    {stores.map((store) => (
+                                                        <option
+                                                            key={store.id}
+                                                            value={store.id}
+                                                        >
+                                                            {store.name.toUpperCase()}{" "}
+                                                            - {store.number}
                                                         </option>
-                                                        {stores.map((store) => (
-                                                            <option
-                                                                key={store.id}
-                                                                value={store.id}
-                                                            >
-                                                                {store.name.toUpperCase()}{" "}
-                                                                - {store.number}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    <>
-                                                        {brand.store_name.toUpperCase()}{" "}
-                                                        -{" "}
-                                                        {stores.find(
-                                                            (store) =>
-                                                                store.id ===
-                                                                brand.store_id
-                                                        )?.number || ""}
-                                                    </>
-                                                )}
+                                                    ))}
+                                                </select>
                                             </td>
                                             <td>
                                                 <input
@@ -553,7 +545,8 @@ const BrandForm = ({
                                                     <button
                                                         onClick={() =>
                                                             handleSaveEdit(
-                                                                brand.brand_id
+                                                                brand.brand_id,
+                                                                brand.store_id
                                                             )
                                                         }
                                                         className="form-button save-button"
@@ -604,7 +597,7 @@ const BrandForm = ({
                                                         }
                                                         className="form-button delete-button"
                                                     >
-                                                        ❌
+                                                        🗑️
                                                     </button>
                                                 </div>
                                             </td>

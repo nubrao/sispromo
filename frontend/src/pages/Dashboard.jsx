@@ -17,6 +17,7 @@ const Dashboard = () => {
     const [dashboardData, setDashboardData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [filterBrand, setFilterBrand] = useState("");
     const [filterStore, setFilterStore] = useState("");
     const [viewMode, setViewMode] = useState("detalhado"); // "detalhado" ou "simplificado"
@@ -34,6 +35,7 @@ const Dashboard = () => {
 
     const fetchDashboardData = async () => {
         setLoading(true);
+        setError(null);
         try {
             const response = await axios.get(
                 `${API_URL}/api/visits/dashboard/`,
@@ -45,6 +47,11 @@ const Dashboard = () => {
             setFilteredData(response.data);
         } catch (error) {
             console.error("Erro ao buscar dados do dashboard:", error);
+            if (error.response?.data?.error) {
+                setError(error.response.data.error);
+            } else {
+                setError("Erro ao carregar dados do dashboard");
+            }
         } finally {
             setLoading(false);
         }
@@ -215,15 +222,27 @@ const Dashboard = () => {
                     <div className="dashboard-content-loading">
                         <Loader />
                     </div>
+                ) : error ? (
+                    <div className="dashboard-error">
+                        <p>{error}</p>
+                    </div>
+                ) : filteredData.length === 0 ? (
+                    <div className="dashboard-empty">
+                        <p>
+                            Nenhuma marca encontrada.{" "}
+                            {filterBrand || filterStore
+                                ? "Tente limpar os filtros."
+                                : "Você ainda não possui marcas atribuídas."}
+                        </p>
+                    </div>
                 ) : (
                     <>
                         {renderCharts()}
-
                         <div className="dashboard-controls">
                             <div className="filters">
                                 <input
                                     type="text"
-                                    placeholder="Filtrar por marca"
+                                    placeholder="Filtrar por marca..."
                                     value={filterBrand}
                                     onChange={(e) =>
                                         setFilterBrand(e.target.value)
@@ -232,19 +251,21 @@ const Dashboard = () => {
                                 />
                                 <input
                                     type="text"
-                                    placeholder="Filtrar por loja"
+                                    placeholder="Filtrar por loja..."
                                     value={filterStore}
                                     onChange={(e) =>
                                         setFilterStore(e.target.value)
                                     }
                                     className="filter-input"
                                 />
-                                <button
-                                    onClick={clearFilters}
-                                    className="clear-button"
-                                >
-                                    Limpar Filtros
-                                </button>
+                                {(filterBrand || filterStore) && (
+                                    <button
+                                        onClick={clearFilters}
+                                        className="clear-button"
+                                    >
+                                        Limpar Filtros
+                                    </button>
+                                )}
                             </div>
                             <div className="view-mode-buttons">
                                 <button

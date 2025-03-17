@@ -1,33 +1,15 @@
-import { useState } from "react";
+import { pt_BR } from '../translations/pt_BR';
 
-const useTranslateMessage = () => {
-    const [isLoading, setIsLoading] = useState(false);
-
-    const translateMessage = async (message) => {
+export const useTranslateMessage = () => {
+    const translateMessage = (message) => {
         if (!message) return "";
-        setIsLoading(true);
-        try {
-            const response = await fetch(
-                `https://api.mymemory.translated.net/get?q=${encodeURIComponent(
-                    message
-                )}&langpair=en|pt`
-            );
-            const data = await response.json();
-            setIsLoading(false);
-            let translatedText = data.responseData.translatedText || message;
 
-            translatedText =
-                translatedText.charAt(0).toUpperCase() + translatedText.slice(1);
+        // Tenta encontrar a tradução no objeto de traduções
+        const translation = message.split('.').reduce((obj, key) => obj?.[key], pt_BR);
 
-            return translatedText;
-        } catch (error) {
-            console.error("Erro na tradução:", error);
-            setIsLoading(false);
-            return message.charAt(0).toUpperCase() + message.slice(1);
-        }
+        // Se encontrar a tradução, retorna ela, senão retorna a mensagem original
+        return translation || message;
     };
 
-    return { translateMessage, isLoading };
+    return { translateMessage };
 };
-
-export default useTranslateMessage;

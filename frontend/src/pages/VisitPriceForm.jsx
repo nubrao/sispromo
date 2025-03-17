@@ -3,7 +3,7 @@ import axios from "axios";
 import "../styles/form.css";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
-import LoadingModal from "../components/LoadingModal";
+import { LoadingModal } from "../components/LoadingModal";
 
 const VisitPriceForm = ({
     loading,
@@ -308,7 +308,7 @@ const VisitPriceForm = ({
                                                     }
                                                     className="form-button delete-button"
                                                 >
-                                                    ❌
+                                                    🗑️
                                                 </button>
                                             </div>
                                         </td>

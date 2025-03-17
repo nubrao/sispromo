@@ -326,6 +326,30 @@
     overflow: hidden;
 }
 
+.dashboard-error,
+.dashboard-empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin: 20px 0;
+    padding: 20px;
+    text-align: center;
+}
+
+.dashboard-error p {
+    color: #f44336;
+    font-size: 1.1em;
+}
+
+.dashboard-empty p {
+    color: #666;
+    font-size: 1.1em;
+}
+
 /* Tema escuro */
 @media (prefers-color-scheme: dark) {
     .dashboard-title,
@@ -393,6 +417,14 @@
 
     .dashboard-content-loading {
         background: rgba(0, 0, 0, 0.2);
+    }
+
+    .dashboard-error p {
+        color: #ff6b6b;
+    }
+
+    .dashboard-empty p {
+        color: #ccc;
     }
 }
 

@@ -28,6 +28,7 @@ from core.infrastructure.views.state_view import StateListView
 from core.infrastructure.views.brand_view import BrandViewSet
 from core.infrastructure.views.visit_price_view import VisitPriceViewSet
 from core.infrastructure.views.user_view import UserViewSet
+from core.infrastructure.views.promoter_brand_view import PromoterBrandViewSet
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -41,6 +42,8 @@ router.register(r"visits", VisitViewSet, basename="visit")
 router.register(r'brands', BrandViewSet)
 router.register(r"visit-prices", VisitPriceViewSet, basename="visit-prices")
 router.register(r"users", UserViewSet, basename="user")
+router.register(r"promoter-brands", PromoterBrandViewSet,
+                basename="promoter-brand")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

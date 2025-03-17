@@ -15,6 +15,7 @@ import Reports from "./pages/ReportsForm";
 import VisitPriceForm from "./pages/VisitPriceForm";
 import Dashboard from "./pages/Dashboard";
 import UserManagement from "./pages/UserManagement";
+import PromoterBrandAssignment from "./pages/PromoterBrandAssignment";
 
 const PrivateRoute = ({ children }) => {
     const { token } = useContext(AuthContext);
@@ -129,6 +130,25 @@ function App() {
                             element={
                                 <PrivateRoute>
                                     <BrandForm
+                                        loading={loading}
+                                        setLoading={setLoading}
+                                        modalOpen={modalOpen}
+                                        setModalOpen={setModalOpen}
+                                        success={success}
+                                        setSuccess={setSuccess}
+                                        errorMessage={errorMessage}
+                                        setErrorMessage={setErrorMessage}
+                                        dataLoaded={dataLoaded}
+                                        setDataLoaded={setDataLoaded}
+                                    />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/promoter-brands"
+                            element={
+                                <PrivateRoute>
+                                    <PromoterBrandAssignment
                                         loading={loading}
                                         setLoading={setLoading}
                                         modalOpen={modalOpen}
