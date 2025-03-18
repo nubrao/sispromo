@@ -403,7 +403,7 @@ const UserManagement = () => {
                             {filteredUsers.map((user) => (
                                 <tr key={user.id}>
                                     <td>
-                                        {user.first_name} {user.last_name}
+                                        {user.first_name.toUpperCase()} {user.last_name.toUpperCase()}
                                     </td>
                                     <td>{user.username}</td>
                                     <td>{user.email}</td>
@@ -436,7 +436,7 @@ const UserManagement = () => {
                                         <label className="switch">
                                             <input
                                                 type="checkbox"
-                                                checked={user.is_active}
+                                                checked={user.profile.is_active}
                                                 onChange={(e) =>
                                                     handleActiveChange(
                                                         user.id,

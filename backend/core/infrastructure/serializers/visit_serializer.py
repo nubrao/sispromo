@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from ..models.visit_model import VisitModel
+from ..models.visit_price_model import VisitPriceModel
+from .visit_price_serializer import VisitPriceSerializer
 
 
 class VisitSerializer(serializers.ModelSerializer):
@@ -19,66 +21,97 @@ class VisitSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.CharField())
     def get_promoter(self, obj):
-        """Retorna os dados do promotor"""
-        promoter_data = {
-            "id": obj.promoter.id,
-            "name": obj.promoter.name,
-            "email": (
-                obj.promoter.user_profile.user.email
-                if obj.promoter.user_profile and obj.promoter.user_profile.user
-                else None
-            )
-        }
-        return promoter_data
+        """Retorna os dados do promoter"""
+        from ..models.promoter_model import PromoterModel
+        try:
+            promoter = PromoterModel.objects.get(id=obj.promoter_id)
+            return {
+                "id": promoter.id,
+                "name": promoter.name,
+                "email": (
+                    promoter.user_profile.user.email
+                    if promoter.user_profile and promoter.user_profile.user
+                    else None
+                )
+            }
+        except PromoterModel.DoesNotExist:
+            return None
 
     @extend_schema_field(serializers.CharField())
     def get_store(self, obj):
         """Retorna os dados da loja"""
-        store_data = {
-            "id": obj.store.id,
-            "name": obj.store.name,
-            "number": obj.store.number,
-            "address": obj.store.address,
-            "city": obj.store.city,
-            "state": obj.store.state
-        }
-        return store_data
+        from ..models.store_model import StoreModel
+        try:
+            store = StoreModel.objects.get(id=obj.store_id)
+            return {
+                "id": store.id,
+                "name": store.name,
+                "number": store.number,
+                "city": store.city,
+                "state": store.state
+            }
+        except StoreModel.DoesNotExist:
+            return None
 
     @extend_schema_field(serializers.CharField())
     def get_brand(self, obj):
         """Retorna os dados da marca"""
-        brand_data = {
-            "id": obj.brand.id,
-            "name": obj.brand.brand_name,
-            "store_id": obj.brand.store.id,
-            "store_name": obj.brand.store.name,
-            "store_number": obj.brand.store.number
-        }
-        return brand_data
+        from ..models.brand_model import BrandModel
+        try:
+            brand = BrandModel.objects.get(id=obj.brand_id)
+            return {
+                "brand_id": brand.id,
+                "brand_name": brand.name
+            }
+        except BrandModel.DoesNotExist:
+            return None
 
-    @extend_schema_field(serializers.DecimalField(max_digits=10, decimal_places=2))
+    @extend_schema_field(
+        serializers.DecimalField(max_digits=10, decimal_places=2)
+    )
     def get_visit_price(self, obj):
-        """Retorna o preço da visita"""
-        if obj.price:
-            return str(obj.price)
-        return "0.00"
+        """Retorna o preço da visita com base na relação Loja + Marca"""
+        try:
+            visit_price = VisitPriceModel.objects.get(
+                store_id=obj.store_id,
+                brand_id=obj.brand_id
+            )
+            # Obtém o preço corretamente
+            return VisitPriceSerializer(visit_price).data["price"]
+        except VisitPriceModel.DoesNotExist:
+            return "0.00"  # Retorna um valor padrão caso não haja preço cadastrado
 
-    @extend_schema_field(serializers.DecimalField(max_digits=10, decimal_places=2))
+    @extend_schema_field(
+        serializers.DecimalField(max_digits=10, decimal_places=2)
+    )
     def get_total_price(self, obj):
         """Calcula o preço total da visita"""
-        if obj.price:
-            return str(obj.price)
-        return "0.00"
+        visit_price = self.get_visit_price(obj)
+        return visit_price if visit_price else "0.00"
 
     def to_internal_value(self, data):
         """
         Converte os dados recebidos para o formato interno do Django.
         """
         internal_data = {}
+
+        # Converte store_id
         if "store" in data:
-            internal_data["store_id"] = data["store"]
+            try:
+                internal_data["store_id"] = int(data["store"])
+            except (ValueError, TypeError):
+                raise serializers.ValidationError(
+                    {"store": "ID da loja inválido"}
+                )
+
+        # Converte brand_id
         if "brand" in data:
-            internal_data["brand_id"] = data["brand"]
+            try:
+                internal_data["brand_id"] = int(data["brand"])
+            except (ValueError, TypeError):
+                raise serializers.ValidationError(
+                    {"brand": "ID da marca inválido"}
+                )
 
         # Se o usuário for promotor, usa a data atual
         if self.context['request'].user.userprofile.role == 'promoter':
@@ -91,12 +124,36 @@ class VisitSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Validação adicional para garantir que promotores não possam criar visitas retroativas
+        Validação adicional dos dados da visita
         """
-        if self.context['request'].user.userprofile.role == 'promoter':
-            from datetime import date
-            if data.get('visit_date') != date.today():
+        from datetime import date
+        user = self.context['request'].user
+
+        # Validação da data para promotores
+        if user.userprofile.role == 'promoter':
+            if data.get('visit_date') and data['visit_date'] != date.today():
                 raise serializers.ValidationError(
                     "Promotores não podem criar visitas retroativas."
                 )
+
+        # Validação da loja
+        if 'store_id' in data:
+            from ..models.store_model import StoreModel
+            try:
+                StoreModel.objects.get(id=data['store_id'])
+            except StoreModel.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"store": "Loja não encontrada"}
+                )
+
+        # Validação da marca
+        if 'brand_id' in data:
+            from ..models.brand_model import BrandModel
+            try:
+                BrandModel.objects.get(id=data['brand_id'])
+            except BrandModel.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"brand": "Marca não encontrada"}
+                )
+
         return data

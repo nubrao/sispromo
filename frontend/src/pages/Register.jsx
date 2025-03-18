@@ -87,8 +87,9 @@ const Register = () => {
             return;
         }
 
-        // Remove caracteres especiais do CPF para usar como username
+        // Remove caracteres especiais do CPF para usar como username e enviar cpf para o backend
         const username = values.cpf.replace(/\D/g, "");
+        const cpf = values.cpf.replace(/\D/g, "");
 
         try {
             const response = await axios.post(
@@ -100,7 +101,7 @@ const Register = () => {
                     password_confirm: values.password_confirm,
                     first_name: values.first_name,
                     last_name: values.last_name,
-                    cpf: values.cpf,
+                    cpf: cpf,
                     phone: values.phone,
                     role: "promoter", // Papel padrão para novos usuários
                 }
@@ -273,6 +274,19 @@ const Register = () => {
                                     "register.cpf.invalid"
                                 ),
                             },
+                            {
+                                validator: (_, value) => {
+                                    const numbers = value?.replace(/\D/g, "");
+                                    if (numbers && numbers.length !== 11) {
+                                        return Promise.reject(
+                                            translateMessage(
+                                                "register.cpf.length"
+                                            )
+                                        );
+                                    }
+                                    return Promise.resolve();
+                                },
+                            },
                         ]}
                     >
                         <Input
@@ -283,6 +297,7 @@ const Register = () => {
                             onChange={handleInputChange}
                             onBlur={() => handleFieldBlur("cpf")}
                             name="cpf"
+                            maxLength={14}
                         />
                     </Form.Item>
 

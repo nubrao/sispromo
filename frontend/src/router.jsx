@@ -5,8 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import BrandForm from "./pages/BrandForm";
 import StoreForm from "./pages/StoreForm";
 import PromoterForm from "./pages/PromoterForm";
-import VisitForm from "./pages/VisitForm";
 import PromoterBrandAssignment from "./pages/PromoterBrandAssignment";
+import Visits from "./pages/Visits";
 
 const router = createBrowserRouter([
     {
@@ -31,7 +31,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "/visits",
-                element: <VisitForm />,
+                element: <Visits />,
             },
             {
                 path: "/promoter-brands",

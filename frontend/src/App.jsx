@@ -7,7 +7,7 @@ import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
 import PromoterForm from "./pages/PromoterForm";
 import StoreForm from "./pages/StoreForm";
-import VisitForm from "./pages/VisitForm";
+import Visits from "./pages/Visits";
 import Navbar from "./components/Navbar";
 import PropTypes from "prop-types";
 import BrandForm from "./pages/BrandForm";
@@ -186,7 +186,7 @@ function App() {
                             path="/visits"
                             element={
                                 <PrivateRoute>
-                                    <VisitForm
+                                    <Visits
                                         loading={loading}
                                         setLoading={setLoading}
                                         modalOpen={modalOpen}

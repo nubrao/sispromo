@@ -21,6 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     current_role = serializers.SerializerMethodField()
     userprofile_id = serializers.SerializerMethodField()
+    username = serializers.SerializerMethodField()
     promoter_id = serializers.SerializerMethodField()
     password = serializers.CharField(write_only=True)
     password_confirm = serializers.CharField(write_only=True)
@@ -37,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'first_name', 'last_name', 'email', 'password',
             'password_confirm', 'cpf', 'phone', 'role', 'is_active',
             'profile', 'name', 'current_role', 'userprofile_id',
-            'promoter_id'
+            'username', 'promoter_id'
         ]
 
     def validate_cpf(self, value):
@@ -92,6 +93,14 @@ class UserSerializer(serializers.ModelSerializer):
         """Retorna o ID do perfil do usuário"""
         try:
             return obj.userprofile.id
+        except UserProfile.DoesNotExist:
+            return None
+
+    @extend_schema_field(serializers.CharField())
+    def get_username(self, obj):
+        """Retorna o username do usuário"""
+        try:
+            return obj.username
         except UserProfile.DoesNotExist:
             return None
 

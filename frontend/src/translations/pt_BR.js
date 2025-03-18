@@ -28,7 +28,8 @@ export const pt_BR = {
             required: 'Por favor, insira seu CPF',
             invalid: 'CPF inválido',
             format: 'CPF deve conter 11 dígitos numéricos',
-            exists: 'Já existe um usuário cadastrado com este CPF'
+            exists: 'Já existe um usuário cadastrado com este CPF',
+            length: 'CPF deve conter 11 dígitos'
         },
         phone: {
             placeholder: 'Telefone ((00) 00000-0000)',

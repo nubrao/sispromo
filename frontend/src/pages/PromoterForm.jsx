@@ -287,7 +287,7 @@ const PromoterForm = ({
                     }
                     className="form-input-text"
                 />
-                <button onClick={clearFilters} className="form-button">
+                <button onClick={clearFilters} className="form-button clear-button">
                     Limpar Filtros
                 </button>
             </div>
