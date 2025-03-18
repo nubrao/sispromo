@@ -5,9 +5,7 @@ import Loader from "../components/Loader";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import React from "react";
-import { RoleContext } from "../context/RoleContext";
-import Select from "react-select";
-import { LoadingModal } from "../components/LoadingModal";
+import { RoleContext } from "./../context/RoleContext";
 
 const Reports = () => {
     const [promoters, setPromoters] = useState([]);
@@ -24,29 +22,15 @@ const Reports = () => {
     const [endDate, setEndDate] = useState("");
 
     const [loading, setLoading] = useState(false);
-    const { isPromoter, isManagerOrAnalyst } = useContext(RoleContext);
+    const { isPromoter } = useContext(RoleContext);
 
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
-
-    const [modalOpen, setModalOpen] = useState(false);
-    const [success, setSuccess] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                if (isPromoter()) {
-                    const userResponse = await axios.get(
-                        `${API_URL}/api/users/me/`,
-                        {
-                            headers: { Authorization: `Bearer ${token}` },
-                        }
-                    );
-                    setSelectedPromoter(userResponse.data.promoter_id);
-                }
-
                 await Promise.all([
                     fetchPromoters(),
                     fetchStores(),
@@ -61,7 +45,7 @@ const Reports = () => {
 
         fetchData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [API_URL, token, isPromoter]);
+    }, [API_URL, token]);
 
     const fetchPromoters = async () => {
         try {
@@ -389,131 +373,185 @@ const Reports = () => {
     const handleBrandChange = (e) => {
         setSelectedBrand(e.target.value);
     };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setSuccess(false);
-        setErrorMessage("");
-
-        try {
-            await fetchReports();
-            setSuccess(true);
-        } catch (error) {
-            console.error("Erro ao gerar relatório:", error);
-            setErrorMessage(
-                "Erro ao gerar relatório. Por favor, tente mais tarde mais tarde."
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
     return (
         <div className="form-container">
-            <h2 className="form-title">Relatórios de Visitas</h2>
-            <form onSubmit={handleSubmit} className="form-input">
-                {isManagerOrAnalyst && (
-                    <Select
-                        value={selectedPromoter}
-                        onChange={setSelectedPromoter}
-                        options={promoters}
-                        placeholder="Selecione um promotor"
-                        className="react-select"
-                        classNamePrefix="react-select"
-                        isClearable
-                        isSearchable
-                    />
-                )}
-                <Select
-                    value={selectedStore}
-                    onChange={setSelectedStore}
-                    options={stores}
-                    placeholder="Selecione uma loja"
-                    className="react-select"
-                    classNamePrefix="react-select"
-                    isClearable
-                    isSearchable
-                />
-                <Select
-                    value={selectedBrand}
-                    onChange={setSelectedBrand}
-                    options={brands}
-                    placeholder="Selecione uma marca"
-                    className="react-select"
-                    classNamePrefix="react-select"
-                    isClearable
-                    isSearchable
-                />
-                <div className="date-range">
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="form-input-text"
-                        required
-                    />
-                    <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="form-input-text"
-                        required
-                    />
-                </div>
-                {errorMessage && (
-                    <p className="error-message">{errorMessage}</p>
-                )}
-                <button type="submit" className="form-button">
-                    Gerar Relatório
-                </button>
-            </form>
+            <h2 className="form-title">Relatório de Visitas</h2>
 
-            <LoadingModal
-                open={modalOpen}
-                success={success}
-                loading={loading}
-                errorMessage={errorMessage}
-                onClose={() => setModalOpen(false)}
-            />
-
-            {reports.length > 0 && (
-                <>
-                    <h3 className="form-title">Resultados</h3>
-                    <div className="table-container">
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Promotor</th>
-                                    <th>Email</th>
-                                    <th>Loja</th>
-                                    <th>Marca</th>
-                                    <th>Total de Visitas</th>
-                                    <th>Média por Semana</th>
-                                    <th>Valor Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {reports.map((report, index) => (
-                                    <tr key={index}>
-                                        <td>{report.promoter_name}</td>
-                                        <td>{report.promoter_email || "-"}</td>
-                                        <td>{report.store_name}</td>
-                                        <td>{report.brand_name}</td>
-                                        <td>{report.total_visits}</td>
-                                        <td>
-                                            {report.visits_per_week.toFixed(1)}
-                                        </td>
-                                        <td>
-                                            R$ {report.total_value.toFixed(2)}
-                                        </td>
-                                    </tr>
+            <div className="filter-container">
+                <section className="report-filters">
+                    {isPromoter && (
+                        <div className="form-group">
+                            <select
+                                id="promoter"
+                                value={selectedPromoter}
+                                onChange={(e) =>
+                                    setSelectedPromoter(e.target.value)
+                                }
+                                className="form-input-text"
+                            >
+                                <option value="">Todos</option>
+                                {promoters.map((promoter) => (
+                                    <option
+                                        key={promoter.id}
+                                        value={promoter.id}
+                                    >
+                                        {promoter.name}
+                                    </option>
                                 ))}
-                            </tbody>
-                        </table>
+                            </select>
+                        </div>
+                    )}
+                    <div className="form-group">
+                        <select
+                            id="store"
+                            value={selectedStore}
+                            onChange={(e) => setSelectedStore(e.target.value)}
+                            className="form-input-text"
+                        >
+                            <option value="">Todas as Lojas</option>
+                            {stores.map((store) => (
+                                <option key={store.id} value={store.id}>
+                                    {store.name.toUpperCase()}
+                                    {store.number && ` - ${store.number}`}
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                </>
-            )}
+                    <select
+                        value={selectedBrand}
+                        onChange={handleBrandChange}
+                        className="form-input-text"
+                    >
+                        <option value="">Todas as Marcas</option>
+                        {brands
+                            .filter(
+                                (brand, index, self) =>
+                                    index ===
+                                    self.findIndex(
+                                        (b) => b.brand_id === brand.brand_id
+                                    )
+                            )
+                            .map((brand) => (
+                                <option
+                                    key={`brand-${brand.brand_id}`}
+                                    value={brand.brand_id}
+                                >
+                                    {brand?.brand_name?.toUpperCase() || ""}
+                                </option>
+                            ))}
+                    </select>
+                </section>
+
+                <section className="report-dates">
+                    <div>
+                        <label className="form-label">Data Inicial:</label>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="form-input-text"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="form-label">Data Final:</label>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="form-input-text"
+                        />
+                    </div>
+                </section>
+
+                <section className="report-button-container">
+                    <div className="view-mode-buttons">
+                        <button
+                            onClick={() => setViewMode("table")}
+                            className={`form-button ${
+                                viewMode === "table" ? "active" : ""
+                            }`}
+                        >
+                            Visualização em Tabela
+                        </button>
+                        <button
+                            onClick={() => setViewMode("calendar")}
+                            className={`form-button ${
+                                viewMode === "calendar" ? "active" : ""
+                            }`}
+                        >
+                            Visualização em Calendário
+                        </button>
+                    </div>
+
+                    <div className="report-actions">
+                        <button
+                            type="button"
+                            onClick={fetchReports}
+                            className="form-button"
+                        >
+                            Gerar Relatório
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSelectedPromoter("");
+                                setSelectedStore("");
+                                setSelectedBrand("");
+                                setStartDate("");
+                                setEndDate("");
+                            }}
+                            className="form-button clear-button"
+                        >
+                            Limpar Filtros
+                        </button>
+                    </div>
+
+                    <div className="export-buttons">
+                        <button
+                            onClick={() => handleExport("excel")}
+                            className={`form-button ${
+                                !reports.length ? "disabled" : ""
+                            }`}
+                            disabled={!reports.length}
+                            title={
+                                !reports.length
+                                    ? "Para exportar em Excel, primeiro gere um relatório usando os filtros"
+                                    : "Exportar relatório em Excel"
+                            }
+                        >
+                            📊 Exportar Excel
+                        </button>
+                        <button
+                            onClick={() => handleExport("pdf")}
+                            className={`form-button ${
+                                !reports.length ? "disabled" : ""
+                            }`}
+                            disabled={!reports.length}
+                            title={
+                                !reports.length
+                                    ? "Para exportar em PDF, primeiro gere um relatório usando os filtros"
+                                    : "Exportar relatório em PDF"
+                            }
+                        >
+                            📄 Exportar PDF
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            <div className={`table-container ${viewMode}`}>
+                {loading ? (
+                    <div className="loading-container">
+                        <Loader />
+                    </div>
+                ) : viewMode === "table" ? (
+                    renderTableView()
+                ) : (
+                    renderCalendarView()
+                )}
+            </div>
         </div>
     );
 };

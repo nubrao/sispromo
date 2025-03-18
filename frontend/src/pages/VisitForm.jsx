@@ -6,7 +6,6 @@ import PropTypes from "prop-types";
 import { LoadingModal } from "../components/LoadingModal";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { RoleContext } from "../context/RoleContext";
-import Select from "react-select";
 
 const VisitForm = ({
     loading,
@@ -40,7 +39,7 @@ const VisitForm = ({
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
     const didFetchData = useRef(false);
-    const { isPromoter, isManagerOrAnalyst } = useContext(RoleContext);
+    const { isPromoter } = useContext(RoleContext);
     const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
@@ -192,13 +191,7 @@ const VisitForm = ({
             const response = await axios.get(`${API_URL}/api/promoters/`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            const promoterOptions = response.data.map((promoter) => ({
-                value: promoter.id,
-                label: `${promoter.name} (${promoter.email || "Sem email"})`,
-                name: promoter.name,
-                email: promoter.email,
-            }));
-            setPromoters(promoterOptions);
+            setPromoters(response.data);
         } catch (error) {
             console.error("Erro ao buscar promotores:", error);
         }
@@ -278,14 +271,14 @@ const VisitForm = ({
 
             if (existingVisit) {
                 const promoterName =
-                    promoters.find((p) => p.value === parseInt(promoterId, 10))
+                    promoters.find((p) => p.id === parseInt(promoterId, 10))
                         ?.name || "";
                 const storeName =
                     stores.find((s) => s.id === parseInt(storeId, 10))?.name ||
                     "";
                 const brandName =
-                    brands.find((b) => b.value === parseInt(brand.id, 10))
-                        ?.label || "";
+                    brands.find((b) => b.brand_id === parseInt(brand.id, 10))
+                        ?.brand_name || "";
 
                 setErrorMessage(
                     `Já existe uma visita cadastrada para ${promoterName.toUpperCase()} na loja ${storeName.toUpperCase()} para a marca ${brandName.toUpperCase()} nesta data.`
@@ -374,66 +367,100 @@ const VisitForm = ({
 
     const handleBrandChange = (e) => {
         const selectedId = e.target.value ? parseInt(e.target.value, 10) : "";
-        const selectedBrand = brands.find((b) => b.value === selectedId) || {
-            value: "",
-            label: "",
+        const selectedBrand = brands.find((b) => b.brand_id === selectedId) || {
+            brand_id: "",
+            brand_name: "",
         };
 
         setBrand({
-            id: selectedBrand.value,
-            name: selectedBrand.label,
+            id: selectedBrand.brand_id,
+            name: selectedBrand.brand_name,
         });
         setStoreId(""); // Limpa a loja selecionada quando trocar a marca
     };
 
     return (
         <div className="form-container">
-            <h2 className="form-title">Registro de Visitas</h2>
+            <h2 className="form-title">Cadastro de Visitas</h2>
             <form onSubmit={handleSubmit} className="form-input">
-                {isManagerOrAnalyst && (
-                    <Select
-                        value={promoterId}
-                        onChange={(e) => setPromoterId(e.value)}
-                        options={promoters}
-                        placeholder="Selecione um promotor"
-                        className="react-select"
-                        classNamePrefix="react-select"
-                        isClearable
-                        isSearchable
+                {isPromoter() ? (
+                    <input
+                        type="hidden"
+                        value={currentUser?.promoter_id || ""}
+                        name="promoterId"
                     />
+                ) : (
+                    <select
+                        value={promoterId}
+                        onChange={(e) => setPromoterId(e.target.value)}
+                        className="form-input-text"
+                        required
+                    >
+                        <option value="">Selecione um Promotor</option>
+                        {promoters.map((promoter) => (
+                            <option key={promoter.id} value={promoter.id}>
+                                {promoter.name.toUpperCase()}
+                            </option>
+                        ))}
+                    </select>
                 )}
-                <Select
-                    value={storeId}
-                    onChange={(e) => setStoreId(e.value)}
-                    options={stores}
-                    placeholder="Selecione uma loja"
-                    className="react-select"
-                    classNamePrefix="react-select"
-                    isClearable
-                    isSearchable
-                />
-                <Select
-                    value={brand.id}
+
+                <select
+                    value={brand.id || ""}
                     onChange={handleBrandChange}
-                    options={brands}
-                    placeholder="Selecione uma marca"
-                    className="react-select"
-                    classNamePrefix="react-select"
-                    isClearable
-                    isSearchable
-                />
-                <input
-                    type="date"
-                    value={visitDate}
-                    onChange={(e) => setVisitDate(e.target.value)}
                     className="form-input-text"
                     required
-                />
-                {errorMessage && (
-                    <p className="error-message">{errorMessage}</p>
-                )}
+                >
+                    <option value="">Selecione uma Marca</option>
+                    {brands
+                        .filter(
+                            (brand, index, self) =>
+                                index ===
+                                self.findIndex(
+                                    (b) => b.brand_id === brand.brand_id
+                                )
+                        )
+                        .map((brand) => (
+                            <option key={brand.brand_id} value={brand.brand_id}>
+                                {brand.brand_name.toUpperCase()}
+                            </option>
+                        ))}
+                </select>
+
+                <select
+                    value={storeId}
+                    onChange={(e) => setStoreId(e.target.value)}
+                    className="form-input-text"
+                    required
+                    disabled={!brand.id}
+                >
+                    <option value="">
+                        {!brand.id
+                            ? "Selecione uma Marca primeiro"
+                            : "Selecione uma Loja"}
+                    </option>
+                    {filteredStores.map((store) => (
+                        <option key={store.id} value={store.id}>
+                            {store.name.toUpperCase()} - {store.number}
+                        </option>
+                    ))}
+                </select>
+
+                <div className="form-dates">
+                    <label className="form-label">Data da Visita:</label>
+                    <input
+                        type="date"
+                        value={visitDate}
+                        onChange={(e) => setVisitDate(e.target.value)}
+                        className="form-input-text date-input"
+                        max={new Date().toISOString().split("T")[0]}
+                        required
+                        disabled={isPromoter()}
+                    />
+                </div>
+
                 <button type="submit" className="form-button">
-                    Registrar Visita
+                    Cadastrar
                 </button>
             </form>
 
@@ -448,36 +475,52 @@ const VisitForm = ({
             <h3 className="form-title">Lista de Visitas</h3>
 
             <div className="filter-container">
-                {isManagerOrAnalyst && (
-                    <input
-                        type="text"
-                        placeholder="Filtrar por promotor"
-                        value={filterPromoter}
-                        onChange={(e) => setFilterPromoter(e.target.value)}
-                        className="form-input-text"
-                    />
-                )}
                 <input
                     type="text"
-                    placeholder="Filtrar por loja"
-                    value={filterStore}
-                    onChange={(e) => setFilterStore(e.target.value)}
+                    placeholder="Filtrar Promotor"
+                    value={filterPromoter}
+                    onChange={(e) => setFilterPromoter(e.target.value)}
                     className="form-input-text"
                 />
+
                 <input
                     type="text"
-                    placeholder="Filtrar por marca"
+                    placeholder="Filtrar Marca"
                     value={filterBrand}
                     onChange={(e) => setFilterBrand(e.target.value)}
                     className="form-input-text"
                 />
-                <button onClick={clearFilters} className="form-button">
+
+                <input
+                    type="text"
+                    placeholder="Filtrar Loja"
+                    value={filterStore}
+                    onChange={(e) => setFilterStore(e.target.value)}
+                    className="form-input-text"
+                />
+
+                <div className="form-dates">
+                    <label className="form-label">Data da Visita:</label>
+                    <input
+                        type="date"
+                        placeholder="Filtrar Data"
+                        value={filterDate}
+                        onChange={(e) => setFilterDate(e.target.value)}
+                        className="form-input-text date-input"
+                        max={new Date().toISOString().split("T")[0]}
+                    />
+                </div>
+
+                <button
+                    onClick={clearFilters}
+                    className="form-button clear-button"
+                >
                     Limpar Filtros
                 </button>
             </div>
 
             <div className="table-container">
-                {loading && filteredVisits.length === 0 ? (
+                {!dataLoaded ? (
                     <div className="loading-container">
                         <Loader />
                     </div>
@@ -485,26 +528,28 @@ const VisitForm = ({
                     <table className="table">
                         <thead>
                             <tr>
-                                <th>Data</th>
                                 <th>Promotor</th>
-                                <th>Email</th>
-                                <th>Loja</th>
                                 <th>Marca</th>
+                                <th>Loja</th>
+                                <th>Data</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredVisits.map((visit) => (
-                                <tr key={visit.id}>
+                                <tr key={visit.id} id={`visit-row-${visit.id}`}>
+                                    <td>{visit.promoter.name.toUpperCase()}</td>
+                                    <td>{visit.brand.name.toUpperCase()}</td>
+                                    <td>
+                                        {visit.store.name.toUpperCase()}
+                                        {visit.store.number &&
+                                            ` - ${visit.store.number}`}
+                                    </td>
                                     <td>
                                         {new Date(
-                                            visit.visit_date
-                                        ).toLocaleDateString()}
+                                            visit.visit_date + "T00:00:00"
+                                        ).toLocaleDateString("pt-BR")}
                                     </td>
-                                    <td>{visit.promoter_name}</td>
-                                    <td>{visit.promoter_email || "-"}</td>
-                                    <td>{visit.store_name}</td>
-                                    <td>{visit.brand_name}</td>
                                     <td>
                                         <div className="form-actions">
                                             <button
@@ -513,7 +558,7 @@ const VisitForm = ({
                                                 }
                                                 className="form-button delete-button"
                                             >
-                                                🗑️
+                                                ❌
                                             </button>
                                         </div>
                                     </td>

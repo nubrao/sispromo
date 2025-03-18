@@ -36,7 +36,7 @@
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .form-group label {
@@ -44,6 +44,69 @@
     margin-bottom: 8px;
     color: #333;
     font-weight: 500;
+}
+
+.form-button:hover {
+    background-color: #535bf2;
+}
+
+/* Estilos da tabela */
+.assignments-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.assignments-table th,
+.assignments-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.assignments-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+}
+
+.assignments-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.delete-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.delete-button:hover {
+    background-color: #ffebee;
+}
+
+.assignments-list {
+    margin-top: 40px;
+}
+
+.assignments-list h3 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.no-assignments {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    color: #666;
 }
 
 /* React Select Styles */
@@ -97,96 +160,38 @@
     color: #333 !important;
 }
 
-.assign-button {
-    width: 100%;
-    padding: 12px;
-    background-color: #646cff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s ease;
-}
-
-.assign-button:hover {
-    background-color: #535bf2;
-}
-
-.assignments-list {
-    margin-top: 30px;
-}
-
-.assignments-list h3 {
-    margin-bottom: 20px;
-    color: #333;
-}
-
-.no-assignments {
-    text-align: center;
-    color: #666;
-    padding: 20px;
-    background: #f5f5f5;
-    border-radius: 8px;
-}
-
-.assignments-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.assignment-card {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.assignment-info h4 {
-    margin: 0 0 10px 0;
-    color: #333;
-}
-
-.assignment-info p {
-    margin: 5px 0;
-    color: #666;
-}
-
-.remove-button {
-    margin-top: 15px;
-    padding: 8px 16px;
-    background-color: #f44336;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.remove-button:hover {
-    background-color: #d32f2f;
-}
-
 /* Tema escuro */
 @media (prefers-color-scheme: dark) {
     .page-title {
         color: #fff;
     }
 
-    .assignment-form,
-    .assignment-card {
-        background: #1a1a1a;
+    .assignment-form {
+        background: #2d2d2d;
     }
 
     .form-group label {
         color: #fff;
     }
 
-    /* React Select Dark Theme */
+    .assignments-table {
+        background: #2d2d2d;
+    }
+
+    .assignments-table th {
+        background-color: #1f1f1f;
+        color: #fff;
+    }
+
+    .assignments-table td {
+        color: #fff;
+        border-bottom-color: #444;
+    }
+
+    .assignments-table tr:hover {
+        background-color: #3f3f3f;
+    }
+
     .react-select__control {
         background-color: #2d2d2d !important;
         border-color: #444 !important;
@@ -194,14 +199,6 @@
 
     .react-select__single-value {
         color: #fff !important;
-    }
-
-    .react-select__input {
-        color: #fff !important;
-    }
-
-    .react-select__placeholder {
-        color: #aaa !important;
     }
 
     .react-select__menu {
@@ -239,17 +236,13 @@
         color: #fff;
     }
 
-    .assignment-info h4 {
-        color: #fff;
-    }
-
-    .assignment-info p {
-        color: #ddd;
-    }
-
     .error-message {
         background-color: #311b1b;
         color: #ff6b6b;
+    }
+
+    .delete-button:hover {
+        background-color: #3f1f1f;
     }
 }
 
@@ -259,11 +252,18 @@
         padding: 10px;
     }
 
-    .assignments-grid {
-        grid-template-columns: 1fr;
+    .assignments-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
     }
 
-    .assignment-card {
-        width: 100%;
+    .assignments-table th,
+    .assignments-table td {
+        padding: 8px;
+    }
+
+    .form-button {
+        padding: 8px 16px;
     }
 }

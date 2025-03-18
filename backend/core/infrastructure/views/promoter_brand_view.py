@@ -34,7 +34,8 @@ class PromoterBrandViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Retorna o queryset de todas as atribuições."""
-        return self.queryset.select_related('promoter', 'brand', 'brand__store')
+        return self.queryset.select_related(
+            'promoter', 'brand', 'brand__store')
 
     def create(self, request, *args, **kwargs):
         """Cria uma nova atribuição verificando duplicatas."""
@@ -94,7 +95,15 @@ class PromoterBrandViewSet(viewsets.ModelViewSet):
     def my_brands(self, request):
         """Retorna as marcas atribuídas ao promotor"""
         try:
-            promoter = request.user.userprofile.promoter
+            user_profile = getattr(request.user, 'userprofile', None)
+            promoter = getattr(user_profile, 'promoter', None)
+
+            if not promoter:
+                return Response(
+                    {"error": "Usuário não está vinculado a um promotor."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             assignments = PromoterBrandModel.objects.filter(promoter=promoter)
             serializer = self.get_serializer(assignments, many=True)
             return Response(serializer.data)

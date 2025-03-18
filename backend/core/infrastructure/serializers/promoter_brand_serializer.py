@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from ..models.promoter_brand_model import PromoterBrandModel
-from ..models.brand_model import BrandModel
 
 
 class PromoterBrandSerializer(serializers.ModelSerializer):
@@ -45,32 +44,34 @@ class PromoterBrandSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.CharField())
     def get_store_name(self, obj):
-        """Retorna o nome da loja"""
-        return obj.brand.store.name
+        """Retorna o nome da loja, se disponível"""
+        return obj.brand.store.name if obj.brand and obj.brand.store else None
 
     @extend_schema_field(serializers.CharField())
     def get_store_number(self, obj):
-        """Retorna o número da loja"""
-        return obj.brand.store.number
+        """Retorna o número da loja, se disponível"""
+        return (obj.brand.store.number
+                if obj.brand and obj.brand.store else None)
 
     def validate(self, data):
         """
-        Verifica se a marca já está associada a outro promotor
+        Verifica se o promotor já está associado à mesma marca
         """
         brand = data.get('brand')
         promoter = data.get('promoter')
 
         if self.instance:  # Se estiver atualizando
             if PromoterBrandModel.objects.exclude(id=self.instance.id).filter(
-                brand=brand
+                brand=brand, promoter=promoter
             ).exists():
                 raise serializers.ValidationError(
-                    "Esta marca já está associada a outro promotor."
+                    "Este promotor já está associado a esta marca."
                 )
         else:  # Se estiver criando
-            if PromoterBrandModel.objects.filter(brand=brand).exists():
+            if PromoterBrandModel.objects.filter(
+                    brand=brand, promoter=promoter).exists():
                 raise serializers.ValidationError(
-                    "Esta marca já está associada a outro promotor."
+                    "Este promotor já está associado a esta marca."
                 )
 
         return data

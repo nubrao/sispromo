@@ -56,23 +56,34 @@ const PromoterBrandAssignment = ({
                 ]
             );
 
-            setPromoters(
-                promotersRes.data.map((promoter) => ({
-                    value: promoter.id,
-                    label: `${promoter.name} (${
-                        promoter.email || "Sem email"
-                    })`,
-                    name: promoter.name,
-                    email: promoter.email,
-                }))
-            );
+            console.log("promotersRes", promotersRes.data);
+            console.log("brandsRes", brandsRes.data);
+            console.log("assignmentsRes", assignmentsRes.data);
 
-            setBrands(
-                brandsRes.data.map((brand) => ({
-                    value: brand.id,
-                    label: `${brand.brand_name} - ${brand.store.name} (${brand.store.number})`,
-                }))
-            );
+            // Formata os promotores para o select
+            const promoterOptions = promotersRes.data.map((promoter) => ({
+                value: promoter.id,
+                label: promoter.user_profile?.user
+                    ? `${promoter.user_profile.user.first_name} ${
+                          promoter.user_profile.user.last_name
+                      } (${promoter.user_profile.user.email || "Sem email"})`
+                    : `${promoter.name} (${promoter.cpf})`,
+                name: promoter.name,
+                email: promoter.user_profile?.user?.email,
+            }));
+            setPromoters(promoterOptions);
+
+            // Formata as marcas para o select
+            const brandOptions = brandsRes.data.map((brand) => ({
+                value: brand.id,
+                label: `${brand.brand_name} - ${brand.store.name} (${
+                    brand.store.number || "S/N"
+                })`,
+                brand_name: brand.brand_name,
+                store_name: brand.store.name,
+                store_number: brand.store.number,
+            }));
+            setBrands(brandOptions);
 
             setAssignments(assignmentsRes.data);
         } catch (error) {
@@ -111,15 +122,18 @@ const PromoterBrandAssignment = ({
             );
             setSelectedPromoter(null);
             setSelectedBrand(null);
-            fetchData();
+            await fetchData(); // Recarrega os dados após a atribuição
+            setSuccess(true);
+            setErrorMessage(null);
         } catch (error) {
             console.error("Erro ao criar atribuição:", error);
-            const message = translateMessage(error.response?.data?.error);
-            setErrorMessage(message || "Erro ao criar atribuição.");
+            const message =
+                error.response?.data?.error || "Erro ao criar atribuição.";
+            setErrorMessage(message);
             setSuccess(false);
         } finally {
             setLoading(false);
-            setSuccess(true);
+            setModalOpen(false);
         }
     };
 
@@ -141,14 +155,16 @@ const PromoterBrandAssignment = ({
             });
 
             setSuccess(true);
-            fetchData();
+            await fetchData(); // Recarrega os dados após a exclusão
         } catch (error) {
             console.error("Erro ao excluir atribuição:", error);
-            const message = translateMessage(error.response?.data?.error);
-            setErrorMessage(message || "Erro ao excluir atribuição.");
+            const message =
+                error.response?.data?.error || "Erro ao excluir atribuição.";
+            setErrorMessage(message);
             setSuccess(false);
         } finally {
             setLoading(false);
+            setModalOpen(false);
         }
     };
 
@@ -171,8 +187,9 @@ const PromoterBrandAssignment = ({
         <div className="promoter-brand-container">
             <h2 className="page-title">Atribuição de Marcas</h2>
 
-            <form onSubmit={handleSubmit} className="promoter-brand-form">
-                <div className="select-container">
+            <form onSubmit={handleSubmit} className="assignment-form">
+                <div className="form-group">
+                    <label>Promotor:</label>
                     <Select
                         value={selectedPromoter}
                         onChange={setSelectedPromoter}
@@ -183,6 +200,10 @@ const PromoterBrandAssignment = ({
                         isClearable
                         isSearchable
                     />
+                </div>
+
+                <div className="form-group">
+                    <label>Marca:</label>
                     <Select
                         value={selectedBrand}
                         onChange={setSelectedBrand}
@@ -194,16 +215,18 @@ const PromoterBrandAssignment = ({
                         isSearchable
                     />
                 </div>
+
                 {errorMessage && (
                     <p className="error-message">{errorMessage}</p>
                 )}
-                <button type="submit" className="promoter-brand-button">
+
+                <button type="submit" className="form-button">
                     Atribuir Marca
                 </button>
             </form>
 
             <LoadingModal
-                open={modalOpen}
+                visible={modalOpen}
                 success={success}
                 loading={loading}
                 errorMessage={errorMessage}
@@ -218,12 +241,13 @@ const PromoterBrandAssignment = ({
                     </p>
                 ) : (
                     <div className="table-container">
-                        <table className="table">
+                        <table className="assignments-table">
                             <thead>
                                 <tr>
                                     <th>Promotor</th>
                                     <th>Email</th>
                                     <th>Marca</th>
+                                    <th>Loja</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
@@ -235,19 +259,19 @@ const PromoterBrandAssignment = ({
                                             {assignment.promoter_email || "-"}
                                         </td>
                                         <td>{assignment.brand_name}</td>
+                                        <td>{`${assignment.store_name} (${
+                                            assignment.store_number || "S/N"
+                                        })`}</td>
                                         <td>
-                                            <div className="form-actions">
-                                                <button
-                                                    onClick={() =>
-                                                        handleDelete(
-                                                            assignment.id
-                                                        )
-                                                    }
-                                                    className="form-button delete-button"
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </div>
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(assignment.id)
+                                                }
+                                                className="delete-button"
+                                                title="Remover atribuição"
+                                            >
+                                                🗑️
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
