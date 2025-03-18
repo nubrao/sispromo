@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import Loader from "./Loader";
 import "../styles/modal.css";
 
-export const LoadingModal = ({
+export const CustomModal = ({
     visible,
     success,
     loading,
@@ -16,7 +16,7 @@ export const LoadingModal = ({
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h3>{title || "Processando..."}</h3>
+                <h3>{title || "" }</h3>
                 {loading ? (
                     <div className="loading-container">
                         <Loader />
@@ -43,7 +43,7 @@ export const LoadingModal = ({
     );
 };
 
-LoadingModal.propTypes = {
+CustomModal.propTypes = {
     visible: PropTypes.bool,
     success: PropTypes.bool,
     loading: PropTypes.bool,

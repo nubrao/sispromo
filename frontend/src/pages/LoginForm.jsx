@@ -4,7 +4,7 @@ import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { useAuth } from "../contexts/AuthContext";
 import { Button, Input, Form, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
-import { LoadingModal } from "../components/LoadingModal";
+import { CustomModal } from "../components/CustomModal";
 
 const LoginForm = () => {
     const navigate = useNavigate();
@@ -104,7 +104,7 @@ const LoginForm = () => {
                     </Form.Item>
                 </Form>
             </div>
-            <LoadingModal visible={loading} />
+            <CustomModal visible={loading} />
         </div>
     );
 };

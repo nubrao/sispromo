@@ -3,7 +3,7 @@ import axios from "axios";
 import "../styles/form.css";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
-import { LoadingModal } from "../components/LoadingModal";
+import { CustomModal } from "../components/CustomModal";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { RoleContext } from "../context/RoleContext";
 
@@ -464,7 +464,7 @@ const VisitForm = ({
                 </button>
             </form>
 
-            <LoadingModal
+            <CustomModal
                 open={modalOpen}
                 success={success}
                 loading={loading}

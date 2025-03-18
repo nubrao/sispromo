@@ -6,7 +6,7 @@ import Select from "react-select";
 import { RoleContext } from "../context/RoleContext";
 import { Navigate } from "react-router-dom";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
-import { LoadingModal } from "../components/LoadingModal";
+import { CustomModal } from "../components/CustomModal";
 import PropTypes from "prop-types";
 
 const PromoterBrandAssignment = ({
@@ -55,10 +55,6 @@ const PromoterBrandAssignment = ({
                     }),
                 ]
             );
-
-            console.log("promotersRes", promotersRes.data);
-            console.log("brandsRes", brandsRes.data);
-            console.log("assignmentsRes", assignmentsRes.data);
 
             // Formata os promotores para o select
             const promoterOptions = promotersRes.data.map((promoter) => ({
@@ -225,7 +221,7 @@ const PromoterBrandAssignment = ({
                 </button>
             </form>
 
-            <LoadingModal
+            <CustomModal
                 visible={modalOpen}
                 success={success}
                 loading={loading}

@@ -86,6 +86,28 @@
     align-items: center;
 }
 
+.form-input-break {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+
+    .name-input {
+        width: 40%;
+    }
+
+    .surname-input {
+        width: 60%;
+    }
+
+    .cpf-input {
+        width: 50%;
+    }
+
+    .phone-input {
+        width: 50%;
+    }
+}
+
 .form-input-text {
     display: flex;
     flex-direction: column;
@@ -372,6 +394,88 @@
     background-color: #c82333;
 }
 
+@media (prefers-color-scheme: dark) {
+    .ant-modal-content {
+        background-color: var(--modal-bg-dark) !important;
+        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    .ant-modal-title {
+        color: white !important;
+        background-color: var(--modal-bg-dark) !important;
+    }
+
+    .ant-modal-confirm-title {
+        color: white !important;
+    }
+
+    .ant-modal-confirm-content {
+        color: white !important;
+    }
+
+    .ant-modal-header {
+        background-color: var(--modal-bg-dark) !important;
+    }
+
+    .ant-modal-body {
+        background-color: var(--modal-bg-dark) !important;
+        color: white !important;
+    }
+
+    .ant-input {
+        background-color: var(--modal-input-dark) !important;
+        color: white !important;
+    }
+}
+
+.ant-modal-content {
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.5);
+}
+
+.ant-modal-header {
+    font-size: 1.2em !important;
+    margin-bottom: 16px !important;
+}
+
+.ant-modal-title {
+    font-weight: bold;
+    font-size: 1.2em !important;
+}
+
+.ant-modal-confirm-title {
+    font-size: 1.2em !important;
+}
+
+.ant-btn-ok {
+    height: 40px;
+    background-color: #89b789;
+    color: white;
+    font-size: 1em;
+    font-weight: bold;
+    border: none !important;
+}
+
+.ant-btn-ok:hover {
+    background-color: #b3d0b3 !important;
+    color: white !important;
+    border: none !important;
+}
+
+.ant-btn-cancel {
+    height: 40px;
+    background-color: #f44336;
+    color: white;
+    font-size: 1em;
+    font-weight: bold;
+    border: none !important;
+}
+
+.ant-btn-cancel:hover {
+    background-color: #c82333 !important;
+    color: white !important;
+    border: none !important;
+}
+
 /* Tema escuro */
 @media (prefers-color-scheme: dark) {
     .filter-container {
@@ -399,6 +503,7 @@
     .filter-container {
         flex-direction: column;
         gap: 10px;
+        max-width: 400px;
     }
 
     .filter-container input,

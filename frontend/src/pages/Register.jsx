@@ -12,7 +12,7 @@ import {
     PhoneOutlined,
 } from "@ant-design/icons";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
-import { LoadingModal } from "../components/LoadingModal";
+import { CustomModal } from "../components/CustomModal";
 import { formatCPF, formatPhone } from "../hooks/useMask";
 
 const Register = () => {
@@ -95,7 +95,7 @@ const Register = () => {
             const response = await axios.post(
                 `${API_URL}/api/users/register/`,
                 {
-                    username: username, // Usa o CPF como username
+                    username: username,
                     email: values.email,
                     password: values.password,
                     password_confirm: values.password_confirm,
@@ -103,7 +103,7 @@ const Register = () => {
                     last_name: values.last_name,
                     cpf: cpf,
                     phone: values.phone,
-                    role: "promoter", // Papel padrão para novos usuários
+                    role: "promoter",
                 }
             );
 
@@ -111,96 +111,37 @@ const Register = () => {
                 setSuccess(true);
                 message.success(translateMessage("register.success"));
                 setTimeout(() => {
+                    setModalVisible(false);
                     navigate("/login");
                 }, 2000);
             }
         } catch (error) {
             console.error("Erro ao registrar:", error.response?.data);
+            setSuccess(false);
+            setModalVisible(false);
 
             if (error.response?.data) {
                 const errorData = error.response.data;
                 const fieldErrors = [];
 
-                // Função auxiliar para adicionar erro a um campo
-                const addFieldError = (field, message) => {
-                    fieldErrors.push({
-                        name: field,
-                        errors: [translateMessage(message)],
-                    });
-                };
-
-                if (typeof errorData === "object") {
-                    Object.entries(errorData).forEach(([field, errors]) => {
-                        if (Array.isArray(errors)) {
-                            errors.forEach((error) => {
-                                if (error.includes("already exists")) {
-                                    addFieldError("cpf", "register.cpf.exists");
-                                } else if (
-                                    error.includes("CPF deve conter 11 dígitos")
-                                ) {
-                                    addFieldError("cpf", "register.cpf.format");
-                                } else if (
-                                    error.includes(
-                                        "Telefone deve ter entre 10 e 11 dígitos"
-                                    )
-                                ) {
-                                    addFieldError(
-                                        "phone",
-                                        "register.phone.format"
-                                    );
-                                } else if (error.includes("senha")) {
-                                    addFieldError(
-                                        "password",
-                                        "register.password.invalid"
-                                    );
-                                } else if (error.includes("email")) {
-                                    addFieldError(
-                                        "email",
-                                        "register.email.invalid"
-                                    );
-                                } else {
-                                    // Se não conseguir identificar o campo específico
-                                    message.error(translateMessage(error));
-                                }
+                Object.entries(errorData).forEach(([field, errors]) => {
+                    if (Array.isArray(errors)) {
+                        errors.forEach((error) => {
+                            fieldErrors.push({
+                                name: field,
+                                errors: [error],
                             });
-                        } else if (typeof errors === "string") {
-                            if (errors.includes("CPF deve conter 11 dígitos")) {
-                                addFieldError("cpf", "register.cpf.format");
-                            } else if (
-                                errors.includes(
-                                    "Telefone deve ter entre 10 e 11 dígitos"
-                                )
-                            ) {
-                                addFieldError("phone", "register.phone.format");
-                            } else if (errors.includes("senha")) {
-                                addFieldError(
-                                    "password",
-                                    "register.password.invalid"
-                                );
-                            } else if (errors.includes("email")) {
-                                addFieldError(
-                                    "email",
-                                    "register.email.invalid"
-                                );
-                            } else {
-                                // Se não conseguir identificar o campo específico
-                                message.error(translateMessage(errors));
-                            }
-                        }
-                    });
-                } else {
-                    message.error(translateMessage(errorData));
-                }
+                        });
+                    }
+                });
 
-                // Define todos os erros de campos de uma vez
                 if (fieldErrors.length > 0) {
                     form.setFields(fieldErrors);
                 }
             }
-            setSuccess(false);
+            message.error(translateMessage("register.error.generic"));
         } finally {
             setLoading(false);
-            setModalVisible(false);
         }
     };
 
@@ -426,15 +367,13 @@ const Register = () => {
                     </Link>
                 </Form>
 
-                {success && (
-                    <div className="success-message">
-                        {translateMessage("register.success")}
-                    </div>
-                )}
-
-                <LoadingModal
+                <CustomModal
+                    loading={loading}
+                    success={success}
+                    errorMessage={translateMessage("register.error")}
+                    title={"Processando..."}
                     visible={modalVisible}
-                    onCancel={() => setModalVisible(false)}
+                    onClose={() => setModalVisible(false)}
                 />
             </div>
         </>

@@ -2,21 +2,19 @@ import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import "../styles/form.css";
 import Loader from "../components/Loader";
-import { LoadingModal } from "../components/LoadingModal";
+import { CustomModal } from "../components/CustomModal";
 import { AuthContext } from "../context/AuthContext";
 import { RoleContext } from "../context/RoleContext";
 import Toast from "../components/Toast";
 import EditUserModal from "../components/EditUserModal";
+import { message, Modal, Input, Form } from "antd";
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [modalTitle, setModalTitle] = useState("");
+    const [modalVisible, setModalVisible] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
-    const [success, setSuccess] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
     const [toast, setToast] = useState({
         show: false,
         message: "",
@@ -32,6 +30,10 @@ const UserManagement = () => {
     const API_URL = import.meta.env.VITE_API_URL;
     const [selectedUser, setSelectedUser] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+        useState(false);
+    const [passwordModalLoading, setPasswordModalLoading] = useState(false);
+    const [form] = Form.useForm();
 
     useEffect(() => {
         if (isManager()) {
@@ -103,128 +105,127 @@ const UserManagement = () => {
             const response = await axios.get(`${API_URL}/api/users/`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setUsers(response.data);
+            // Ordenar usuários por ID
+            const sortedUsers = response.data.sort((a, b) => a.id - b.id);
+            setUsers(sortedUsers);
+            setFilteredUsers(sortedUsers);
         } catch (error) {
             console.error("Erro ao buscar usuários:", error);
-            showToast(
-                "Erro ao carregar usuários. Por favor, tente novamente.",
-                "error"
-            );
+            message.error("Erro ao carregar usuários");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleRoleChange = async (userId, newRole) => {
-        setModalTitle("Alterando Papel do Usuário");
-        setModalMessage("Processando alteração...");
-        setModalOpen(true);
-        setLoading(true);
-        setErrorMessage("");
+    const handleDeleteUser = (userId) => {
+        Modal.confirm({
+            title: "Confirmar exclusão",
+            content: "Tem certeza que deseja excluir este usuário?",
+            okText: "Sim",
+            cancelText: "Não",
+            okButtonProps: {
+                className: "ant-btn-ok",
+            },
+            cancelButtonProps: {
+                className: "ant-btn-cancel",
+            },
+            onOk: async () => {
+                try {
+                    await axios.delete(`${API_URL}/api/users/${userId}/`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    showToast("Usuário excluído com sucesso!", "success");
+                    setTimeout(() => {
+                        fetchUsers();
+                    }, 2000);
+                } catch (error) {
+                    console.error("Erro ao excluir usuário:", error);
+                    showToast("Erro ao excluir usuário", "error");
+                }
+            },
+        });
+    };
+
+    const handleChangePassword = (userId) => {
+        setSelectedUser({ id: userId });
+        setIsChangePasswordModalOpen(true);
+    };
+
+    const handlePasswordSubmit = async (values) => {
+        if (values.newPassword !== values.confirmPassword) {
+            form.setFields([
+                {
+                    name: "confirmPassword",
+                    errors: ["As senhas não coincidem"],
+                },
+            ]);
+            return;
+        }
+
+        setPasswordModalLoading(true);
 
         try {
             await axios.patch(
-                `${API_URL}/api/users/${userId}/update_role/`,
-                { role: newRole },
+                `${API_URL}/api/users/${selectedUser.id}/`,
                 {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
+                    password: values.newPassword,
+                    password_confirm: values.confirmPassword,
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
                 }
             );
-            await fetchUsers();
-        } catch (error) {
-            console.error("Erro ao atualizar papel do usuário:", error);
-            const errorMsg =
-                error.response?.data?.error ||
-                "Erro ao atualizar permissão. Por favor, tente novamente.";
-            setErrorMessage(errorMsg);
-            setModalMessage(errorMsg);
-        } finally {
-            setLoading(false);
+            showToast("Senha alterada com sucesso!", "success");
+            setModalVisible(false);
             setTimeout(() => {
-                setModalOpen(false);
-                setSuccess(false);
-                setErrorMessage("");
+                setIsChangePasswordModalOpen(false);
+                setPasswordModalLoading(false);
+                form.resetFields();
             }, 2000);
-            setModalMessage("Papel do usuário atualizado com sucesso!");
-            setSuccess(true);
+        } catch (error) {
+            console.error("Erro ao alterar senha:", error);
+            showToast("Erro ao alterar senha", "error");
+            setIsChangePasswordModalOpen(false);
+        } finally {
+            setPasswordModalLoading(false);
         }
     };
 
     const handleActiveChange = async (userId, isActive) => {
-        setModalTitle(isActive ? "Ativando Usuário" : "Desativando Usuário");
-        setModalMessage("Processando alteração...");
-        setModalOpen(true);
-        setLoading(true);
-        setErrorMessage("");
-
         try {
             await axios.patch(
                 `${API_URL}/api/users/${userId}/`,
                 { is_active: isActive },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
-            await fetchUsers();
+            showToast(
+                `Usuário ${isActive ? "ativado" : "desativado"} com sucesso`,
+                "success"
+            );
+            fetchUsers();
         } catch (error) {
-            console.error("Erro ao atualizar status do usuário:", error);
-            const errorMsg =
-                error.response?.data?.error ||
-                "Erro ao atualizar status. Por favor, tente novamente.";
-            setErrorMessage(errorMsg);
-            setModalMessage(errorMsg);
-        } finally {
-            setLoading(false);
-            setTimeout(() => {
-                setModalOpen(false);
-                setSuccess(false);
-                setErrorMessage("");
-            }, 2000);
-            setSuccess(true);
-            setModalMessage(
-                `Usuário ${isActive ? "ativado" : "desativado"} com sucesso!`
-            );
+            console.error("Erro ao alterar status:", error);
+            showToast("Erro ao alterar status do usuário", "error");
         }
     };
 
-    const handleDeleteUser = async (userId) => {
-        if (!window.confirm("Tem certeza que deseja excluir este usuário?")) {
-            return;
-        }
-
-        setModalTitle("Excluindo Usuário");
-        setModalMessage("Processando exclusão...");
-        setModalOpen(true);
-        setLoading(true);
-        setErrorMessage("");
-
+    const handleRoleChange = async (userId, newRole) => {
         try {
-            await axios.delete(`${API_URL}/api/users/${userId}/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            await fetchUsers();
+            await axios.patch(
+                `${API_URL}/api/users/${userId}/`,
+                { role: newRole },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            const roleNames = {
+                promoter: "Promotor",
+                analyst: "Analista",
+                manager: "Gestor",
+            };
+            showToast(`Função alterada para ${roleNames[newRole]}`, "success");
+            fetchUsers();
         } catch (error) {
-            console.error("Erro ao excluir usuário:", error);
-            const errorMsg =
-                error.response?.data?.error ||
-                "Erro ao excluir usuário. Por favor, tente novamente.";
-            setErrorMessage(errorMsg);
-            setModalMessage(errorMsg);
-        } finally {
-            setLoading(false);
-            setTimeout(() => {
-                setModalOpen(false);
-                setSuccess(false);
-                setErrorMessage("");
-            }, 2000);
-            setModalMessage("Usuário excluído com sucesso!");
-            setSuccess(true);
+            console.error("Erro ao alterar função:", error);
+            showToast("Erro ao alterar função do usuário", "error");
         }
     };
 
@@ -235,9 +236,12 @@ const UserManagement = () => {
 
     const handleEditSave = async (editedUserData) => {
         try {
+            // Remover campos que não devem ser atualizados via PATCH
+            const { cpf, username, ...dataToUpdate } = editedUserData;
+
             await axios.patch(
                 `${API_URL}/api/users/${selectedUser.id}/`,
-                editedUserData,
+                dataToUpdate,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -247,66 +251,33 @@ const UserManagement = () => {
             );
             await fetchUsers();
             setIsEditModalOpen(false);
-            setToast({
-                message: "Usuário atualizado com sucesso!",
-                type: "success",
-                show: true,
-            });
+            showToast("Usuário atualizado com sucesso!", "success");
         } catch (error) {
             console.error("Erro ao atualizar usuário:", error);
-            setToast({
-                message:
-                    error.response?.data?.error || "Erro ao atualizar usuário",
-                type: "error",
-                show: true,
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
 
-    const handleChangePassword = async (userId) => {
-        const newPassword = window.prompt(
-            "Digite a nova senha para o usuário:"
-        );
-        if (!newPassword) return;
+            // Tratamento específico para erros da API
+            if (error.response?.data) {
+                const errorData = error.response.data;
+                let errorMessage = "";
 
-        setModalTitle("Alterando Senha");
-        setModalMessage("Processando alteração...");
-        setModalOpen(true);
-        setLoading(true);
-        setErrorMessage("");
-
-        try {
-            await axios.patch(
-                `${API_URL}/api/users/${userId}/`,
-                {
-                    password: newPassword,
-                    password_confirm: newPassword,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
+                // Verifica se há mensagens de erro em campos específicos
+                if (typeof errorData === "object") {
+                    errorMessage = Object.entries(errorData)
+                        .map(([field, errors]) => {
+                            if (Array.isArray(errors)) {
+                                return errors.join(", ");
+                            }
+                            return errors;
+                        })
+                        .join(". ");
+                } else {
+                    errorMessage = errorData;
                 }
-            );
-            setSuccess(true);
-            setModalMessage("Senha alterada com sucesso!");
-        } catch (error) {
-            console.error("Erro ao alterar senha:", error);
-            const errorMsg =
-                error.response?.data?.error ||
-                "Erro ao alterar senha. Por favor, tente novamente.";
-            setErrorMessage(errorMsg);
-            setModalMessage(errorMsg);
-        } finally {
-            setLoading(false);
-            setTimeout(() => {
-                setModalOpen(false);
-                setSuccess(false);
-                setErrorMessage("");
-            }, 2000);
+
+                showToast(errorMessage, "error");
+            } else {
+                showToast("Erro ao atualizar usuário", "error");
+            }
         }
     };
 
@@ -372,22 +343,18 @@ const UserManagement = () => {
                 />
             )}
 
-            <LoadingModal
-                open={modalOpen}
-                success={success}
-                loading={loading}
-                errorMessage={errorMessage}
-                title={modalTitle}
+            <CustomModal
+                visible={modalVisible}
+                onCancel={() => setModalVisible(false)}
                 message={modalMessage}
-                onClose={() => setModalOpen(false)}
             />
 
-            {loading && !modalOpen ? (
-                <div className="loading-container">
-                    <Loader />
-                </div>
-            ) : (
-                <div className="table-container">
+            <div className="table-container">
+                {loading && !modalVisible ? (
+                    <div className="loading-container">
+                        <Loader />
+                    </div>
+                ) : (
                     <table className="table">
                         <thead>
                             <tr>
@@ -403,7 +370,8 @@ const UserManagement = () => {
                             {filteredUsers.map((user) => (
                                 <tr key={user.id}>
                                     <td>
-                                        {user.first_name.toUpperCase()} {user.last_name.toUpperCase()}
+                                        {user.first_name.toUpperCase()}{" "}
+                                        {user.last_name.toUpperCase()}
                                     </td>
                                     <td>{user.username}</td>
                                     <td>{user.email}</td>
@@ -490,17 +458,84 @@ const UserManagement = () => {
                             ))}
                         </tbody>
                     </table>
-                </div>
-            )}
+                )}
+            </div>
 
+            {/* Modal de edição */}
             {isEditModalOpen && selectedUser && (
                 <EditUserModal
                     open={isEditModalOpen}
+                    setOpen={setIsEditModalOpen}
                     user={selectedUser}
                     onClose={() => setIsEditModalOpen(false)}
                     onSave={handleEditSave}
                 />
             )}
+
+            {/* Modal de alterar senha */}
+            <Modal
+                title="Alterar Senha"
+                open={isChangePasswordModalOpen}
+                onOk={() => form.submit()}
+                okText="Confirmar"
+                okButtonProps={{
+                    type: "primary",
+                    loading: passwordModalLoading,
+                    className: "ant-btn-ok",
+                }}
+                confirmLoading={passwordModalLoading}
+                onCancel={() => {
+                    setIsChangePasswordModalOpen(false);
+                    form.resetFields();
+                }}
+                cancelText="Cancelar"
+                cancelButtonProps={{
+                    type: "default",
+                    className: "ant-btn-cancel",
+                }}
+            >
+                <Form form={form} onFinish={handlePasswordSubmit}>
+                    <Form.Item
+                        name="newPassword"
+                        rules={[
+                            { required: true, message: "Digite a nova senha" },
+                        ]}
+                    >
+                        <Input.Password
+                            placeholder="Nova senha"
+                            className="ant-input"
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        name="confirmPassword"
+                        dependencies={["newPassword"]}
+                        rules={[
+                            {
+                                required: true,
+                                message: "Confirme a nova senha",
+                            },
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    if (
+                                        !value ||
+                                        getFieldValue("newPassword") === value
+                                    ) {
+                                        return Promise.resolve();
+                                    }
+                                    return Promise.reject(
+                                        "As senhas não coincidem"
+                                    );
+                                },
+                            }),
+                        ]}
+                    >
+                        <Input.Password
+                            placeholder="Confirme a nova senha"
+                            className="ant-input"
+                        />
+                    </Form.Item>
+                </Form>
+            </Modal>
         </div>
     );
 };

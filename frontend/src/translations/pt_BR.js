@@ -15,6 +15,7 @@ export const pt_BR = {
     },
     register: {
         title: 'Criar Conta no SisPromo',
+        loading: 'Processando cadastro...',
         firstName: {
             placeholder: 'Nome',
             required: 'Por favor, insira seu nome'
@@ -61,7 +62,9 @@ export const pt_BR = {
         },
         submit: 'Criar Conta',
         success: 'Cadastro realizado com sucesso! Você já pode fazer login.',
-        error: 'Erro ao realizar cadastro. Por favor, tente novamente.',
+        error: {
+            generic: 'Não foi possível realizar o cadastro. Por favor, verifique os dados e tente novamente.'
+        },
         loginLink: 'Já tem uma conta? Faça login'
     },
     validation: {

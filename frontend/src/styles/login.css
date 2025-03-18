@@ -11,6 +11,11 @@
     --button-hover-light: #b3d0b3;
     --button-hover-dark: #b3d0b3;
     --input-bg-dark: #2d2d2d;
+    --modal-bg-dark: #2d2d2d;
+    --modal-title-dark: #fff;
+    --modal-header-dark: #2d2d2d;
+    --modal-body-dark: #2d2d2d;
+    --modal-input-dark: #141414;
 }
 
 html,

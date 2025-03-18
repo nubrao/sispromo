@@ -5,7 +5,9 @@ import { formatCPF, formatPhone } from "../hooks/useMask";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
-import { LoadingModal } from "../components/LoadingModal";
+import { CustomModal } from "../components/CustomModal";
+import { Modal } from "antd";
+import Toast from "../components/Toast";
 
 const PromoterForm = ({
     loading,
@@ -39,6 +41,11 @@ const PromoterForm = ({
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
+    const [toast, setToast] = useState({
+        show: false,
+        message: "",
+        type: "success",
+    });
 
     useEffect(() => {
         setLoading(true);
@@ -186,17 +193,104 @@ const PromoterForm = ({
         }
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm("Tem certeza que deseja excluir este promotor?")) {
-            try {
-                await axios.delete(`${API_URL}/api/promoters/${id}/`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                fetchPromoters();
-            } catch (error) {
-                console.error("Erro ao excluir promotor", error);
-            }
-        }
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+        setTimeout(() => {
+            setToast({ show: false, message: "", type: "success" });
+        }, 3000);
+    };
+
+    const handleDelete = (promoterId) => {
+        Modal.confirm({
+            title: "Confirmar exclusão",
+            content:
+                "Tem certeza que deseja excluir este promotor? Esta ação também removerá o usuário associado.",
+            okText: "Sim",
+            cancelText: "Não",
+            okButtonProps: {
+                className: "ant-btn-ok",
+            },
+            cancelButtonProps: {
+                className: "ant-btn-cancel",
+            },
+            onOk: async () => {
+                setModalOpen(true);
+                setLoading(true);
+                setErrorMessage("");
+
+                try {
+                    // Primeiro, buscar os dados do promotor
+                    const promoterResponse = await axios.get(
+                        `${API_URL}/api/promoters/${promoterId}/`,
+                        {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }
+                    );
+
+                    const promoterData = promoterResponse.data;
+
+                    // Buscar o usuário pelo CPF (que é usado como username)
+                    try {
+                        const usersResponse = await axios.get(
+                            `${API_URL}/api/users/`,
+                            {
+                                headers: { Authorization: `Bearer ${token}` },
+                            }
+                        );
+
+                        // Encontrar o usuário que tem o mesmo CPF como username
+                        const user = usersResponse.data.find(
+                            (user) => user.username === promoterData.cpf
+                        );
+
+                        if (user) {
+                            // Se encontrou o usuário, exclui ele primeiro
+                            await axios.delete(
+                                `${API_URL}/api/users/${user.id}/`,
+                                {
+                                    headers: {
+                                        Authorization: `Bearer ${token}`,
+                                    },
+                                }
+                            );
+                        } else {
+                            // Se não encontrou o usuário, exclui apenas o promotor
+                            await axios.delete(
+                                `${API_URL}/api/promoters/${promoterId}/`,
+                                {
+                                    headers: {
+                                        Authorization: `Bearer ${token}`,
+                                    },
+                                }
+                            );
+                        }
+
+                        showToast("Promotor excluído com sucesso!", "success");
+                        await fetchPromoters();
+                    } catch (error) {
+                        console.error("Erro ao buscar/excluir usuário:", error);
+                        showToast(
+                            "Erro ao excluir usuário e promotor",
+                            "error"
+                        );
+                    }
+                } catch (error) {
+                    console.error("Erro ao excluir promotor:", error);
+                    let errorMessage = "Erro ao excluir promotor";
+
+                    if (error.response?.data?.detail) {
+                        errorMessage = error.response.data.detail;
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+
+                    showToast(errorMessage, "error");
+                } finally {
+                    setLoading(false);
+                    setModalOpen(false);
+                }
+            },
+        });
     };
 
     const handleCancelEdit = () => {
@@ -208,22 +302,24 @@ const PromoterForm = ({
         <div className="form-container">
             <h2 className="form-title">Cadastro de Promotores</h2>
             <form onSubmit={handleSubmit} className="form-input">
-                <input
-                    type="text"
-                    placeholder="Nome"
-                    value={firstName.toUpperCase()}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="form-input-text"
-                    required
-                />
-                <input
-                    type="text"
-                    placeholder="Sobrenome"
-                    value={lastName.toLocaleUpperCase()}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="form-input-text"
-                    required
-                />
+                <div className="form-input-break">
+                    <input
+                        type="text"
+                        placeholder="Nome"
+                        value={firstName.toUpperCase()}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="form-input-text name-input"
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder="Sobrenome"
+                        value={lastName.toLocaleUpperCase()}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="form-input-text surname-input"
+                        required
+                    />
+                </div>
                 <input
                     type="email"
                     placeholder="Email"
@@ -232,28 +328,40 @@ const PromoterForm = ({
                     className="form-input-text"
                     required
                 />
-                <input
-                    type="text"
-                    placeholder="CPF"
-                    value={cpf}
-                    onChange={(e) => setCPF(formatCPF(e.target.value))}
-                    className="form-input-text"
-                    required
-                />
-                <input
-                    type="text"
-                    placeholder="Celular"
-                    value={phone}
-                    onChange={(e) => setPhone(formatPhone(e.target.value))}
-                    className="form-input-text"
-                    required
-                />
+                <div className="form-input-break">
+                    <input
+                        type="text"
+                        placeholder="CPF"
+                        value={cpf}
+                        onChange={(e) => setCPF(formatCPF(e.target.value))}
+                        className="form-input-text cpf-input"
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder="Celular"
+                        value={phone}
+                        onChange={(e) => setPhone(formatPhone(e.target.value))}
+                        className="form-input-text phone-input"
+                        required
+                    />
+                </div>
                 <button type="submit" className="form-button">
                     Cadastrar
                 </button>
             </form>
 
-            <LoadingModal
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() =>
+                        setToast({ show: false, message: "", type: "success" })
+                    }
+                />
+            )}
+
+            <CustomModal
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
                 loading={loading}
@@ -287,7 +395,10 @@ const PromoterForm = ({
                     }
                     className="form-input-text"
                 />
-                <button onClick={clearFilters} className="form-button clear-button">
+                <button
+                    onClick={clearFilters}
+                    className="form-button clear-button"
+                >
                     Limpar Filtros
                 </button>
             </div>

@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import AuthProvider from "./context/AuthContext";
 import App from "./App";
 import "./index.css";
+import "@ant-design/v5-patch-for-react-19";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>

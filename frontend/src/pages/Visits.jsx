@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useContext } from "react";
 import axios from "axios";
 import "../styles/form.css";
 import Loader from "../components/Loader";
-import { LoadingModal } from "../components/LoadingModal";
+import { CustomModal } from "../components/CustomModal";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { RoleContext } from "../context/RoleContext";
 import VisitFilters from "../components/visits/VisitFilters";
@@ -138,7 +138,6 @@ const Visits = ({
 
         setFilteredVisits(filtered);
     }, [filterPromoter, filterStore, filterBrand, filterDate, visits]);
-
 
     useEffect(() => {
         if (brand.id) {
@@ -315,10 +314,6 @@ const Visits = ({
         return translateMessage("Erro ao registrar visita.");
     };
 
-    if (!dataLoaded) return <Loader />;
-
-    console.log(filteredVisits);
-
     return (
         <div className="form-container">
             <h2 className="form-title">
@@ -431,9 +426,10 @@ const Visits = ({
                 handleDelete={handleDelete}
                 handleEdit={handleEdit}
                 isPromoter={isPromoter()}
+                dataLoaded={dataLoaded}
             />
 
-            <LoadingModal
+            <CustomModal
                 isOpen={modalOpen}
                 loading={loading}
                 success={success}

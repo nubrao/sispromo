@@ -3,7 +3,7 @@ import axios from "axios";
 import "../styles/form.css";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
-import { LoadingModal } from "../components/LoadingModal";
+import { CustomModal } from "../components/CustomModal";
 import CreatableSelect from "react-select/creatable";
 
 const BrandForm = ({
@@ -413,7 +413,7 @@ const BrandForm = ({
                 </button>
             </form>
 
-            <LoadingModal
+            <CustomModal
                 open={modalOpen}
                 success={success}
                 loading={loading}

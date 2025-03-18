@@ -5,7 +5,7 @@ import { formatCNPJ } from "../hooks/useMask";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
-import { LoadingModal } from "../components/LoadingModal";
+import { CustomModal } from "../components/CustomModal";
 
 const StoreForm = ({
     loading,
@@ -343,7 +343,7 @@ const StoreForm = ({
                 </button>
             </form>
 
-            <LoadingModal
+            <CustomModal
                 open={modalOpen}
                 success={success}
                 loading={loading}
