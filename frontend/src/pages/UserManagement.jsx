@@ -1,34 +1,22 @@
 import { useState, useEffect, useContext } from "react";
-import axios from "axios";
 import "../styles/form.css";
 import Loader from "../components/Loader";
-import { CustomModal } from "../components/CustomModal";
-import { AuthContext } from "../context/AuthContext";
 import { RoleContext } from "../context/RoleContext";
-import Toast from "../components/Toast";
+import { Toast } from "../components/Toast";
 import EditUserModal from "../components/EditUserModal";
-import { message, Modal, Input, Form } from "antd";
+import { Modal, Input, Form } from "antd";
 import userRepository from "../repositories/userRepository";
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [modalMessage, setModalMessage] = useState("");
-    const [toast, setToast] = useState({
-        show: false,
-        message: "",
-        type: "success",
-    });
     const [filters, setFilters] = useState({
         search: "",
         role: "",
         status: "",
     });
-    const { token } = useContext(AuthContext);
     const { isManager, userProfileId } = useContext(RoleContext);
-    const API_URL = import.meta.env.VITE_API_URL;
     const [selectedUser, setSelectedUser] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
@@ -44,6 +32,7 @@ const UserManagement = () => {
 
     useEffect(() => {
         filterUsers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters, users]);
 
     const filterUsers = () => {
@@ -93,13 +82,6 @@ const UserManagement = () => {
         });
     };
 
-    const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
-        setTimeout(() => {
-            setToast({ show: false, message: "", type: "success" });
-        }, 3000);
-    };
-
     const fetchUsers = async () => {
         setLoading(true);
         try {
@@ -108,120 +90,75 @@ const UserManagement = () => {
             setFilteredUsers(data);
         } catch (error) {
             console.error("Erro ao buscar usuários:", error);
-            showToast("Erro ao carregar usuários", "error");
+            Toast.showToast("Erro ao carregar usuários", "error");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDelete = (userId) => {
-        Modal.confirm({
-            title: "Confirmar exclusão",
-            content: "Tem certeza que deseja excluir este usuário?",
-            okText: "Sim",
-            cancelText: "Não",
-            okButtonProps: {
-                className: "ant-btn-ok",
-            },
-            cancelButtonProps: {
-                className: "ant-btn-cancel",
-            },
-            onOk: async () => {
-                setLoading(true);
-                try {
-                    await userRepository.deleteUser(userId);
-                    showToast("Usuário excluído com sucesso!", "success");
-                    await fetchUsers();
-                } catch (error) {
-                    console.error("Erro ao excluir usuário:", error);
-                    showToast("Erro ao excluir usuário", "error");
-                } finally {
-                    setLoading(false);
-                }
-            },
-        });
-    };
-
-    const handleChangePassword = (userId) => {
-        setSelectedUser({ id: userId });
-        setIsChangePasswordModalOpen(true);
-    };
-
-    const handlePasswordSubmit = async (values) => {
-        if (values.newPassword !== values.confirmPassword) {
-            form.setFields([
-                {
-                    name: "confirmPassword",
-                    errors: ["As senhas não coincidem"],
-                },
-            ]);
-            return;
-        }
-
-        setPasswordModalLoading(true);
-
+    const handleDelete = async (userId) => {
         try {
-            await axios.patch(
-                `${API_URL}/api/users/${selectedUser.id}/`,
-                {
-                    password: values.newPassword,
-                    password_confirm: values.confirmPassword,
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            showToast("Senha alterada com sucesso!", "success");
-            setModalVisible(false);
-            setTimeout(() => {
-                setIsChangePasswordModalOpen(false);
-                setPasswordModalLoading(false);
-                form.resetFields();
-            }, 2000);
+            await userRepository.deleteUser(userId);
+            await fetchUsers();
+            Toast.showToast("Usuário excluído com sucesso!", "success");
+        } catch (error) {
+            console.error("Erro ao excluir usuário:", error);
+            Toast.showToast("Erro ao excluir usuário", "error");
+        }
+    };
+
+    const handleChangePassword = async (values) => {
+        setPasswordModalLoading(true);
+        try {
+            await userRepository.updateUser(selectedUser.id, {
+                password: values.newPassword,
+                password_confirm: values.confirmPassword,
+            });
+            setIsChangePasswordModalOpen(false);
+            form.resetFields();
+            Toast.showToast("Senha alterada com sucesso!", "success");
         } catch (error) {
             console.error("Erro ao alterar senha:", error);
-            showToast("Erro ao alterar senha", "error");
-            setIsChangePasswordModalOpen(false);
+            Toast.showToast("Erro ao alterar senha", "error");
         } finally {
             setPasswordModalLoading(false);
         }
     };
 
-    const handleActiveChange = async (userId, isActive) => {
+    const handleToggleActive = async (userId, currentStatus) => {
         try {
-            await axios.patch(
-                `${API_URL}/api/users/${userId}/`,
-                { is_active: isActive },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            showToast(
-                `Usuário ${isActive ? "ativado" : "desativado"} com sucesso`,
+            await userRepository.updateUser(userId, {
+                is_active: !currentStatus,
+            });
+            await fetchUsers();
+            Toast.showToast(
+                `Usuário ${
+                    currentStatus ? "desativado" : "ativado"
+                } com sucesso!`,
                 "success"
             );
-            fetchUsers();
         } catch (error) {
-            console.error("Erro ao alterar status:", error);
-            showToast("Erro ao alterar status do usuário", "error");
+            console.error("Erro ao alterar status do usuário:", error);
+            Toast.showToast("Erro ao alterar status do usuário", "error");
         }
     };
 
     const handleRoleChange = async (userId, newRole) => {
         try {
-            await axios.patch(
-                `${API_URL}/api/users/${userId}/`,
-                { role: newRole },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await userRepository.updateUser(userId, { role: newRole });
+            await fetchUsers();
             const roleNames = {
                 promoter: "Promotor",
                 analyst: "Analista",
                 manager: "Gestor",
             };
-            showToast(`Função alterada para ${roleNames[newRole]}`, "success");
-            fetchUsers();
+            Toast.showToast(
+                `Função alterada para ${roleNames[newRole]}`,
+                "success"
+            );
         } catch (error) {
-            console.error("Erro ao alterar função:", error);
-            showToast("Erro ao alterar função do usuário", "error");
+            console.error("Erro ao alterar função do usuário:", error);
+            Toast.showToast("Erro ao alterar função do usuário", "error");
         }
     };
 
@@ -232,22 +169,10 @@ const UserManagement = () => {
 
     const handleEditSave = async (editedUserData) => {
         try {
-            // Remover campos que não devem ser atualizados via PATCH
-            const { cpf, username, ...dataToUpdate } = editedUserData;
-
-            await axios.patch(
-                `${API_URL}/api/users/${selectedUser.id}/`,
-                dataToUpdate,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
+            await userRepository.updateUser(selectedUser.id, editedUserData);
             await fetchUsers();
             setIsEditModalOpen(false);
-            showToast("Usuário atualizado com sucesso!", "success");
+            Toast.showToast("Usuário atualizado com sucesso!", "success");
         } catch (error) {
             console.error("Erro ao atualizar usuário:", error);
 
@@ -259,7 +184,8 @@ const UserManagement = () => {
                 // Verifica se há mensagens de erro em campos específicos
                 if (typeof errorData === "object") {
                     errorMessage = Object.entries(errorData)
-                        .map(([field, errors]) => {
+                        // eslint-disable-next-line no-unused-vars
+                        .map(([_, errors]) => {
                             if (Array.isArray(errors)) {
                                 return errors.join(", ");
                             }
@@ -270,69 +196,10 @@ const UserManagement = () => {
                     errorMessage = errorData;
                 }
 
-                showToast(errorMessage, "error");
+                Toast.showToast(errorMessage, "error");
             } else {
-                showToast("Erro ao atualizar usuário", "error");
+                Toast.showToast("Erro ao atualizar usuário", "error");
             }
-        }
-    };
-
-    const handleSaveEdit = async (userId) => {
-        setLoading(true);
-        try {
-            await userRepository.updateUser(userId, {
-                first_name: editFirstName,
-                last_name: editLastName,
-                email: editEmail,
-                cpf: editCPF.replace(/\D/g, ""),
-                phone: editPhone.replace(/\D/g, ""),
-                role: editRole,
-                is_active: editIsActive,
-            });
-
-            showToast("Usuário atualizado com sucesso!", "success");
-            setEditingId(null);
-            await fetchUsers();
-        } catch (error) {
-            console.error("Erro ao atualizar usuário:", error);
-            showToast("Erro ao atualizar usuário", "error");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleToggleActive = async (userId, currentStatus) => {
-        setLoading(true);
-        try {
-            await userRepository.updateUser(userId, {
-                is_active: !currentStatus,
-            });
-
-            showToast(
-                `Usuário ${
-                    !currentStatus ? "ativado" : "desativado"
-                } com sucesso!`,
-                "success"
-            );
-            await fetchUsers();
-        } catch (error) {
-            console.error("Erro ao alterar status do usuário:", error);
-            showToast("Erro ao alterar status do usuário", "error");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleResetPassword = async (userId) => {
-        setLoading(true);
-        try {
-            await userRepository.resetPassword({ user_id: userId });
-            showToast("Senha resetada com sucesso!", "success");
-        } catch (error) {
-            console.error("Erro ao resetar senha:", error);
-            showToast("Erro ao resetar senha", "error");
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -387,25 +254,8 @@ const UserManagement = () => {
                     Limpar Filtros
                 </button>
             </div>
-
-            {toast.show && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() =>
-                        setToast({ show: false, message: "", type: "success" })
-                    }
-                />
-            )}
-
-            <CustomModal
-                visible={modalVisible}
-                onCancel={() => setModalVisible(false)}
-                message={modalMessage}
-            />
-
             <div className="table-container">
-                {loading && !modalVisible ? (
+                {loading ? (
                     <div className="loading-container">
                         <Loader />
                     </div>
@@ -460,7 +310,7 @@ const UserManagement = () => {
                                             <input
                                                 type="checkbox"
                                                 checked={user.profile.is_active}
-                                                onChange={(e) =>
+                                                onChange={() =>
                                                     handleToggleActive(
                                                         user.id,
                                                         user.profile.is_active
@@ -549,7 +399,7 @@ const UserManagement = () => {
                     className: "ant-btn-cancel",
                 }}
             >
-                <Form form={form} onFinish={handlePasswordSubmit}>
+                <Form form={form} onFinish={handleChangePassword}>
                     <Form.Item
                         name="newPassword"
                         rules={[

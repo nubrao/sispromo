@@ -5,13 +5,12 @@ from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
-from core.infrastructure.serializers.promoter_serializer import (
-    PromoterSerializer
+from ..serializers.promoter_serializer import (
+    PromoterSerializer, PromoterUpdateSerializer
 )
-from core.infrastructure.repositories.promoter_repository import (
-    DjangoPromoterRepository
-)
-from core.infrastructure.models.promoter_model import PromoterModel
+from ..repositories.promoter_repository import DjangoPromoterRepository
+from ..domain.use_cases.promoter_use_cases import PromoterUseCases
+from ..models.promoter_model import PromoterModel
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,27 +50,24 @@ class PromoterViewSet(viewsets.ViewSet):
     ViewSet para gerenciar promotores.
     """
     permission_classes = [IsAuthenticated]
-    serializer_class = PromoterSerializer
+    repository = DjangoPromoterRepository()
+    use_cases = PromoterUseCases(repository)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.repository = DjangoPromoterRepository()
+    def get_serializer_class(self):
+        if self.request.method == 'PATCH':
+            return PromoterUpdateSerializer
+        return PromoterSerializer
 
     def list(self, request):
         """Lista todos os promotores com filtros opcionais"""
         try:
-            name = request.query_params.get('name')
-            cpf = request.query_params.get('cpf')
-            phone = request.query_params.get('phone')
-
-            promoters = self.repository.get_by_filters(
-                name=name, cpf=cpf, phone=phone)
-            serializer = self.serializer_class(promoters, many=True)
+            promoters = self.use_cases.list_promoters()
+            serializer = self.get_serializer_class()(promoters, many=True)
             return Response(serializer.data)
         except Exception as e:
             logger.error(f"Erro ao listar promotores: {str(e)}")
             return Response(
-                {"error": "Erro ao listar promotores."},
+                {"error": "Erro ao listar promotores"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -80,107 +76,81 @@ class PromoterViewSet(viewsets.ViewSet):
         try:
             logger.info(
                 f"Iniciando criação de promotor com dados: {request.data}")
-            serializer = self.serializer_class(data=request.data)
-
-            logger.info("Validando dados do promotor...")
-            if serializer.is_valid():
-                logger.info("Dados válidos, criando promotor...")
-                try:
-                    promoter = serializer.create(serializer.validated_data)
-                    logger.info(
-                        f"Promotor criado com sucesso. ID: {promoter.id}")
-                    return Response(
-                        self.serializer_class(promoter).data,
-                        status=status.HTTP_201_CREATED
-                    )
-                except Exception as create_error:
-                    logger.error(
-                        f"Erro durante a criação do promotor: {str(create_error)}")
-                    raise create_error
-
-            logger.error(f"Erro de validação: {serializer.errors}")
+            serializer = self.get_serializer_class()(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            promoter = serializer.save()
+            logger.info(
+                f"Promotor criado com sucesso. ID: {promoter.id}")
             return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except serializers.ValidationError as e:
-            logger.error(f"Erro de validação ao criar promotor: {str(e)}")
-            return Response(
-                e.detail,
-                status=status.HTTP_400_BAD_REQUEST
+                PromoterSerializer(promoter).data,
+                status=status.HTTP_201_CREATED
             )
         except Exception as e:
-            logger.error(f"Erro não esperado ao criar promotor: {str(e)}")
+            logger.error(f"Erro ao criar promotor: {str(e)}")
             return Response(
-                {"error": "Erro ao criar promotor."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
     def retrieve(self, request, pk=None):
         """Obtém um promotor específico"""
         try:
-            promoter = self.repository.get_by_id(pk)
-            if promoter:
-                serializer = self.serializer_class(promoter)
-                return Response(serializer.data)
-            return Response(
-                {'error': 'Promotor não encontrado.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            promoter = self.use_cases.get_promoter(pk)
+            if not promoter:
+                return Response(
+                    {"error": "Promotor não encontrado"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            serializer = self.get_serializer_class()(promoter)
+            return Response(serializer.data)
         except Exception as e:
-            logger.error(f"Erro ao obter promotor: {str(e)}")
+            logger.error(f"Erro ao buscar promotor: {str(e)}")
             return Response(
-                {"error": "Erro ao obter promotor."},
+                {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     def update(self, request, pk=None):
         """Atualiza um promotor existente"""
         try:
-            promoter = self.repository.get_by_id(pk)
+            promoter = self.use_cases.get_promoter(pk)
             if not promoter:
                 return Response(
-                    {'error': 'Promotor não encontrado.'},
+                    {"error": "Promotor não encontrado"},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            serializer = self.serializer_class(promoter, data=request.data)
-            if serializer.is_valid():
-                updated_promoter = self.repository.update(
-                    pk, serializer.validated_data)
-                return Response(self.serializer_class(updated_promoter).data)
-            return Response(
-                {"error": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except serializers.ValidationError as e:
-            return Response(
-                e.detail,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            serializer = self.get_serializer_class()(data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+
+            # Atualiza os dados da entidade
+            for field, value in serializer.validated_data.items():
+                setattr(promoter, field, value)
+
+            # Usa o caso de uso para atualizar
+            updated_promoter = self.use_cases.update_promoter(promoter)
+            return Response(PromoterSerializer(updated_promoter).data)
         except Exception as e:
             logger.error(f"Erro ao atualizar promotor: {str(e)}")
             return Response(
-                {"error": "Erro ao atualizar promotor."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
     def destroy(self, request, pk=None):
         """Remove um promotor"""
         try:
-            promoter = self.repository.get_by_id(pk)
-            if not promoter:
+            success = self.use_cases.delete_promoter(pk)
+            if not success:
                 return Response(
-                    {'error': 'Promotor não encontrado.'},
+                    {"error": "Promotor não encontrado"},
                     status=status.HTTP_404_NOT_FOUND
                 )
-
-            self.repository.delete(pk)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             logger.error(f"Erro ao excluir promotor: {str(e)}")
             return Response(
-                {"error": "Erro ao excluir promotor."},
+                {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -198,7 +168,7 @@ class PromoterViewSet(viewsets.ViewSet):
             success = PromoterModel.link_promoter_to_user(pk, user_id)
             if success:
                 promoter = self.repository.get_by_id(pk)
-                serializer = self.serializer_class(promoter)
+                serializer = self.get_serializer_class()(promoter)
                 return Response(serializer.data)
             else:
                 return Response(

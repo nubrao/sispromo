@@ -38,7 +38,7 @@ def save_user_profile(sender, instance, **kwargs):
                 f"Perfil atualizado com sucesso para: {instance.username}")
         else:
             logger.warning(f"Perfil não encontrado para {instance.username}")
-            # Não cria um novo perfil aqui, pois o primeiro signal já deve ter feito isso
+            # Não cria um novo perfil aqui, pois o primeiro signal já deve ter feito isso # noqa: E501
     except Exception as e:
         logger.error(
             f"Erro ao salvar perfil para {instance.username}: {str(e)}")

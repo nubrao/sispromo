@@ -1,75 +1,79 @@
 import axios from "axios";
+import { Toast } from '../components/Toast';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export const visitRepository = {
-    async fetchVisits(token, promoterId) {
+class VisitRepository {
+    constructor() {
+        this.baseURL = `${API_URL}/api/visits/`;
+    }
+
+    getHeaders(token = null) {
+        const authToken = token || localStorage.getItem('token');
+        return {
+            headers: {
+                Authorization: `Bearer ${authToken}`,
+                "Content-Type": "application/json"
+            }
+        };
+    }
+
+    async getAllVisits(promoterId = null) {
         try {
-            let url = `${API_URL}/api/visits/`;
+            let url = this.baseURL;
             if (promoterId) {
                 url += `?promoter_id=${promoterId}`;
             }
 
-            const response = await axios.get(url, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await axios.get(url, this.getHeaders());
             return response.data;
         } catch (error) {
             console.error("Erro ao buscar visitas:", error);
+            Toast.showToast("Erro ao carregar visitas", "error");
             throw error;
         }
-    },
+    }
 
-    async createVisit(token, visitData) {
+    async createVisit(visitData) {
         try {
-            const response = await axios.post(
-                `${API_URL}/api/visits/`,
-                visitData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
+            const response = await axios.post(this.baseURL, visitData, this.getHeaders());
+            Toast.showToast("Visita cadastrada com sucesso!", "success");
             return response.data;
         } catch (error) {
             console.error("Erro ao criar visita:", error);
+            Toast.showToast("Erro ao cadastrar visita", "error");
             throw error;
         }
-    },
+    }
 
-    async updateVisit(token, visitId, visitData) {
+    async updateVisit(visitId, visitData) {
         try {
             const response = await axios.put(
-                `${API_URL}/api/visits/${visitId}/`,
+                `${this.baseURL}${visitId}/`,
                 visitData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
+                this.getHeaders()
             );
+            Toast.showToast("Visita atualizada com sucesso!", "success");
             return response.data;
         } catch (error) {
             console.error("Erro ao atualizar visita:", error);
+            Toast.showToast("Erro ao atualizar visita", "error");
             throw error;
         }
-    },
+    }
 
-    async deleteVisit(token, visitId) {
+    async deleteVisit(visitId) {
         try {
-            await axios.delete(`${API_URL}/api/visits/${visitId}/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await axios.delete(`${this.baseURL}${visitId}/`, this.getHeaders());
+            Toast.showToast("Visita excluída com sucesso!", "success");
         } catch (error) {
             console.error("Erro ao excluir visita:", error);
+            Toast.showToast("Erro ao excluir visita", "error");
             throw error;
         }
-    },
+    }
 
-    async fetchVisitsByFilters(token, filters) {
+    async getVisitsByFilters(filters) {
         try {
             const queryParams = new URLSearchParams();
             if (filters.promoterId) queryParams.append("promoter", filters.promoterId);
@@ -78,14 +82,15 @@ export const visitRepository = {
             if (filters.startDate) queryParams.append("start_date", filters.startDate);
             if (filters.endDate) queryParams.append("end_date", filters.endDate);
 
-            const url = `${API_URL}/api/visits/?${queryParams.toString()}`;
-            const response = await axios.get(url, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const url = `${this.baseURL}?${queryParams.toString()}`;
+            const response = await axios.get(url, this.getHeaders());
             return response.data;
         } catch (error) {
             console.error("Erro ao buscar visitas com filtros:", error);
+            Toast.showToast("Erro ao carregar visitas", "error");
             throw error;
         }
-    },
-}; 
+    }
+}
+
+export default new VisitRepository(); 

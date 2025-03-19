@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { formatCPF } from "../hooks/useMask";
 import Loader from "../components/Loader";
-import Toast from "../components/Toast";
+import { Toast } from "../components/Toast";
 import userRepository from "../repositories/userRepository";
 import "../styles/login.css";
 import Logo from "../assets/img/logo";

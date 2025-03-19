@@ -1,21 +1,16 @@
 import { useState, useEffect, useRef, useContext } from "react";
 import axios from "axios";
 import "../styles/form.css";
-import Loader from "../components/Loader";
 import { CustomModal } from "../components/CustomModal";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { RoleContext } from "../context/RoleContext";
 import VisitFilters from "../components/visits/VisitFilters";
 import VisitTable from "../components/visits/VisitTable";
 import PropTypes from "prop-types";
-import { visitRepository } from "../repositories/visitRepository";
-import { useNavigate } from "react-router-dom";
-import { useRole } from "../context/RoleContext";
-import { formatCPF, formatPhone } from "../hooks/useMask";
-import { formatDate } from "../hooks/useFormatDate";
-import Toast from "../components/Toast";
+import visitRepository from "../repositories/visitRepository";
+import { Toast } from "../components/Toast";
 import promoterRepository from "../repositories/promoterRepository";
-import userRepository from "../repositories/userRepository";
+import storeRepository from "../repositories/storeRepository";
 
 const Visits = ({
     loading,
@@ -54,7 +49,6 @@ const Visits = ({
     const didFetchData = useRef(false);
     const { isPromoter } = useContext(RoleContext);
     const [currentUser, setCurrentUser] = useState(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
         if (didFetchData.current) return;
@@ -120,6 +114,7 @@ const Visits = ({
         };
 
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [API_URL, token, isPromoter]);
 
     useEffect(() => {
@@ -182,12 +177,11 @@ const Visits = ({
 
     const fetchStores = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/stores/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setStores(response.data);
+            const data = await storeRepository.getAllStores();
+            setStores(data);
         } catch (error) {
             console.error("Erro ao buscar lojas:", error);
+            Toast.showToast("Erro ao carregar lojas", "error");
         }
     };
 
@@ -318,15 +312,6 @@ const Visits = ({
             return translateMessage(error.response.data.error);
         }
         return translateMessage("Erro ao registrar visita.");
-    };
-
-    const fetchCurrentUser = async () => {
-        try {
-            const userData = await userRepository.getCurrentUser();
-            setCurrentUser(userData);
-        } catch (error) {
-            console.error("Erro ao buscar usuário atual:", error);
-        }
     };
 
     return (

@@ -1,22 +1,22 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from core.domain.entities.promoter import Promoter
+from ..entities.promoter import Promoter
 
 
 class PromoterRepository(ABC):
     @abstractmethod
     def get_by_id(self, promoter_id: int) -> Optional[Promoter]:
-        """Retorna um promotor pelo ID"""
+        """Busca um promotor pelo ID"""
         pass
 
     @abstractmethod
     def get_by_cpf(self, cpf: str) -> Optional[Promoter]:
-        """Retorna um promotor pelo CPF"""
+        """Busca um promotor pelo CPF"""
         pass
 
     @abstractmethod
     def get_by_user_id(self, user_id: int) -> Optional[Promoter]:
-        """Retorna um promotor pelo ID do usuário"""
+        """Busca um promotor pelo ID do usuário"""
         pass
 
     @abstractmethod
@@ -36,7 +36,7 @@ class PromoterRepository(ABC):
 
     @abstractmethod
     def delete(self, promoter_id: int) -> None:
-        """Exclui um promotor"""
+        """Remove um promotor"""
         pass
 
     @abstractmethod
@@ -46,7 +46,7 @@ class PromoterRepository(ABC):
         cpf: Optional[str] = None,
         phone: Optional[str] = None
     ) -> List[Promoter]:
-        """Retorna promotores filtrados por nome, CPF e/ou telefone"""
+        """Retorna promotores filtrados"""
         pass
 
     @abstractmethod

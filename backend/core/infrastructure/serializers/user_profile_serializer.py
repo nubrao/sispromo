@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from django.contrib.auth.models import User
-from django.contrib.auth.hashers import make_password
 from ..models.user_profile_model import UserProfileModel
 
 
@@ -143,7 +142,7 @@ class UserSerializer(serializers.ModelSerializer):
         # Garante que temos os dados mais recentes após o signal criar o perfil
         user.refresh_from_db()
 
-        # Atualiza o perfil do usuário que foi criado automaticamente pelo signal
+        # Atualiza o perfil do usuário que foi criado automaticamente pelo signal # noqa: E501
         profile = user.userprofile
         profile.role = role
         profile.cpf = cpf
@@ -151,7 +150,7 @@ class UserSerializer(serializers.ModelSerializer):
         profile.is_active = is_active
         profile.save()
 
-        # Se o usuário for um promotor, cria automaticamente um registro na tabela de promotores
+        # Se o usuário for um promotor, cria automaticamente um registro na tabela de promotores # noqa: E501
         if role == 'promoter':
             from ..models.promoter_model import PromoterModel
             # Verifica se já existe um promotor com este CPF

@@ -5,6 +5,8 @@ import Loader from "../components/Loader";
 import PropTypes from "prop-types";
 import { CustomModal } from "../components/CustomModal";
 import CreatableSelect from "react-select/creatable";
+import { Toast } from "../components/Toast";
+import storeRepository from "../repositories/storeRepository";
 
 const BrandForm = ({
     loading,
@@ -67,12 +69,11 @@ const BrandForm = ({
 
     const fetchStores = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/stores/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setStores(response.data);
+            const data = await storeRepository.getAllStores();
+            setStores(data);
         } catch (error) {
-            console.error("Erro ao buscar lojas", error);
+            console.error("Erro ao buscar lojas:", error);
+            Toast.showToast("Erro ao carregar lojas", "error");
         }
     };
 

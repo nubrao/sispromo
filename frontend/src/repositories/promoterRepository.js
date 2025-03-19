@@ -4,7 +4,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 class PromoterRepository {
     constructor() {
-        this.baseURL = `${API_URL}/api/promoters`;
+        this.baseURL = `${API_URL}/api/promoters/`;
     }
 
     // Configura o header de autorização
@@ -29,7 +29,7 @@ class PromoterRepository {
     // Busca um promotor específico
     async getPromoterById(id) {
         try {
-            const response = await axios.get(`${this.baseURL}/${id}`, this.getHeaders());
+            const response = await axios.get(`${this.baseURL}${id}/`, this.getHeaders());
             return response.data;
         } catch (error) {
             console.error(`Erro ao buscar promotor ${id}:`, error);
@@ -51,7 +51,7 @@ class PromoterRepository {
     // Atualiza um promotor existente
     async updatePromoter(id, promoterData) {
         try {
-            const response = await axios.put(`${this.baseURL}/${id}`, promoterData, this.getHeaders());
+            const response = await axios.put(`${this.baseURL}${id}/`, promoterData, this.getHeaders());
             return response.data;
         } catch (error) {
             console.error(`Erro ao atualizar promotor ${id}:`, error);
@@ -62,7 +62,7 @@ class PromoterRepository {
     // Remove um promotor
     async deletePromoter(id) {
         try {
-            await axios.delete(`${this.baseURL}/${id}`, this.getHeaders());
+            await axios.delete(`${this.baseURL}${id}/`, this.getHeaders());
         } catch (error) {
             console.error(`Erro ao excluir promotor ${id}:`, error);
             throw error;
@@ -73,7 +73,7 @@ class PromoterRepository {
     async linkPromoterToUser(promoterId, userId) {
         try {
             const response = await axios.post(
-                `${this.baseURL}/${promoterId}/link_user/`,
+                `${this.baseURL}${promoterId}/link_user/`,
                 { user_id: userId },
                 this.getHeaders()
             );

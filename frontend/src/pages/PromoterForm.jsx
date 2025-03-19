@@ -6,7 +6,7 @@ import Loader from "../components/Loader";
 import PropTypes from "prop-types";
 import { CustomModal } from "../components/CustomModal";
 import { Modal } from "antd";
-import Toast from "../components/Toast";
+import { Toast } from "../components/Toast";
 import promoterRepository from "../repositories/promoterRepository";
 import userRepository from "../repositories/userRepository";
 
@@ -37,14 +37,7 @@ const PromoterForm = ({
     const [editPhone, setEditPhone] = useState("");
     const [editEmail, setEditEmail] = useState("");
 
-    const API_URL = import.meta.env.VITE_API_URL;
-    const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
-    const [toast, setToast] = useState({
-        show: false,
-        message: "",
-        type: "success",
-    });
 
     useEffect(() => {
         setLoading(true);
@@ -94,47 +87,32 @@ const PromoterForm = ({
     };
 
     const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
-        setTimeout(() => {
-            setToast({ show: false, message: "", type: "success" });
-        }, 3000);
+        Toast.showToast(message, type);
     };
 
     const copyToClipboard = async (text) => {
         try {
-            // Tenta usar a API do Clipboard
-            if (navigator.clipboard && window.isSecureContext) {
-                await navigator.clipboard.writeText(text);
-                showToast("Senha copiada com sucesso!", "success");
-                return;
-            }
-
-            // Fallback para o método mais antigo
+            await navigator.clipboard.writeText(text);
+            showToast("Senha copiada com sucesso!", "success");
+        } catch {
+            // Fallback para navegadores mais antigos ou contextos não seguros
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-999999px";
-            textArea.style.top = "-999999px";
             document.body.appendChild(textArea);
-            textArea.focus();
             textArea.select();
 
             try {
-                document.execCommand("copy");
-                textArea.remove();
+                const successful = document.execCommand("copy");
+                if (!successful) throw new Error("Copy command failed");
                 showToast("Senha copiada com sucesso!", "success");
-            } catch (err) {
-                textArea.remove();
+            } catch {
                 showToast(
                     "Erro ao copiar senha. Tente copiar manualmente.",
                     "error"
                 );
+            } finally {
+                document.body.removeChild(textArea);
             }
-        } catch (err) {
-            showToast(
-                "Erro ao copiar senha. Tente copiar manualmente.",
-                "error"
-            );
         }
     };
 
@@ -249,22 +227,29 @@ const PromoterForm = ({
         setLoading(true);
 
         const cleanedCPF = editCPF.replace(/\D/g, "");
+        const currentPromoter = promoters.find((p) => p.id === id);
 
-        if (cleanedCPF.length !== 11) {
+        // Só valida o CPF se ele foi alterado
+        if (cleanedCPF !== currentPromoter.cpf && cleanedCPF.length !== 11) {
             showToast("CPF inválido.", "error");
             setLoading(false);
             return;
         }
 
         try {
-            await promoterRepository.updatePromoter(id, {
+            const updateData = {
                 first_name: editFirstName,
                 last_name: editLastName,
-                cpf: cleanedCPF,
                 phone: editPhone.replace(/\D/g, ""),
                 email: editEmail,
-            });
+            };
 
+            // Só inclui o CPF se ele foi alterado
+            if (cleanedCPF !== currentPromoter.cpf) {
+                updateData.cpf = cleanedCPF;
+            }
+
+            await promoterRepository.updatePromoter(id, updateData);
             setEditingId(null);
             await fetchPromoters();
             showToast("Promotor atualizado com sucesso!", "success");
@@ -415,16 +400,6 @@ const PromoterForm = ({
                     {loading ? <Loader size="small" /> : "Cadastrar"}
                 </button>
             </form>
-
-            {toast.show && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() =>
-                        setToast({ show: false, message: "", type: "success" })
-                    }
-                />
-            )}
 
             <CustomModal
                 isOpen={modalOpen}

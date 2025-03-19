@@ -1,13 +1,63 @@
 from rest_framework import serializers
-from core.domain.entities.promoter import Promoter
 from django.contrib.auth.models import User
-from django.contrib.auth.hashers import make_password
-from ..models.user_profile_model import UserProfileModel
+from ..domain.entities.promoter import Promoter
 from ..models.promoter_model import PromoterModel
+from django.contrib.auth.hashers import make_password
 import logging
 from django.db import transaction
 
 logger = logging.getLogger(__name__)
+
+
+class PromoterUpdateSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100)
+    name = serializers.CharField(read_only=True)
+    cpf = serializers.CharField(min_length=11, max_length=11, required=False)
+    phone = serializers.CharField(min_length=10, max_length=15)
+    email = serializers.EmailField(required=True)
+    user_id = serializers.IntegerField(read_only=True)
+    temporary_password = serializers.CharField(read_only=True)
+
+    def validate_cpf(self, value):
+        """Valida se o CPF contém apenas números e se já não existe usuário/promotor"""
+        # Remove caracteres especiais do CPF
+        cpf_numbers = ''.join(filter(str.isdigit, value))
+
+        if len(cpf_numbers) != 11:
+            raise serializers.ValidationError(
+                "CPF deve conter 11 dígitos numéricos."
+            )
+
+        # Verifica se já existe um usuário com este CPF como username, exceto o atual
+        existing_user = User.objects.filter(username=cpf_numbers).first()
+        if existing_user and existing_user.id != self.instance.user_profile.user.id:
+            raise serializers.ValidationError(
+                "Já existe um usuário cadastrado com este CPF."
+            )
+
+        # Verifica se já existe um promotor com este CPF, exceto o atual
+        existing_promoter = PromoterModel.objects.filter(
+            cpf=cpf_numbers).first()
+        if existing_promoter and existing_promoter.id != self.instance.id:
+            raise serializers.ValidationError(
+                "Já existe um promotor cadastrado com este CPF."
+            )
+
+        return cpf_numbers
+
+    def validate_phone(self, value):
+        """Valida se o telefone contém apenas números"""
+        # Remove caracteres especiais do telefone
+        phone_numbers = ''.join(filter(str.isdigit, value))
+
+        if len(phone_numbers) < 10 or len(phone_numbers) > 11:
+            raise serializers.ValidationError(
+                "Telefone deve ter entre 10 e 11 dígitos."
+            )
+
+        return phone_numbers
 
 
 class PromoterSerializer(serializers.Serializer):
@@ -22,7 +72,7 @@ class PromoterSerializer(serializers.Serializer):
     temporary_password = serializers.CharField(read_only=True)
 
     def validate_cpf(self, value):
-        """Valida se o CPF contém apenas números e se já não existe usuário/promotor"""
+        """Valida se o CPF contém apenas números e se já não existe usuário/promotor"""  # noqa: E501
         # Remove caracteres especiais do CPF
         cpf_numbers = ''.join(filter(str.isdigit, value))
 
@@ -131,12 +181,12 @@ class PromoterSerializer(serializers.Serializer):
         except Exception as e:
             logger.error(
                 f"Erro durante a criação do promotor/usuário: {str(e)}")
-            # Se algo der errado, remove o usuário criado para evitar inconsistências
+            # Se algo der errado, remove o usuário criado para evitar inconsistências # noqa: E501
             if 'user' in locals():
                 logger.info(f"Removendo usuário {user.id} devido a erro")
                 user.delete()
             raise serializers.ValidationError({
-                "cpf": ["Erro ao criar usuário/promotor. Por favor, tente novamente."]
+                "cpf": ["Erro ao criar usuário/promotor. Por favor, tente novamente."]  # noqa: E501
             })
 
     def update(self, instance, validated_data):
@@ -164,7 +214,7 @@ class PromoterSerializer(serializers.Serializer):
             # Retorna a entidade atualizada
             entity = self.to_entity(validated_data)
             entity.id = instance.id
-            entity.user_id = instance.user_profile.user.id if instance.user_profile else None
+            entity.user_id = instance.user_profile.user.id if instance.user_profile else None  # noqa: E501
             return entity
 
         except Exception as e:

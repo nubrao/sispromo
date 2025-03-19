@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import "../styles/form.css";
 import { formatCNPJ } from "../hooks/useMask";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import Loader from "../components/Loader";
 import PropTypes from "prop-types";
 import { CustomModal } from "../components/CustomModal";
+import storeRepository from "../repositories/storeRepository";
+import { Toast } from "../components/Toast";
+import stateRepository from "../repositories/stateRepository";
 
 const StoreForm = ({
     loading,
@@ -25,6 +27,7 @@ const StoreForm = ({
     const [states, setStates] = useState([]);
     const [selectedState, setSelectedState] = useState("");
     const [cnpj, setCnpj] = useState("");
+    const [submitLoading, setSubmitLoading] = useState(false);
 
     const [stores, setStores] = useState([]);
     const [filteredStores, setFilteredStores] = useState([]);
@@ -42,8 +45,6 @@ const StoreForm = ({
     const [editCnpj, setEditCnpj] = useState("");
     const [isEditing, setIsEditing] = useState(false);
 
-    const API_URL = import.meta.env.VITE_API_URL;
-    const token = localStorage.getItem("token");
     const { translateMessage } = useTranslateMessage();
     const cleanedCNPJ = isEditing ? editCnpj : cnpj.replace(/\D/g, "");
     const didFetchData = useRef(false);
@@ -65,6 +66,7 @@ const StoreForm = ({
                 await Promise.all([fetchStates(), fetchStores()]);
             } catch (error) {
                 console.error("Erro ao buscar dados:", error);
+                Toast.showToast("Erro ao carregar dados", "error");
             } finally {
                 setLoading(false);
                 setDataLoaded(true);
@@ -90,30 +92,32 @@ const StoreForm = ({
 
     const fetchStores = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/stores/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setStores(response.data);
-            setFilteredStores(response.data);
+            const data = await storeRepository.getAllStores();
+            setStores(data);
+            setFilteredStores(data);
         } catch (error) {
-            console.error("Erro ao buscar lojas", error);
+            console.error("Erro ao buscar lojas:", error);
+            Toast.showToast("Erro ao carregar lojas", "error");
         }
     };
 
     const fetchStates = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/states/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (Array.isArray(response.data.states)) {
-                setStates(response.data.states);
+            const data = await stateRepository.getAllStates();
+            if (Array.isArray(data.states)) {
+                const formattedStates = data.states.map(([uf, name]) => ({
+                    uf,
+                    name,
+                }));
+                setStates(formattedStates);
             } else {
-                console.error("Formato inesperado dos estados:", response.data);
+                console.error("Formato inesperado dos estados:", data);
+                Toast.showToast("Erro ao carregar estados", "error");
                 setStates([]);
             }
         } catch (error) {
-            console.error("Erro ao buscar estados", error);
+            console.error("Erro ao buscar estados:", error);
+            Toast.showToast("Erro ao carregar estados", "error");
             setStates([]);
         }
     };
@@ -148,10 +152,11 @@ const StoreForm = ({
         e.preventDefault();
         setErrorMessage("");
         setModalOpen(true);
-        setLoading(true);
+        setSubmitLoading(true);
 
         if (!isEditing && cleanedCNPJ.length !== 14) {
             setErrorMessage("CNPJ inválido.");
+            setSubmitLoading(false);
             return;
         }
 
@@ -164,16 +169,16 @@ const StoreForm = ({
         };
 
         try {
-            await axios.post(`${API_URL}/api/stores/`, storeData, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            fetchStores();
+            await storeRepository.createStore(storeData);
+            await fetchStores();
             resetForm();
             setSuccess(true);
+            Toast.showToast("Loja cadastrada com sucesso!", "success");
         } catch (error) {
             setErrorMessage(await getErrorMessage(error));
+            Toast.showToast("Erro ao cadastrar loja", "error");
         } finally {
+            setSubmitLoading(false);
             finalizeModal();
         }
     };
@@ -201,7 +206,6 @@ const StoreForm = ({
     };
 
     const finalizeModal = () => {
-        setLoading(false);
         setTimeout(() => {
             setModalOpen(false);
             setErrorMessage("");
@@ -221,30 +225,27 @@ const StoreForm = ({
 
     const handleSaveEdit = async (id) => {
         setErrorMessage("");
+        setSubmitLoading(true);
 
         if (isEditing && cleanedCNPJ.length !== 14) {
             setErrorMessage("CNPJ inválido.");
+            setSubmitLoading(false);
             return;
         }
 
         try {
-            await axios.put(
-                `${API_URL}/api/stores/${id}/`,
-                {
-                    name: editName,
-                    number: editNumber,
-                    city: editCity,
-                    state: editState,
-                    cnpj: cleanedCNPJ,
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+            await storeRepository.updateStore(id, {
+                name: editName,
+                number: editNumber,
+                city: editCity,
+                state: editState,
+                cnpj: cleanedCNPJ,
+            });
 
             setEditingId(null);
-            fetchStores();
+            await fetchStores();
             setIsEditing(false);
+            Toast.showToast("Loja atualizada com sucesso!", "success");
         } catch (error) {
             if (isEditing && error.response?.data?.cnpj) {
                 const translatedMessage = await translateMessage(
@@ -252,32 +253,44 @@ const StoreForm = ({
                 );
                 setErrorMessage(translatedMessage);
             } else {
-                setErrorMessage("Erro ao atualizar loja. Verifique os dados.");
+                setErrorMessage("Erro ao atualizar loja.");
             }
+            Toast.showToast("Erro ao atualizar loja", "error");
+        } finally {
+            setSubmitLoading(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm("Tem certeza que deseja excluir esta loja?")) {
-            try {
-                await axios.delete(`${API_URL}/api/stores/${id}/`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                fetchStores();
-            } catch (error) {
-                console.error("Erro ao excluir loja", error);
-            }
+        if (!window.confirm("Tem certeza que deseja excluir esta loja?")) {
+            return;
+        }
+
+        setSubmitLoading(true);
+        try {
+            await storeRepository.deleteStore(id);
+            await fetchStores();
+            Toast.showToast("Loja excluída com sucesso!", "success");
+        } catch (error) {
+            console.error("Erro ao excluir loja:", error);
+            Toast.showToast("Erro ao excluir loja", "error");
+        } finally {
+            setSubmitLoading(false);
         }
     };
 
     const handleCancelEdit = () => {
         setEditingId(null);
-        setErrorMessage("");
         setIsEditing(false);
     };
 
     const handleNumberInput = (value) => {
-        return value.replace(/\D/g, "");
+        const numericValue = value.replace(/\D/g, "");
+        if (isEditing) {
+            setEditNumber(numericValue);
+        } else {
+            setNumber(numericValue);
+        }
     };
 
     return (
@@ -297,9 +310,7 @@ const StoreForm = ({
                         type="text"
                         placeholder="Número"
                         value={number}
-                        onChange={(e) =>
-                            setNumber(handleNumberInput(e.target.value))
-                        }
+                        onChange={(e) => handleNumberInput(e.target.value)}
                         className="form-input-text number"
                         required
                     />
@@ -320,9 +331,9 @@ const StoreForm = ({
                         className="form-input-text state"
                     >
                         <option value="">Estado</option>
-                        {states.map(([uf]) => (
-                            <option key={uf} value={uf}>
-                                {uf}
+                        {states.map((state) => (
+                            <option key={state.uf} value={state.uf}>
+                                {state.name}
                             </option>
                         ))}
                     </select>
@@ -338,8 +349,12 @@ const StoreForm = ({
                 {errorMessage && (
                     <p className="error-message">{errorMessage}</p>
                 )}
-                <button type="submit" className="form-button">
-                    Cadastrar
+                <button
+                    type="submit"
+                    className="form-button"
+                    disabled={submitLoading}
+                >
+                    {submitLoading ? <Loader /> : "Cadastrar"}
                 </button>
             </form>
 
@@ -365,9 +380,7 @@ const StoreForm = ({
                     type="text"
                     placeholder="Filtrar Número"
                     value={filterNumber}
-                    onChange={(e) =>
-                        setFilterNumber(e.target.value.replace(/\D/g, ""))
-                    }
+                    onChange={(e) => setFilterNumber(e.target.value)}
                     className="form-input-text"
                 />
                 <input
@@ -388,7 +401,7 @@ const StoreForm = ({
                     type="text"
                     placeholder="Filtrar CNPJ"
                     value={filterCNPJ}
-                    onChange={(e) => setFilterCNPJ(formatCNPJ(e.target.value))}
+                    onChange={(e) => setFilterCNPJ(e.target.value)}
                     className="form-input-text"
                 />
 
@@ -439,10 +452,8 @@ const StoreForm = ({
                                                     type="text"
                                                     value={editNumber}
                                                     onChange={(e) =>
-                                                        setEditNumber(
-                                                            handleNumberInput(
-                                                                e.target.value
-                                                            )
+                                                        handleNumberInput(
+                                                            e.target.value
                                                         )
                                                     }
                                                     className="form-input-text"
@@ -460,7 +471,26 @@ const StoreForm = ({
                                                     className="form-input-text"
                                                 />
                                             </td>
-                                            <td>{editState}</td>
+                                            <td>
+                                                <select
+                                                    value={editState}
+                                                    onChange={(e) =>
+                                                        setEditState(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="form-input-text"
+                                                >
+                                                    {states.map((state) => (
+                                                        <option
+                                                            key={state.uf}
+                                                            value={state.uf}
+                                                        >
+                                                            {state.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </td>
                                             <td>
                                                 <input
                                                     type="text"
@@ -487,16 +517,26 @@ const StoreForm = ({
                                                             )
                                                         }
                                                         className="form-button save-button"
+                                                        disabled={submitLoading}
                                                     >
-                                                        Salvar
+                                                        {submitLoading ? (
+                                                            <Loader />
+                                                        ) : (
+                                                            "Salvar"
+                                                        )}
                                                     </button>
                                                     <button
                                                         onClick={
                                                             handleCancelEdit
                                                         }
                                                         className="form-button cancel-button"
+                                                        disabled={submitLoading}
                                                     >
-                                                        Cancelar
+                                                        {submitLoading ? (
+                                                            <Loader />
+                                                        ) : (
+                                                            "Cancelar"
+                                                        )}
                                                     </button>
                                                 </div>
                                             </td>
@@ -515,6 +555,7 @@ const StoreForm = ({
                                                             handleEdit(store)
                                                         }
                                                         className="form-button edit-button"
+                                                        disabled={submitLoading}
                                                     >
                                                         ✏️
                                                     </button>
@@ -525,8 +566,13 @@ const StoreForm = ({
                                                             )
                                                         }
                                                         className="form-button delete-button"
+                                                        disabled={submitLoading}
                                                     >
-                                                        🗑️
+                                                        {submitLoading ? (
+                                                            <Loader />
+                                                        ) : (
+                                                            "🗑️"
+                                                        )}
                                                     </button>
                                                 </div>
                                             </td>

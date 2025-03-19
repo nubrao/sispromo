@@ -57,8 +57,8 @@ class PromoterModel(models.Model):
                     "Promotor vinculado ao perfil do usuário existente")
             except User.DoesNotExist:
                 logger.info(
-                    "Usuário não encontrado, procurando perfil de promotor disponível")
-                # Se não encontrar, tenta encontrar um usuário com role de promotor sem promotor vinculado
+                    "Usuário não encontrado, procurando perfil de promotor disponível")  # noqa: E501
+                # Se não encontrar, tenta encontrar um usuário com role de promotor sem promotor vinculado   # noqa: E501
                 try:
                     user_profile = UserProfileModel.objects.get(
                         role='promoter',
@@ -96,7 +96,7 @@ class PromoterModel(models.Model):
 
     @classmethod
     def auto_link_promoters(cls):
-        """Vincula automaticamente promotores disponíveis a usuários promotores sem vínculo"""
+        """Vincula automaticamente promotores disponíveis a usuários promotores sem vínculo"""  # noqa: E501
         # Obtém todos os promotores sem vínculo
         available_promoters = cls.objects.filter(user_profile__isnull=True)
 

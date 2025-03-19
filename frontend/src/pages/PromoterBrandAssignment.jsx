@@ -4,12 +4,10 @@ import "../styles/promoter-brand.css";
 import Loader from "../components/Loader";
 import Select from "react-select";
 import { RoleContext } from "../context/RoleContext";
-import { Navigate, useNavigate } from "react-router-dom";
-import { useTranslateMessage } from "../hooks/useTranslateMessage";
+import { Navigate } from "react-router-dom";
 import { CustomModal } from "../components/CustomModal";
 import PropTypes from "prop-types";
-import { formatCPF, formatPhone } from "../hooks/useMask";
-import Toast from "../components/Toast";
+import { Toast } from "../components/Toast";
 import promoterRepository from "../repositories/promoterRepository";
 
 const PromoterBrandAssignment = ({
@@ -31,9 +29,7 @@ const PromoterBrandAssignment = ({
     const token = localStorage.getItem("token");
     const { isManager, isAnalyst } = useContext(RoleContext);
     const isManagerOrAnalyst = isManager || isAnalyst;
-    const { translateMessage } = useTranslateMessage();
     const [error, setError] = useState(null);
-    const navigate = useNavigate();
     const { showToast } = Toast;
 
     useEffect(() => {

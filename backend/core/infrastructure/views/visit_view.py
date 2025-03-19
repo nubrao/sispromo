@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.http import HttpResponse
 from core.infrastructure.serializers.visit_serializer import VisitSerializer
-from core.infrastructure.repositories.visit_repository import DjangoVisitRepository
-from core.domain.entities.visit import Visit
+from core.infrastructure.repositories.visit_repository import DjangoVisitRepository  # noqa: E501
+from core.infrastructure.domain.entities.visit import Visit
 from reportlab.pdfgen import canvas
 from io import BytesIO
 from rest_framework.decorators import action
@@ -374,7 +374,7 @@ class VisitViewSet(viewsets.ModelViewSet):
 
             # Adiciona linha de total após a última visita de cada promotor
             next_visit = visits.filter(id__gt=visit.id).first()
-            if not next_visit or next_visit.promoter.name.upper() != promoter_name:
+            if not next_visit or next_visit.promoter.name.upper() != promoter_name:  # noqa: E501
                 data.append({
                     "Data": "",
                     "Promotor": (
@@ -504,7 +504,7 @@ class VisitViewSet(viewsets.ModelViewSet):
         for visit in visits:
             # Se mudou o promotor, imprime o total do promoter anterior
             visit_promoter_name = visit.promoter.name.upper()
-            if current_promoter_name and current_promoter_name != visit_promoter_name:
+            if current_promoter_name and current_promoter_name != visit_promoter_name:  # noqa: E501
                 pdf.setFont("Helvetica-Bold", 10)
                 total_text = (
                     f"Total Acumulado ({current_promoter_name}): "
@@ -566,7 +566,7 @@ class VisitViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         description=(
-            "Retorna dados para o dashboard com métricas de visitas por marca e loja"
+            "Retorna dados para o dashboard com métricas de visitas por marca e loja"  # noqa: E501
         ),
         responses={
             200: {

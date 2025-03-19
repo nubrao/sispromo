@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import "../styles/form.css";
-import Loader from "../components/Loader";
 import PropTypes from "prop-types";
 import { CustomModal } from "../components/CustomModal";
+import Loader from "../components/Loader";
+import { Toast } from "../components/Toast";
+import storeRepository from "../repositories/storeRepository";
+import "../styles/form.css";
 
 const VisitPriceForm = ({
     loading,
@@ -70,6 +72,16 @@ const VisitPriceForm = ({
             console.error("Erro ao buscar dados", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchStores = async () => {
+        try {
+            const data = await storeRepository.getAllStores();
+            setStores(data);
+        } catch (error) {
+            console.error("Erro ao buscar lojas:", error);
+            Toast.showToast("Erro ao carregar lojas", "error");
         }
     };
 

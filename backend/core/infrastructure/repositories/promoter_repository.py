@@ -1,10 +1,10 @@
 from typing import List, Optional
 from django.db.models import Q
-from core.domain.entities.promoter import Promoter
-from core.domain.repositories.promoter_repository import PromoterRepository
-from core.infrastructure.models.promoter_model import PromoterModel
+from ..domain.entities.promoter import Promoter
+from ..domain.repositories.promoter_repository import PromoterRepository
+from ..models.promoter_model import PromoterModel
 from django.contrib.auth.models import User
-from core.infrastructure.cache.cache_config import CacheConfig
+from ..cache.cache_config import CacheConfig
 
 
 class DjangoPromoterRepository(PromoterRepository):
@@ -59,7 +59,7 @@ class DjangoPromoterRepository(PromoterRepository):
             return None
 
     def get_by_user_id(self, user_id: int) -> Optional[Promoter]:
-        """Busca um promotor pelo ID do usuário, primeiro no cache, depois no banco"""
+        """Busca um promotor pelo ID do usuário, primeiro no cache, depois no banco"""  # noqa: E501
         cache_key = CacheConfig.get_key(
             CacheConfig.PROMOTER_PREFIX, f"user_{user_id}")
         cached_promoter = CacheConfig.get(cache_key)
@@ -109,11 +109,26 @@ class DjangoPromoterRepository(PromoterRepository):
             'user_profile__user'
         ).get(id=promoter.id)
 
+        # Atualiza os dados do promotor
         model.first_name = promoter.first_name
         model.last_name = promoter.last_name
         model.cpf = promoter.cpf
         model.phone = promoter.phone
         model.save()
+
+        # Se houver um usuário vinculado, atualiza seus dados também
+        if model.user_profile and model.user_profile.user:
+            user = model.user_profile.user
+            user.first_name = promoter.first_name
+            user.last_name = promoter.last_name
+            user.email = promoter.email
+            user.username = promoter.cpf  # CPF é usado como username
+            user.save()
+
+            profile = user.userprofile
+            profile.cpf = promoter.cpf
+            profile.phone = promoter.phone
+            profile.save()
 
         # Invalida caches relacionados
         self._invalidate_promoter_caches(model)
@@ -136,7 +151,7 @@ class DjangoPromoterRepository(PromoterRepository):
         cpf: Optional[str] = None,
         phone: Optional[str] = None
     ) -> List[Promoter]:
-        """Retorna promotores filtrados (sem cache devido à natureza dinâmica dos filtros)"""
+        """Retorna promotores filtrados (sem cache devido à natureza dinâmica dos filtros)"""  # noqa: E501
         query = PromoterModel.objects.select_related(
             'user_profile__user').all()
 
@@ -169,7 +184,7 @@ class DjangoPromoterRepository(PromoterRepository):
         except (PromoterModel.DoesNotExist, User.DoesNotExist):
             return False
 
-    def _invalidate_promoter_caches(self, promoter: Optional[PromoterModel] = None) -> None:
+    def _invalidate_promoter_caches(self, promoter: Optional[PromoterModel] = None) -> None:  # noqa: E501
         """Invalida os caches relacionados a um promotor"""
         # Sempre invalida a lista completa
         cache_key_all = CacheConfig.get_key(CacheConfig.PROMOTER_PREFIX, "all")
@@ -189,5 +204,5 @@ class DjangoPromoterRepository(PromoterRepository):
             # Invalida cache por user_id se existir
             if promoter.user_profile and promoter.user_profile.user:
                 cache_key_user = CacheConfig.get_key(
-                    CacheConfig.PROMOTER_PREFIX, f"user_{promoter.user_profile.user.id}")
+                    CacheConfig.PROMOTER_PREFIX, f"user_{promoter.user_profile.user.id}")  # noqa: E501
                 CacheConfig.delete(cache_key_user)

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 from datetime import datetime
-from core.domain.entities.visit import Visit
+from core.infrastructure.domain.entities.visit import Visit
 
 
 class VisitRepository(ABC):

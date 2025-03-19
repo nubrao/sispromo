@@ -46,11 +46,6 @@ export const RoleProvider = ({ children }) => {
         return allowedRoles ? allowedRoles.includes(userRole) : false;
     };
 
-    // Debug para verificar os valores
-    console.log("Current role:", userRole);
-    console.log("Is Manager:", isManager);
-    console.log("Can access /users:", canAccessRoute("/users"));
-
     return (
         <RoleContext.Provider
             value={{

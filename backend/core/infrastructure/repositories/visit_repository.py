@@ -1,8 +1,8 @@
 from typing import List, Optional
 from datetime import datetime
 from django.db.models import QuerySet
-from core.domain.repositories.visit_repository import VisitRepository
-from core.domain.entities.visit import Visit
+from core.infrastructure.domain.repositories.visit_repository import VisitRepository  # noqa: E501
+from core.infrastructure.domain.entities.visit import Visit
 from core.infrastructure.models.visit_model import VisitModel
 from core.infrastructure.models.promoter_model import PromoterModel
 from core.infrastructure.cache.cache_config import CacheConfig
@@ -94,7 +94,7 @@ class DjangoVisitRepository(VisitRepository):
             brand_id: ID da marca
             start_date: Data inicial (YYYY-MM-DD)
             end_date: Data final (YYYY-MM-DD)
-            user_id: ID do usuário (para filtrar visitas de um promotor específico)
+            user_id: ID do usuário (para filtrar visitas de um promotor específico)  # noqa: E501
         """
         queryset = VisitModel.objects.select_related(
             "promoter", "store", "brand"

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from core.domain.entities.store import Store
+from core.infrastructure.domain.entities.store import Store
 
 
 class StoreRepository(ABC):

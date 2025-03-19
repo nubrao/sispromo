@@ -109,7 +109,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
             if serializer.is_valid():
                 user = serializer.save()
-                # Recarrega o usuário para garantir que temos os dados atualizados
+                # Recarrega o usuário para garantir que temos os dados atualizados  # noqa: E501
                 user.refresh_from_db()
                 return Response(
                     self.get_serializer(user).data,
@@ -180,7 +180,7 @@ class UserViewSet(viewsets.ModelViewSet):
             # Verifica se o usuário é um gestor
             if request.user.userprofile.role != 'manager':
                 return Response(
-                    {"error": "Apenas gestores podem atualizar papéis de usuários."},
+                    {"error": "Apenas gestores podem atualizar papéis de usuários."},  # noqa: E501
                     status=status.HTTP_403_FORBIDDEN
                 )
 
@@ -244,7 +244,7 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(data=request.data)
             if serializer.is_valid():
                 user = serializer.save()
-                # Recarrega o usuário para garantir que temos os dados atualizados
+                # Recarrega o usuário para garantir que temos os dados atualizados  # noqa: E501
                 user.refresh_from_db()
                 return Response(
                     self.get_serializer(user).data,

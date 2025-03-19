@@ -8,8 +8,8 @@ class CoreConfig(AppConfig):
 
     def ready(self):
         """Registra os sinais quando o app é inicializado"""
-        from core.infrastructure.signals import user_profile_signals
-        from .infrastructure.models import (
+        from core.infrastructure.signals import user_profile_signals  # noqa: F401 E501
+        from .infrastructure.models import (  # noqa: F401 E501
             user_profile_model,
             store_model,
             brand_model,

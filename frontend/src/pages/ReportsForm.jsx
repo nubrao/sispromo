@@ -6,6 +6,8 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import React from "react";
 import { RoleContext } from "./../context/RoleContext";
+import storeRepository from "../repositories/storeRepository";
+import { Toast } from "../components/Toast";
 
 const Reports = () => {
     const [promoters, setPromoters] = useState([]);
@@ -66,12 +68,11 @@ const Reports = () => {
 
     const fetchStores = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/stores/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setStores(response.data);
+            const data = await storeRepository.getAllStores();
+            setStores(data);
         } catch (error) {
             console.error("Erro ao buscar lojas:", error);
+            Toast.showToast("Erro ao carregar lojas", "error");
         }
     };
 

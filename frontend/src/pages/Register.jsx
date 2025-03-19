@@ -15,7 +15,7 @@ import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { CustomModal } from "../components/CustomModal";
 import { formatCPF, formatPhone } from "../hooks/useMask";
 import Loader from "../components/Loader";
-import Toast from "../components/Toast";
+import { Toast } from "../components/Toast";
 import userRepository from "../repositories/userRepository";
 
 const Register = () => {
