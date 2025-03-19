@@ -6,6 +6,13 @@ import PropTypes from "prop-types";
 import { CustomModal } from "../components/CustomModal";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { RoleContext } from "../context/RoleContext";
+import { useNavigate } from "react-router-dom";
+import { useRole } from "../context/RoleContext";
+import { formatCPF, formatPhone } from "../hooks/useMask";
+import { formatDate } from "../hooks/useFormatDate";
+import Toast from "../components/Toast";
+import promoterRepository from "../repositories/promoterRepository";
+import userRepository from "../repositories/userRepository";
 
 const VisitForm = ({
     loading,
@@ -41,6 +48,7 @@ const VisitForm = ({
     const didFetchData = useRef(false);
     const { isPromoter } = useContext(RoleContext);
     const [currentUser, setCurrentUser] = useState(null);
+    const { showToast } = useRole();
 
     useEffect(() => {
         if (didFetchData.current) return;
@@ -188,10 +196,8 @@ const VisitForm = ({
 
     const fetchPromoters = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/promoters/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setPromoters(response.data);
+            const data = await promoterRepository.getAllPromoters();
+            setPromoters(data);
         } catch (error) {
             console.error("Erro ao buscar promotores:", error);
         }
@@ -232,6 +238,29 @@ const VisitForm = ({
             setBrands(response.data);
         } catch (error) {
             console.error("Erro ao buscar marcas:", error);
+        }
+    };
+
+    const fetchCurrentUser = async () => {
+        try {
+            const userData = await userRepository.getCurrentUser();
+            setCurrentUser(userData);
+        } catch (error) {
+            console.error("Erro ao buscar usuário atual:", error);
+        }
+    };
+
+    const linkPromoterToUser = async (availablePromoter) => {
+        try {
+            await promoterRepository.linkPromoterToUser(
+                availablePromoter.id,
+                currentUser.id
+            );
+            showToast("Promotor vinculado com sucesso!", "success");
+            await fetchCurrentUser();
+        } catch (error) {
+            console.error("Erro ao vincular promotor:", error);
+            showToast("Erro ao vincular promotor", "error");
         }
     };
 

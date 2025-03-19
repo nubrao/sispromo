@@ -14,6 +14,9 @@ import {
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { CustomModal } from "../components/CustomModal";
 import { formatCPF, formatPhone } from "../hooks/useMask";
+import Loader from "../components/Loader";
+import Toast from "../components/Toast";
+import userRepository from "../repositories/userRepository";
 
 const Register = () => {
     const [loading, setLoading] = useState(false);
@@ -23,6 +26,7 @@ const Register = () => {
     const navigate = useNavigate();
     const API_URL = import.meta.env.VITE_API_URL;
     const { translateMessage } = useTranslateMessage();
+    const [errorMessage, setErrorMessage] = useState("");
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -42,104 +46,43 @@ const Register = () => {
         form.validateFields([field]);
     };
 
-    const onFinish = async (values) => {
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         setLoading(true);
-        setModalVisible(true);
-        setSuccess(false);
+        setErrorMessage("");
 
-        if (values.password !== values.password_confirm) {
-            form.setFields([
-                {
-                    name: "password_confirm",
-                    errors: [translateMessage("register.password.mismatch")],
-                },
-            ]);
+        if (password !== confirmPassword) {
+            setErrorMessage("As senhas não coincidem");
             setLoading(false);
-            setModalVisible(false);
             return;
         }
 
-        // Validação do CPF (formato básico)
-        const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
-        if (!cpfRegex.test(values.cpf)) {
-            form.setFields([
-                {
-                    name: "cpf",
-                    errors: [translateMessage("register.cpf.invalid")],
-                },
-            ]);
-            setLoading(false);
-            setModalVisible(false);
-            return;
-        }
-
-        // Validação do telefone (formato básico)
-        const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
-        if (!phoneRegex.test(values.phone)) {
-            form.setFields([
-                {
-                    name: "phone",
-                    errors: [translateMessage("register.phone.invalid")],
-                },
-            ]);
-            setLoading(false);
-            setModalVisible(false);
-            return;
-        }
-
-        // Remove caracteres especiais do CPF para usar como username e enviar cpf para o backend
-        const username = values.cpf.replace(/\D/g, "");
-        const cpf = values.cpf.replace(/\D/g, "");
+        const userData = {
+            first_name: firstName,
+            last_name: lastName,
+            email,
+            cpf: cpf.replace(/\D/g, ""),
+            phone: phone.replace(/\D/g, ""),
+            password,
+            password_confirm: confirmPassword,
+            role,
+        };
 
         try {
-            const response = await axios.post(
-                `${API_URL}/api/users/register/`,
-                {
-                    username: username,
-                    email: values.email,
-                    password: values.password,
-                    password_confirm: values.password_confirm,
-                    first_name: values.first_name,
-                    last_name: values.last_name,
-                    cpf: cpf,
-                    phone: values.phone,
-                    role: "promoter",
-                }
-            );
-
-            if (response.status === 201) {
-                setSuccess(true);
-                message.success(translateMessage("register.success"));
-                setTimeout(() => {
-                    setModalVisible(false);
-                    navigate("/login");
-                }, 2000);
-            }
+            await userRepository.registerUser(userData);
+            showToast("Usuário registrado com sucesso!", "success");
+            navigate("/login");
         } catch (error) {
-            console.error("Erro ao registrar:", error.response?.data);
-            setSuccess(false);
-            setModalVisible(false);
+            let errorMsg = "Erro ao registrar usuário.";
 
-            if (error.response?.data) {
-                const errorData = error.response.data;
-                const fieldErrors = [];
-
-                Object.entries(errorData).forEach(([field, errors]) => {
-                    if (Array.isArray(errors)) {
-                        errors.forEach((error) => {
-                            fieldErrors.push({
-                                name: field,
-                                errors: [error],
-                            });
-                        });
-                    }
-                });
-
-                if (fieldErrors.length > 0) {
-                    form.setFields(fieldErrors);
-                }
+            if (error.response?.data?.cpf) {
+                errorMsg = await translateMessage(error.response.data.cpf[0]);
+            } else if (error.response?.data?.error) {
+                errorMsg = error.response.data.error;
             }
-            message.error(translateMessage("register.error.generic"));
+
+            setErrorMessage(errorMsg);
+            showToast(errorMsg, "error");
         } finally {
             setLoading(false);
         }
@@ -155,7 +98,7 @@ const Register = () => {
                 <Form
                     form={form}
                     name="register"
-                    onFinish={onFinish}
+                    onFinish={handleSubmit}
                     layout="vertical"
                     className="login-form"
                     validateTrigger={["onBlur"]}
@@ -370,7 +313,7 @@ const Register = () => {
                 <CustomModal
                     loading={loading}
                     success={success}
-                    errorMessage={translateMessage("register.error")}
+                    errorMessage={errorMessage}
                     title={"Processando..."}
                     visible={modalVisible}
                     onClose={() => setModalVisible(false)}

@@ -2,12 +2,16 @@ from rest_framework import viewsets, status, serializers
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from drf_spectacular.types import OpenApiTypes
-from ..models.promoter_model import PromoterModel
-from ..serializers.promoter_serializer import PromoterSerializer
-from ..permissions import IsManagerOrAnalyst
-from django.contrib.auth.models import User
+from drf_spectacular.utils import OpenApiParameter
+from core.infrastructure.serializers.promoter_serializer import (
+    PromoterSerializer
+)
+from core.infrastructure.repositories.promoter_repository import (
+    DjangoPromoterRepository
+)
+from core.infrastructure.models.promoter_model import PromoterModel
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,56 +23,11 @@ class LinkUserSerializer(serializers.Serializer):
 
 
 @extend_schema_view(
-    list=extend_schema(
-        description="Lista todos os promotores cadastrados",
-        responses={
-            200: PromoterSerializer(many=True),
-            500: {
-                "type": "object",
-                "properties": {"error": {"type": "string"}}
-            }
-        }
-    ),
-    create=extend_schema(
-        description="Cria um novo promotor e seu usuário associado",
-        request=PromoterSerializer,
-        responses={
-            201: PromoterSerializer,
-            400: {
-                "type": "object",
-                "properties": {"error": {"type": "string"}}
-            },
-            500: {
-                "type": "object",
-                "properties": {"error": {"type": "string"}}
-            }
-        }
-    ),
-    update=extend_schema(
-        description="Atualiza um promotor existente",
-        request=PromoterSerializer,
-        responses={
-            200: PromoterSerializer,
-            400: {
-                "type": "object",
-                "properties": {"error": {"type": "string"}}
-            },
-            500: {
-                "type": "object",
-                "properties": {"error": {"type": "string"}}
-            }
-        }
-    ),
-    destroy=extend_schema(
-        description="Deleta um promotor",
-        responses={
-            204: None,
-            500: {
-                "type": "object",
-                "properties": {"error": {"type": "string"}}
-            }
-        }
-    ),
+    list=extend_schema(description='Lista todos os promotores'),
+    create=extend_schema(description='Cria um novo promotor'),
+    retrieve=extend_schema(description='Obtém um promotor específico'),
+    update=extend_schema(description='Atualiza um promotor'),
+    destroy=extend_schema(description='Remove um promotor'),
     link_user=extend_schema(
         description="Vincula um usuário a um promotor",
         request=LinkUserSerializer,
@@ -87,176 +46,144 @@ class LinkUserSerializer(serializers.Serializer):
         ]
     )
 )
-class PromoterViewSet(viewsets.ModelViewSet):
-    """ ViewSet para gerenciar Promotores """
-
-    queryset = PromoterModel.objects.all()
+class PromoterViewSet(viewsets.ViewSet):
+    """
+    ViewSet para gerenciar promotores.
+    """
+    permission_classes = [IsAuthenticated]
     serializer_class = PromoterSerializer
-    permission_classes = [IsAuthenticated, IsManagerOrAnalyst]
 
-    def get_queryset(self):
-        """
-        Retorna o queryset de promotores filtrado com base no papel do usuário.
-        Se o usuário for um promotor, retorna apenas seu próprio registro.
-        Se for analista ou gerente, retorna todos os promotores.
-        """
-        user = self.request.user
-        queryset = self.queryset.select_related(
-            'user_profile', 'user_profile__user'
-        )
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.repository = DjangoPromoterRepository()
 
-        # Se o usuário for um promotor, filtra apenas seu próprio registro
-        if user.userprofile.role == 'promoter':
-            queryset = queryset.filter(user_profile=user.userprofile)
-
-        return queryset
-
-    def list(self, request, *args, **kwargs):
-        """ Lista todos os promotores """
+    def list(self, request):
+        """Lista todos os promotores com filtros opcionais"""
         try:
-            promoters = self.get_queryset()
-            serializer = self.get_serializer(promoters, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            name = request.query_params.get('name')
+            cpf = request.query_params.get('cpf')
+            phone = request.query_params.get('phone')
+
+            promoters = self.repository.get_by_filters(
+                name=name, cpf=cpf, phone=phone)
+            serializer = self.serializer_class(promoters, many=True)
+            return Response(serializer.data)
         except Exception as e:
-            logger.error(f"Erro ao listar promotores: {e}")
+            logger.error(f"Erro ao listar promotores: {str(e)}")
             return Response(
-                {"error": "Erro ao buscar promotores."},
+                {"error": "Erro ao listar promotores."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    def create(self, request, *args, **kwargs):
-        """ Cria um novo promotor e seu usuário associado """
-        # Apenas analistas e gerentes podem criar promotores
-        if request.user.userprofile.role == 'promoter':
+    def create(self, request):
+        """Cria um novo promotor"""
+        try:
+            logger.info(
+                f"Iniciando criação de promotor com dados: {request.data}")
+            serializer = self.serializer_class(data=request.data)
+
+            logger.info("Validando dados do promotor...")
+            if serializer.is_valid():
+                logger.info("Dados válidos, criando promotor...")
+                try:
+                    promoter = serializer.create(serializer.validated_data)
+                    logger.info(
+                        f"Promotor criado com sucesso. ID: {promoter.id}")
+                    return Response(
+                        self.serializer_class(promoter).data,
+                        status=status.HTTP_201_CREATED
+                    )
+                except Exception as create_error:
+                    logger.error(
+                        f"Erro durante a criação do promotor: {str(create_error)}")
+                    raise create_error
+
+            logger.error(f"Erro de validação: {serializer.errors}")
             return Response(
-                {"error": "Você não tem permissão para criar promotores."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        serializer = self.get_serializer(data=request.data)
-
-        if serializer.is_valid():
-            try:
-                promoter = serializer.save()
-                response_data = self.get_serializer(promoter).data
-                # Inclui a senha temporária apenas na resposta de criação
-                if hasattr(promoter, 'temporary_password'):
-                    response_data['temporary_password'] = promoter.temporary_password
-
-                return Response(
-                    response_data,
-                    status=status.HTTP_201_CREATED
-                )
-            except Exception as e:
-                logger.error(f"Erro ao criar promotor: {e}")
-                return Response(
-                    {"error": "Erro ao criar promotor."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        else:
-            logger.warning(
-                f"Erro de validação ao criar promotor: {serializer.errors}"
-            )
-            return Response(
-                {"error": serializer.errors},
+                serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except serializers.ValidationError as e:
+            logger.error(f"Erro de validação ao criar promotor: {str(e)}")
+            return Response(
+                e.detail,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Erro não esperado ao criar promotor: {str(e)}")
+            return Response(
+                {"error": "Erro ao criar promotor."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-    def update(self, request, *args, **kwargs):
-        """ Atualiza um promotor existente """
-        instance = self.get_object()
+    def retrieve(self, request, pk=None):
+        """Obtém um promotor específico"""
+        try:
+            promoter = self.repository.get_by_id(pk)
+            if promoter:
+                serializer = self.serializer_class(promoter)
+                return Response(serializer.data)
+            return Response(
+                {'error': 'Promotor não encontrado.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Erro ao obter promotor: {str(e)}")
+            return Response(
+                {"error": "Erro ao obter promotor."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-        # Verifica se o usuário tem permissão para atualizar este promotor
-        if request.user.userprofile.role == 'promoter':
-            try:
-                user_promoter = PromoterModel.objects.get(
-                    user_profile=request.user.userprofile)
-                if instance.id != user_promoter.id:
-                    return Response(
-                        {"error": "Você não tem permissão para atualizar outros promotores."},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-            except PromoterModel.DoesNotExist:
+    def update(self, request, pk=None):
+        """Atualiza um promotor existente"""
+        try:
+            promoter = self.repository.get_by_id(pk)
+            if not promoter:
                 return Response(
-                    {"error": "Promotor não encontrado."},
+                    {'error': 'Promotor não encontrado.'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            try:
-                promoter = serializer.save()
-                return Response(
-                    self.get_serializer(promoter).data,
-                    status=status.HTTP_200_OK
-                )
-            except Exception as e:
-                logger.error(f"Erro ao atualizar promotor: {e}")
-                return Response(
-                    {"error": "Erro ao atualizar promotor."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        else:
-            logger.warning(
-                f"Erro de validação ao atualizar promotor: {serializer.errors}")
+            serializer = self.serializer_class(promoter, data=request.data)
+            if serializer.is_valid():
+                updated_promoter = self.repository.update(
+                    pk, serializer.validated_data)
+                return Response(self.serializer_class(updated_promoter).data)
             return Response(
                 {"error": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
-    def destroy(self, request, *args, **kwargs):
-        """ Deleta um promotor """
-        # Apenas analistas e gerentes podem deletar promotores
-        if request.user.userprofile.role == 'promoter':
+        except serializers.ValidationError as e:
             return Response(
-                {"error": "Você não tem permissão para deletar promotores."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        instance = self.get_object()
-
-        try:
-            # Se houver um usuário vinculado, mantém ele mas remove o vínculo
-            if instance.user_profile:
-                user_profile = instance.user_profile
-                instance.user_profile = None
-                instance.save()
-
-            instance.delete()
-            return Response(
-                {"message": "Promotor excluído com sucesso."},
-                status=status.HTTP_204_NO_CONTENT
+                e.detail,
+                status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
-            logger.error(f"Erro ao excluir promotor: {e}")
+            logger.error(f"Erro ao atualizar promotor: {str(e)}")
+            return Response(
+                {"error": "Erro ao atualizar promotor."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def destroy(self, request, pk=None):
+        """Remove um promotor"""
+        try:
+            promoter = self.repository.get_by_id(pk)
+            if not promoter:
+                return Response(
+                    {'error': 'Promotor não encontrado.'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            self.repository.delete(pk)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            logger.error(f"Erro ao excluir promotor: {str(e)}")
             return Response(
                 {"error": "Erro ao excluir promotor."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    @extend_schema(
-        description="Vincula um promotor a um usuário específico",
-        request={
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "integer"}
-            },
-            "required": ["user_id"]
-        },
-        responses={
-            200: PromoterSerializer,
-            400: {
-                "type": "object",
-                "properties": {"error": {"type": "string"}}
-            },
-            500: {
-                "type": "object",
-                "properties": {"error": {"type": "string"}}
-            }
-        }
-    )
     @action(detail=True, methods=['post'])
     def link_user(self, request, pk=None):
         """Vincula um promotor a um usuário específico"""
@@ -270,8 +197,8 @@ class PromoterViewSet(viewsets.ModelViewSet):
 
             success = PromoterModel.link_promoter_to_user(pk, user_id)
             if success:
-                promoter = self.get_object()
-                serializer = self.get_serializer(promoter)
+                promoter = self.repository.get_by_id(pk)
+                serializer = self.serializer_class(promoter)
                 return Response(serializer.data)
             else:
                 return Response(
@@ -279,6 +206,7 @@ class PromoterViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
         except Exception as e:
+            logger.error(f"Erro ao vincular promotor: {str(e)}")
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

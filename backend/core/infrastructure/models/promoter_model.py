@@ -7,7 +7,10 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from validate_docbr import CPF
-from .user_profile_model import UserProfile
+from .user_profile_model import UserProfileModel
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def validate_cpf(value):
@@ -23,7 +26,7 @@ class PromoterModel(models.Model):
                            validators=[validate_cpf])
     phone = models.CharField(max_length=20)
     user_profile = models.OneToOneField(
-        UserProfile,
+        UserProfileModel,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -39,25 +42,37 @@ class PromoterModel(models.Model):
         return f"{self.first_name} {self.last_name}".strip()
 
     def save(self, *args, **kwargs):
+        logger.info(f"Salvando promotor com CPF: {self.cpf}")
         # Se o promotor está sendo criado e tem CPF
         if not self.pk and self.cpf:
+            logger.info(
+                "Novo promotor sendo criado, procurando usuário existente")
             try:
                 # Tenta encontrar um usuário com o mesmo CPF no username
                 user = User.objects.get(username=self.cpf)
+                logger.info(f"Usuário encontrado com CPF {self.cpf}")
                 # Se encontrar, vincula o promotor ao perfil do usuário
                 self.user_profile = user.userprofile
+                logger.info(
+                    "Promotor vinculado ao perfil do usuário existente")
             except User.DoesNotExist:
+                logger.info(
+                    "Usuário não encontrado, procurando perfil de promotor disponível")
                 # Se não encontrar, tenta encontrar um usuário com role de promotor sem promotor vinculado
                 try:
-                    user_profile = UserProfile.objects.get(
+                    user_profile = UserProfileModel.objects.get(
                         role='promoter',
                         promoter__isnull=True
                     )
                     self.user_profile = user_profile
-                except UserProfile.DoesNotExist:
+                    logger.info("Promotor vinculado a perfil disponível")
+                except UserProfileModel.DoesNotExist:
+                    logger.info(
+                        "Nenhum perfil de promotor disponível encontrado")
                     pass
 
         super().save(*args, **kwargs)
+        logger.info(f"Promotor salvo com sucesso. ID: {self.pk}")
 
     @classmethod
     def get_promoter_by_user(cls, user):
@@ -86,7 +101,7 @@ class PromoterModel(models.Model):
         available_promoters = cls.objects.filter(user_profile__isnull=True)
 
         # Obtém todos os usuários promotores sem vínculo
-        unlinked_promoter_users = UserProfile.objects.filter(
+        unlinked_promoter_users = UserProfileModel.objects.filter(
             role='promoter',
             promoter__isnull=True
         )

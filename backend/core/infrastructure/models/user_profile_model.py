@@ -23,7 +23,7 @@ def validate_phone(value):
         raise ValidationError("Telefone deve ter entre 10 e 11 dígitos.")
 
 
-class UserProfile(models.Model):
+class UserProfileModel(models.Model):
     ROLE_CHOICES = [
         ('promoter', 'Promotor'),
         ('analyst', 'Analista'),
@@ -70,7 +70,7 @@ class UserProfile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     """Cria um perfil para o usuário quando ele é criado"""
     if created:
-        UserProfile.objects.create(user=instance)
+        UserProfileModel.objects.create(user=instance)
 
 
 @receiver(post_save, sender=User)
@@ -78,5 +78,5 @@ def save_user_profile(sender, instance, **kwargs):
     """Salva o perfil do usuário"""
     try:
         instance.userprofile.save()
-    except UserProfile.DoesNotExist:
-        UserProfile.objects.create(user=instance)
+    except UserProfileModel.DoesNotExist:
+        UserProfileModel.objects.create(user=instance)

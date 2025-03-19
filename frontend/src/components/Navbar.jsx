@@ -46,27 +46,27 @@ const Navbar = () => {
             {
                 path: "/promoters",
                 label: "Promotores",
-                visible: isManager() || isAnalyst(),
+                visible: isManager || isAnalyst,
             },
             {
                 path: "/stores",
                 label: "Lojas",
-                visible: isManager() || isAnalyst(),
+                visible: isManager || isAnalyst,
             },
             {
                 path: "/brands",
                 label: "Marcas",
-                visible: isManager() || isAnalyst(),
+                visible: isManager || isAnalyst,
             },
             {
                 path: "/promoter-brands",
                 label: "Atribuir Marcas",
-                visible: isManager() || isAnalyst(),
+                visible: isManager || isAnalyst,
             },
             {
                 path: "/visit-prices",
                 label: "Preços",
-                visible: isManager() || isAnalyst(),
+                visible: isManager || isAnalyst,
             },
             {
                 path: "/visits",
@@ -81,7 +81,7 @@ const Navbar = () => {
             {
                 path: "/users",
                 label: "Usuários",
-                visible: isManager(),
+                visible: isManager,
             },
         ];
 

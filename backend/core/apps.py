@@ -4,8 +4,11 @@ from django.apps import AppConfig
 class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'core'
+    verbose_name = 'Sistema de Promoção'
 
     def ready(self):
+        """Registra os sinais quando o app é inicializado"""
+        from core.infrastructure.signals import user_profile_signals
         from .infrastructure.models import (
             user_profile_model,
             store_model,

@@ -213,7 +213,8 @@ class VisitViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="reports")
     def get_report(self, request):
         """
-        Gera um relatório filtrado e agrupado por promotor com base nos parâmetros:
+        Gera um relatório filtrado e agrupado por promotor com base nos
+        parâmetros:
         - promoter: ID do promotor (apenas para analistas/gerentes)
         - store: ID da loja
         - brand: ID da marca
@@ -241,7 +242,8 @@ class VisitViewSet(viewsets.ModelViewSet):
             brand_id=request.query_params.get("brand"),
             start_date=request.query_params.get("start_date"),
             end_date=request.query_params.get("end_date"),
-            user_id=request.user.id if request.user.userprofile.role == 'promoter' else None
+            user_id=request.user.id if (
+                request.user.userprofile.role == 'promoter') else None
         )
 
         # Agrupa as visitas por promotor para calcular totais
@@ -264,7 +266,8 @@ class VisitViewSet(viewsets.ModelViewSet):
             promoter_totals[promoter_id]['total_value'] += visit_price
 
             visit_data = self.get_serializer(visit).data
-            visit_data['promoter_total_visits'] = promoter_totals[promoter_id]['total_visits']
+            visit_data['promoter_total_visits'] = promoter_totals[
+                promoter_id]['total_visits']
             visit_data['promoter_total_value'] = float(
                 promoter_totals[promoter_id]['total_value'])
             visit_data['visit_price'] = float(visit_price)

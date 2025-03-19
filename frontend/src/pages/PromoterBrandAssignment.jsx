@@ -4,10 +4,13 @@ import "../styles/promoter-brand.css";
 import Loader from "../components/Loader";
 import Select from "react-select";
 import { RoleContext } from "../context/RoleContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { CustomModal } from "../components/CustomModal";
 import PropTypes from "prop-types";
+import { formatCPF, formatPhone } from "../hooks/useMask";
+import Toast from "../components/Toast";
+import promoterRepository from "../repositories/promoterRepository";
 
 const PromoterBrandAssignment = ({
     loading,
@@ -27,9 +30,11 @@ const PromoterBrandAssignment = ({
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
     const { isManager, isAnalyst } = useContext(RoleContext);
-    const isManagerOrAnalyst = isManager() || isAnalyst();
+    const isManagerOrAnalyst = isManager || isAnalyst;
     const { translateMessage } = useTranslateMessage();
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
+    const { showToast } = Toast;
 
     useEffect(() => {
         if (isManagerOrAnalyst) {
@@ -88,6 +93,7 @@ const PromoterBrandAssignment = ({
                 error.response?.data?.error ||
                     "Erro ao carregar dados. Tente novamente."
             );
+            showToast("Erro ao carregar dados", "error");
         } finally {
             setLoading(false);
         }
@@ -161,6 +167,16 @@ const PromoterBrandAssignment = ({
         } finally {
             setLoading(false);
             setModalOpen(false);
+        }
+    };
+
+    const fetchPromoters = async () => {
+        try {
+            const data = await promoterRepository.getAllPromoters();
+            setPromoters(data);
+        } catch (error) {
+            console.error("Erro ao buscar promotores:", error);
+            showToast("Erro ao carregar promotores", "error");
         }
     };
 

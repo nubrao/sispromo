@@ -9,6 +9,13 @@ import VisitFilters from "../components/visits/VisitFilters";
 import VisitTable from "../components/visits/VisitTable";
 import PropTypes from "prop-types";
 import { visitRepository } from "../repositories/visitRepository";
+import { useNavigate } from "react-router-dom";
+import { useRole } from "../context/RoleContext";
+import { formatCPF, formatPhone } from "../hooks/useMask";
+import { formatDate } from "../hooks/useFormatDate";
+import Toast from "../components/Toast";
+import promoterRepository from "../repositories/promoterRepository";
+import userRepository from "../repositories/userRepository";
 
 const Visits = ({
     loading,
@@ -47,6 +54,7 @@ const Visits = ({
     const didFetchData = useRef(false);
     const { isPromoter } = useContext(RoleContext);
     const [currentUser, setCurrentUser] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (didFetchData.current) return;
@@ -58,13 +66,13 @@ const Visits = ({
 
             try {
                 // Se for promotor, define a data atual
-                if (isPromoter()) {
+                if (isPromoter) {
                     const today = new Date().toISOString().split("T")[0];
                     setVisitDate(today);
                 }
 
                 // Busca os dados do usuário atual primeiro
-                if (isPromoter()) {
+                if (isPromoter) {
                     const userResponse = await axios.get(
                         `${API_URL}/api/users/me/`,
                         {
@@ -165,10 +173,8 @@ const Visits = ({
 
     const fetchPromoters = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/promoters/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setPromoters(response.data);
+            const data = await promoterRepository.getAllPromoters();
+            setPromoters(data);
         } catch (error) {
             console.error("Erro ao buscar promotores:", error);
         }
@@ -188,7 +194,7 @@ const Visits = ({
     const fetchVisits = async () => {
         try {
             const promoterId =
-                isPromoter() && currentUser ? currentUser.promoter_id : null;
+                isPromoter && currentUser ? currentUser.promoter_id : null;
             const data = await visitRepository.fetchVisits(token, promoterId);
             setVisits(data);
         } catch (error) {
@@ -235,7 +241,7 @@ const Visits = ({
         };
 
         // Se for promotor, usa o promotor vinculado
-        if (isPromoter()) {
+        if (isPromoter) {
             if (!currentUser?.promoter_id) {
                 setErrorMessage("Usuário não possui um promotor associado.");
                 setLoading(false);
@@ -301,7 +307,7 @@ const Visits = ({
 
     const resetForm = () => {
         setEditingVisit(null);
-        if (!isPromoter()) setPromoterId("");
+        if (!isPromoter) setPromoterId("");
         setStoreId("");
         setBrand({ id: "", name: "" });
         setVisitDate("");
@@ -314,6 +320,15 @@ const Visits = ({
         return translateMessage("Erro ao registrar visita.");
     };
 
+    const fetchCurrentUser = async () => {
+        try {
+            const userData = await userRepository.getCurrentUser();
+            setCurrentUser(userData);
+        } catch (error) {
+            console.error("Erro ao buscar usuário atual:", error);
+        }
+    };
+
     return (
         <div className="form-container">
             <h2 className="form-title">
@@ -321,7 +336,7 @@ const Visits = ({
             </h2>
 
             <form onSubmit={handleSubmit} className="form-input">
-                {isPromoter() ? (
+                {isPromoter ? (
                     <input
                         type="hidden"
                         value={currentUser?.promoter_id || ""}
@@ -399,7 +414,7 @@ const Visits = ({
                         className="form-input-text date-input"
                         max={new Date().toISOString().split("T")[0]}
                         required
-                        disabled={isPromoter()}
+                        disabled={!isPromoter}
                     />
                 </div>
 
@@ -418,14 +433,14 @@ const Visits = ({
                 filterDate={filterDate}
                 setFilterDate={setFilterDate}
                 clearFilters={clearFilters}
-                isPromoter={isPromoter()}
+                isPromoter={isPromoter}
             />
 
             <VisitTable
                 visits={filteredVisits}
                 handleDelete={handleDelete}
                 handleEdit={handleEdit}
-                isPromoter={isPromoter()}
+                isPromoter={isPromoter}
                 dataLoaded={dataLoaded}
             />
 

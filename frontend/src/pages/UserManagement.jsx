@@ -8,6 +8,7 @@ import { RoleContext } from "../context/RoleContext";
 import Toast from "../components/Toast";
 import EditUserModal from "../components/EditUserModal";
 import { message, Modal, Input, Form } from "antd";
+import userRepository from "../repositories/userRepository";
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
@@ -36,7 +37,7 @@ const UserManagement = () => {
     const [form] = Form.useForm();
 
     useEffect(() => {
-        if (isManager()) {
+        if (isManager) {
             fetchUsers();
         }
     }, [isManager]);
@@ -102,22 +103,18 @@ const UserManagement = () => {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`${API_URL}/api/users/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            // Ordenar usuários por ID
-            const sortedUsers = response.data.sort((a, b) => a.id - b.id);
-            setUsers(sortedUsers);
-            setFilteredUsers(sortedUsers);
+            const data = await userRepository.getAllUsers();
+            setUsers(data);
+            setFilteredUsers(data);
         } catch (error) {
             console.error("Erro ao buscar usuários:", error);
-            message.error("Erro ao carregar usuários");
+            showToast("Erro ao carregar usuários", "error");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDeleteUser = (userId) => {
+    const handleDelete = (userId) => {
         Modal.confirm({
             title: "Confirmar exclusão",
             content: "Tem certeza que deseja excluir este usuário?",
@@ -130,17 +127,16 @@ const UserManagement = () => {
                 className: "ant-btn-cancel",
             },
             onOk: async () => {
+                setLoading(true);
                 try {
-                    await axios.delete(`${API_URL}/api/users/${userId}/`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
+                    await userRepository.deleteUser(userId);
                     showToast("Usuário excluído com sucesso!", "success");
-                    setTimeout(() => {
-                        fetchUsers();
-                    }, 2000);
+                    await fetchUsers();
                 } catch (error) {
                     console.error("Erro ao excluir usuário:", error);
                     showToast("Erro ao excluir usuário", "error");
+                } finally {
+                    setLoading(false);
                 }
             },
         });
@@ -281,7 +277,66 @@ const UserManagement = () => {
         }
     };
 
-    if (!isManager()) {
+    const handleSaveEdit = async (userId) => {
+        setLoading(true);
+        try {
+            await userRepository.updateUser(userId, {
+                first_name: editFirstName,
+                last_name: editLastName,
+                email: editEmail,
+                cpf: editCPF.replace(/\D/g, ""),
+                phone: editPhone.replace(/\D/g, ""),
+                role: editRole,
+                is_active: editIsActive,
+            });
+
+            showToast("Usuário atualizado com sucesso!", "success");
+            setEditingId(null);
+            await fetchUsers();
+        } catch (error) {
+            console.error("Erro ao atualizar usuário:", error);
+            showToast("Erro ao atualizar usuário", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleToggleActive = async (userId, currentStatus) => {
+        setLoading(true);
+        try {
+            await userRepository.updateUser(userId, {
+                is_active: !currentStatus,
+            });
+
+            showToast(
+                `Usuário ${
+                    !currentStatus ? "ativado" : "desativado"
+                } com sucesso!`,
+                "success"
+            );
+            await fetchUsers();
+        } catch (error) {
+            console.error("Erro ao alterar status do usuário:", error);
+            showToast("Erro ao alterar status do usuário", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (userId) => {
+        setLoading(true);
+        try {
+            await userRepository.resetPassword({ user_id: userId });
+            showToast("Senha resetada com sucesso!", "success");
+        } catch (error) {
+            console.error("Erro ao resetar senha:", error);
+            showToast("Erro ao resetar senha", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!isManager) {
         return (
             <div className="form-container">
                 <h2 className="form-title">Acesso Negado</h2>
@@ -406,9 +461,9 @@ const UserManagement = () => {
                                                 type="checkbox"
                                                 checked={user.profile.is_active}
                                                 onChange={(e) =>
-                                                    handleActiveChange(
+                                                    handleToggleActive(
                                                         user.id,
-                                                        e.target.checked
+                                                        user.profile.is_active
                                                     )
                                                 }
                                                 disabled={
@@ -442,7 +497,7 @@ const UserManagement = () => {
                                             </button>
                                             <button
                                                 onClick={() =>
-                                                    handleDeleteUser(user.id)
+                                                    handleDelete(user.id)
                                                 }
                                                 className="form-button delete-button"
                                                 disabled={

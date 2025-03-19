@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import "../styles/form.css";
 import { formatCPF, formatPhone } from "../hooks/useMask";
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
@@ -8,14 +7,14 @@ import PropTypes from "prop-types";
 import { CustomModal } from "../components/CustomModal";
 import { Modal } from "antd";
 import Toast from "../components/Toast";
+import promoterRepository from "../repositories/promoterRepository";
+import userRepository from "../repositories/userRepository";
 
 const PromoterForm = ({
     loading,
     setLoading,
     modalOpen,
     setModalOpen,
-    success,
-    setSuccess,
     errorMessage,
     setErrorMessage,
 }) => {
@@ -60,11 +59,9 @@ const PromoterForm = ({
 
     const fetchPromoters = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/promoters/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setPromoters(response.data);
-            setFilteredPromoters(response.data);
+            const data = await promoterRepository.getAllPromoters();
+            setPromoters(data);
+            setFilteredPromoters(data);
         } catch (error) {
             console.error("Erro ao buscar promotores", error);
         }
@@ -96,10 +93,54 @@ const PromoterForm = ({
         setFilteredPromoters(promoters);
     };
 
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+        setTimeout(() => {
+            setToast({ show: false, message: "", type: "success" });
+        }, 3000);
+    };
+
+    const copyToClipboard = async (text) => {
+        try {
+            // Tenta usar a API do Clipboard
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+                showToast("Senha copiada com sucesso!", "success");
+                return;
+            }
+
+            // Fallback para o método mais antigo
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                document.execCommand("copy");
+                textArea.remove();
+                showToast("Senha copiada com sucesso!", "success");
+            } catch (err) {
+                textArea.remove();
+                showToast(
+                    "Erro ao copiar senha. Tente copiar manualmente.",
+                    "error"
+                );
+            }
+        } catch (err) {
+            showToast(
+                "Erro ao copiar senha. Tente copiar manualmente.",
+                "error"
+            );
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrorMessage("");
-        setModalOpen(true);
         setLoading(true);
 
         const promoterData = {
@@ -111,17 +152,76 @@ const PromoterForm = ({
         };
 
         try {
-            await axios.post(`${API_URL}/api/promoters/`, promoterData, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await promoterRepository.createPromoter(
+                promoterData
+            );
 
+            // Se chegou aqui, deu sucesso
             await fetchPromoters();
             resetForm();
-            setSuccess(true);
+            showToast("Promotor cadastrado com sucesso!", "success");
+
+            // Se tiver senha temporária, mostra para o usuário
+            if (response.temporary_password) {
+                const tempPassword = response.temporary_password;
+                Modal.success({
+                    title: "Promotor cadastrado com sucesso!",
+                    content: (
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                flexWrap: "wrap",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                }}
+                            >
+                                <span>A senha temporária do promotor é:</span>
+                                <strong>{tempPassword}</strong>
+                                <button
+                                    onClick={() =>
+                                        copyToClipboard(tempPassword)
+                                    }
+                                    className="form-button"
+                                    style={{
+                                        padding: "5px 10px",
+                                        minWidth: "auto",
+                                        fontSize: "14px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                    }}
+                                >
+                                    <span>📋</span>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                        </div>
+                    ),
+                    okText: "Entendi",
+                    okButtonProps: {
+                        className: "ant-btn-ok",
+                    },
+                });
+            }
         } catch (error) {
-            setErrorMessage(await getErrorMessage(error));
+            let errorMsg = "Erro ao cadastrar promotor. Verifique os dados.";
+
+            if (error.response?.data?.cpf) {
+                errorMsg = await translateMessage(error.response.data.cpf[0]);
+            } else if (error.response?.data?.error) {
+                errorMsg = error.response.data.error;
+            }
+
+            showToast(errorMsg, "error");
         } finally {
-            finalizeModal();
+            setLoading(false);
         }
     };
 
@@ -135,24 +235,7 @@ const PromoterForm = ({
         setEmail("");
     };
 
-    const getErrorMessage = async (error) => {
-        if (!error.response) return "Erro ao conectar com o servidor.";
-
-        return error.response.status === 400 && error.response.data.error.cpf
-            ? await translateMessage(error.response.data.error.cpf[0])
-            : "Erro ao cadastrar promotor. Verifique os dados.";
-    };
-
-    const finalizeModal = () => {
-        setLoading(false);
-        setTimeout(() => {
-            setModalOpen(false);
-            setSuccess(false);
-            setErrorMessage("");
-        }, 3000);
-    };
-
-    const handleEdit = (promoter) => {
+    const handleEdit = async (promoter) => {
         setEditingId(promoter.id);
         setEditFirstName(promoter.first_name);
         setEditLastName(promoter.last_name);
@@ -163,41 +246,39 @@ const PromoterForm = ({
 
     const handleSaveEdit = async (id) => {
         setErrorMessage("");
+        setLoading(true);
 
         const cleanedCPF = editCPF.replace(/\D/g, "");
 
         if (cleanedCPF.length !== 11) {
-            setErrorMessage("CPF inválido.");
+            showToast("CPF inválido.", "error");
+            setLoading(false);
             return;
         }
 
         try {
-            await axios.put(
-                `${API_URL}/api/promoters/${id}/`,
-                {
-                    first_name: editFirstName,
-                    last_name: editLastName,
-                    cpf: cleanedCPF,
-                    phone: editPhone.replace(/\D/g, ""),
-                    email: editEmail,
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setEditingId(null);
-            fetchPromoters();
-        } catch (error) {
-            setErrorMessage(
-                "Erro ao atualizar promotor. Verifique os dados.",
-                error
-            );
-        }
-    };
+            await promoterRepository.updatePromoter(id, {
+                first_name: editFirstName,
+                last_name: editLastName,
+                cpf: cleanedCPF,
+                phone: editPhone.replace(/\D/g, ""),
+                email: editEmail,
+            });
 
-    const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
-        setTimeout(() => {
-            setToast({ show: false, message: "", type: "success" });
-        }, 3000);
+            setEditingId(null);
+            await fetchPromoters();
+            showToast("Promotor atualizado com sucesso!", "success");
+        } catch (error) {
+            let errorMsg = "Erro ao atualizar promotor. Verifique os dados.";
+
+            if (error.response?.data?.error) {
+                errorMsg = error.response.data.error;
+            }
+
+            showToast(errorMsg, "error");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleDelete = (promoterId) => {
@@ -220,49 +301,24 @@ const PromoterForm = ({
 
                 try {
                     // Primeiro, buscar os dados do promotor
-                    const promoterResponse = await axios.get(
-                        `${API_URL}/api/promoters/${promoterId}/`,
-                        {
-                            headers: { Authorization: `Bearer ${token}` },
-                        }
-                    );
-
-                    const promoterData = promoterResponse.data;
+                    const promoterData =
+                        await promoterRepository.getPromoterById(promoterId);
 
                     // Buscar o usuário pelo CPF (que é usado como username)
                     try {
-                        const usersResponse = await axios.get(
-                            `${API_URL}/api/users/`,
-                            {
-                                headers: { Authorization: `Bearer ${token}` },
-                            }
-                        );
+                        const users = await userRepository.getAllUsers();
 
                         // Encontrar o usuário que tem o mesmo CPF como username
-                        const user = usersResponse.data.find(
+                        const user = users.find(
                             (user) => user.username === promoterData.cpf
                         );
 
                         if (user) {
                             // Se encontrou o usuário, exclui ele primeiro
-                            await axios.delete(
-                                `${API_URL}/api/users/${user.id}/`,
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${token}`,
-                                    },
-                                }
-                            );
+                            await userRepository.deleteUser(user.id);
                         } else {
                             // Se não encontrou o usuário, exclui apenas o promotor
-                            await axios.delete(
-                                `${API_URL}/api/promoters/${promoterId}/`,
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${token}`,
-                                    },
-                                }
-                            );
+                            await promoterRepository.deletePromoter(promoterId);
                         }
 
                         showToast("Promotor excluído com sucesso!", "success");
@@ -310,6 +366,7 @@ const PromoterForm = ({
                         onChange={(e) => setFirstName(e.target.value)}
                         className="form-input-text name-input"
                         required
+                        disabled={loading}
                     />
                     <input
                         type="text"
@@ -318,6 +375,7 @@ const PromoterForm = ({
                         onChange={(e) => setLastName(e.target.value)}
                         className="form-input-text surname-input"
                         required
+                        disabled={loading}
                     />
                 </div>
                 <input
@@ -327,6 +385,7 @@ const PromoterForm = ({
                     onChange={(e) => setEmail(e.target.value)}
                     className="form-input-text"
                     required
+                    disabled={loading}
                 />
                 <div className="form-input-break">
                     <input
@@ -336,6 +395,7 @@ const PromoterForm = ({
                         onChange={(e) => setCPF(formatCPF(e.target.value))}
                         className="form-input-text cpf-input"
                         required
+                        disabled={loading}
                     />
                     <input
                         type="text"
@@ -344,10 +404,15 @@ const PromoterForm = ({
                         onChange={(e) => setPhone(formatPhone(e.target.value))}
                         className="form-input-text phone-input"
                         required
+                        disabled={loading}
                     />
                 </div>
-                <button type="submit" className="form-button">
-                    Cadastrar
+                <button
+                    type="submit"
+                    className="form-button"
+                    disabled={loading}
+                >
+                    {loading ? <Loader size="small" /> : "Cadastrar"}
                 </button>
             </form>
 
@@ -365,7 +430,6 @@ const PromoterForm = ({
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
                 loading={loading}
-                success={success}
                 errorMessage={errorMessage}
             />
 
@@ -378,6 +442,7 @@ const PromoterForm = ({
                     value={filterName}
                     onChange={(e) => setFilterName(e.target.value)}
                     className="form-input-text"
+                    disabled={loading}
                 />
                 <input
                     type="text"
@@ -385,6 +450,7 @@ const PromoterForm = ({
                     value={filterCPF}
                     onChange={(e) => setFilterCPF(formatCPF(e.target.value))}
                     className="form-input-text"
+                    disabled={loading}
                 />
                 <input
                     type="text"
@@ -394,10 +460,12 @@ const PromoterForm = ({
                         setFilterPhone(formatPhone(e.target.value))
                     }
                     className="form-input-text"
+                    disabled={loading}
                 />
                 <button
                     onClick={clearFilters}
                     className="form-button clear-button"
+                    disabled={loading}
                 >
                     Limpar Filtros
                 </button>
@@ -434,6 +502,7 @@ const PromoterForm = ({
                                                         )
                                                     }
                                                     className="form-input-text"
+                                                    disabled={loading}
                                                 />
                                                 <input
                                                     type="text"
@@ -444,6 +513,7 @@ const PromoterForm = ({
                                                         )
                                                     }
                                                     className="form-input-text"
+                                                    disabled={loading}
                                                 />
                                             </td>
                                             <td>
@@ -456,6 +526,7 @@ const PromoterForm = ({
                                                         )
                                                     }
                                                     className="form-input-text"
+                                                    disabled={loading}
                                                 />
                                             </td>
                                             <td>
@@ -470,6 +541,7 @@ const PromoterForm = ({
                                                         )
                                                     }
                                                     className="form-input-text"
+                                                    disabled={loading}
                                                 />
                                             </td>
                                             <td>
@@ -486,6 +558,7 @@ const PromoterForm = ({
                                                         )
                                                     }
                                                     className="form-input-text"
+                                                    disabled={loading}
                                                 />
                                             </td>
                                             <td>
@@ -497,14 +570,20 @@ const PromoterForm = ({
                                                             )
                                                         }
                                                         className="form-button save-button"
+                                                        disabled={loading}
                                                     >
-                                                        Salvar
+                                                        {loading ? (
+                                                            <Loader size="small" />
+                                                        ) : (
+                                                            "Salvar"
+                                                        )}
                                                     </button>
                                                     <button
                                                         onClick={
                                                             handleCancelEdit
                                                         }
                                                         className="form-button cancel-button"
+                                                        disabled={loading}
                                                     >
                                                         Cancelar
                                                     </button>
@@ -528,6 +607,7 @@ const PromoterForm = ({
                                                             handleEdit(promoter)
                                                         }
                                                         className="form-button edit-button"
+                                                        disabled={loading}
                                                     >
                                                         ✏️
                                                     </button>
@@ -538,6 +618,7 @@ const PromoterForm = ({
                                                             )
                                                         }
                                                         className="form-button delete-button"
+                                                        disabled={loading}
                                                     >
                                                         🗑️
                                                     </button>
@@ -560,8 +641,6 @@ PromoterForm.propTypes = {
     setLoading: PropTypes.func.isRequired,
     modalOpen: PropTypes.bool.isRequired,
     setModalOpen: PropTypes.func.isRequired,
-    success: PropTypes.bool.isRequired,
-    setSuccess: PropTypes.func.isRequired,
     errorMessage: PropTypes.string.isRequired,
     setErrorMessage: PropTypes.func.isRequired,
 };

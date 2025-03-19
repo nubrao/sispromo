@@ -1,112 +1,65 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import PropTypes from "prop-types";
 import { AuthContext } from "./AuthContext";
-import axios from "axios";
 
 export const RoleContext = createContext();
 
+const ROLES = {
+    MANAGER: "manager",
+    ANALYST: "analyst",
+    PROMOTER: "promoter",
+};
+
+const ROUTE_ACCESS = {
+    "/home": [ROLES.MANAGER, ROLES.ANALYST, ROLES.PROMOTER],
+    "/promoters": [ROLES.MANAGER, ROLES.ANALYST],
+    "/stores": [ROLES.MANAGER, ROLES.ANALYST],
+    "/brands": [ROLES.MANAGER, ROLES.ANALYST],
+    "/promoter-brands": [ROLES.MANAGER, ROLES.ANALYST],
+    "/visit-prices": [ROLES.MANAGER, ROLES.ANALYST],
+    "/visits": [ROLES.MANAGER, ROLES.ANALYST, ROLES.PROMOTER],
+    "/reports": [ROLES.MANAGER, ROLES.ANALYST, ROLES.PROMOTER],
+    "/users": [ROLES.MANAGER],
+};
+
 export const RoleProvider = ({ children }) => {
     const [userRole, setUserRole] = useState(null);
-    const [userProfileId, setUserProfileId] = useState(null);
-    const [promoterId, setPromoterId] = useState(null);
     const [loading, setLoading] = useState(true);
-    const { token } = useContext(AuthContext);
-    const API_URL = import.meta.env.VITE_API_URL;
+    const { user } = useContext(AuthContext);
 
     useEffect(() => {
-        const fetchUserRole = async () => {
-            if (!token) {
-                setUserRole(null);
-                setUserProfileId(null);
-                setPromoterId(null);
-                setLoading(false);
-                return;
-            }
-
-            try {
-                const response = await axios.get(`${API_URL}/api/users/me/`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                // Armazena os dados do usuário
-                const userData = response.data;
-
-                setUserRole(userData.current_role || null);
-                setUserProfileId(userData.userprofile_id || null);
-                setPromoterId(userData.promoter_id || null);
-            } catch (error) {
-                console.error("Erro ao buscar dados do usuário:", error);
-                if (error.response) {
-                    console.error("Dados do erro:", error.response.data);
-                }
-                setUserRole(null);
-                setUserProfileId(null);
-                setPromoterId(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchUserRole();
-    }, [token, API_URL]);
-
-    const isManager = () => {
-        const result = userRole === "manager";
-        return result;
-    };
-
-    const isAnalyst = () => {
-        const result = userRole === "analyst";
-        return result;
-    };
-
-    const isPromoter = () => {
-        const result = userRole === "promoter";
-        return result;
-    };
-
-    const canAccessRoute = (route) => {
-        if (loading) return false;
-
-        const isManagerUser = isManager();
-        const isAnalystUser = isAnalyst();
-        const isPromoterUser = isPromoter();
-
-        if (isManagerUser || isAnalystUser) {
-            const managerAnalystRoutes = [
-                "/home",
-                "/promoters",
-                "/stores",
-                "/brands",
-                "/visit-prices",
-                "/visits",
-                "/reports",
-                "/promoter-brands",
-            ];
-            if (isManagerUser) {
-                managerAnalystRoutes.push("/users");
-            }
-            return managerAnalystRoutes.includes(route);
+        if (user) {
+            setUserRole(user.current_role);
+            setLoading(false);
+        } else {
+            setUserRole(null);
+            setLoading(true);
         }
-        if (isPromoterUser) {
-            const promoterRoutes = ["/home", "/visits", "/reports"];
-            const hasAccess = promoterRoutes.includes(route);
-            return hasAccess;
-        }
-        return false;
+    }, [user]);
+
+    const isManager = userRole === ROLES.MANAGER;
+    const isAnalyst = userRole === ROLES.ANALYST;
+    const isPromoter = userRole === ROLES.PROMOTER;
+
+    const canAccessRoute = (path) => {
+        const allowedRoles = ROUTE_ACCESS[path];
+        return allowedRoles ? allowedRoles.includes(userRole) : false;
     };
+
+    // Debug para verificar os valores
+    console.log("Current role:", userRole);
+    console.log("Is Manager:", isManager);
+    console.log("Can access /users:", canAccessRoute("/users"));
 
     return (
         <RoleContext.Provider
             value={{
                 userRole,
-                userProfileId,
-                promoterId,
+                loading,
                 isManager,
                 isAnalyst,
                 isPromoter,
                 canAccessRoute,
-                loading,
             }}
         >
             {children}
@@ -116,4 +69,12 @@ export const RoleProvider = ({ children }) => {
 
 RoleProvider.propTypes = {
     children: PropTypes.node.isRequired,
+};
+
+export const useRole = () => {
+    const context = useContext(RoleContext);
+    if (!context) {
+        throw new Error("useRole deve ser usado dentro de um RoleProvider");
+    }
+    return context;
 };

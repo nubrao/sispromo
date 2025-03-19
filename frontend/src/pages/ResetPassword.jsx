@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import { useTranslateMessage } from "../hooks/useTranslateMessage";
+import { formatCPF } from "../hooks/useMask";
+import Loader from "../components/Loader";
+import Toast from "../components/Toast";
+import userRepository from "../repositories/userRepository";
 import "../styles/login.css";
 import Logo from "../assets/img/logo";
-import Loader from "../components/Loader";
 
 const ResetPassword = () => {
     const [email, setEmail] = useState("");
@@ -12,28 +15,33 @@ const ResetPassword = () => {
     const [success, setSuccess] = useState(false);
     const navigate = useNavigate();
     const API_URL = import.meta.env.VITE_API_URL;
+    const { showToast } = useTranslateMessage();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");
         setLoading(true);
+        setError("");
+
+        const resetData = {
+            email,
+        };
 
         try {
-            const response = await axios.post(
-                `${API_URL}/api/users/reset-password/`,
-                {
-                    email,
-                }
+            await userRepository.resetPassword(resetData);
+            showToast(
+                "Senha resetada com sucesso! Verifique seu email.",
+                "success"
             );
-
-            if (response.status === 200) {
-                setSuccess(true);
-            }
+            navigate("/login");
         } catch (error) {
-            setError(
-                error.response?.data?.message ||
-                    "Erro ao solicitar redefinição de senha. Por favor, tente novamente."
-            );
+            let errorMsg = "Erro ao resetar senha.";
+
+            if (error.response?.data?.error) {
+                errorMsg = error.response.data.error;
+            }
+
+            setError(errorMsg);
+            showToast(errorMsg, "error");
         } finally {
             setLoading(false);
         }

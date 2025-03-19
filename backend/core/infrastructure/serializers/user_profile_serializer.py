@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from django.contrib.auth.models import User
-from ..models.user_profile_model import UserProfile
+from django.contrib.auth.hashers import make_password
+from ..models.user_profile_model import UserProfileModel
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -9,7 +10,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     role_value = serializers.CharField(source='role', read_only=True)
 
     class Meta:
-        model = UserProfile
+        model = UserProfileModel
         fields = [
             'id', 'role', 'role_value', 'cpf', 'phone', 'is_active',
             'created_at', 'updated_at'
@@ -85,7 +86,7 @@ class UserSerializer(serializers.ModelSerializer):
         """Retorna o papel atual do usuário"""
         try:
             return obj.userprofile.role
-        except UserProfile.DoesNotExist:
+        except UserProfileModel.DoesNotExist:
             return None
 
     @extend_schema_field(serializers.IntegerField())
@@ -93,7 +94,7 @@ class UserSerializer(serializers.ModelSerializer):
         """Retorna o ID do perfil do usuário"""
         try:
             return obj.userprofile.id
-        except UserProfile.DoesNotExist:
+        except UserProfileModel.DoesNotExist:
             return None
 
     @extend_schema_field(serializers.CharField())
@@ -101,7 +102,7 @@ class UserSerializer(serializers.ModelSerializer):
         """Retorna o username do usuário"""
         try:
             return obj.username
-        except UserProfile.DoesNotExist:
+        except UserProfileModel.DoesNotExist:
             return None
 
     @extend_schema_field(serializers.IntegerField())
@@ -112,7 +113,7 @@ class UserSerializer(serializers.ModelSerializer):
                     hasattr(obj.userprofile, 'promoter')):
                 return obj.userprofile.promoter.id
             return None
-        except (UserProfile.DoesNotExist, AttributeError):
+        except (UserProfileModel.DoesNotExist, AttributeError):
             return None
 
     def validate(self, data):

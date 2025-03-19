@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, useRef } from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
+import userRepository from "../repositories/userRepository";
 
 export const AuthContext = createContext(null);
 
@@ -15,6 +16,17 @@ const AuthProvider = ({ children }) => {
     const API_URL = import.meta.env.VITE_API_URL;
 
     const hasCheckedToken = useRef(false);
+
+    const fetchUserData = async () => {
+        try {
+            const userData = await userRepository.getCurrentUser();
+            setUser(userData);
+            return userData;
+        } catch (error) {
+            console.error("Erro ao buscar dados do usuário:", error);
+            return null;
+        }
+    };
 
     useEffect(() => {
         const verifyToken = async () => {
@@ -39,6 +51,9 @@ const AuthProvider = ({ children }) => {
                     axios.defaults.headers.common[
                         "Authorization"
                     ] = `Bearer ${response.data.access}`;
+
+                    // Busca os dados do usuário após verificar o token
+                    await fetchUserData();
                 }
             } catch (error) {
                 console.error("Token inválido ou expirado", error);
@@ -88,8 +103,14 @@ const AuthProvider = ({ children }) => {
             axios.defaults.headers.common[
                 "Authorization"
             ] = `Bearer ${response.data.access}`;
-            navigate("/home");
 
+            // Busca os dados do usuário após o login
+            const userData = await fetchUserData();
+            if (!userData) {
+                throw new Error("Não foi possível obter os dados do usuário");
+            }
+
+            navigate("/home");
             return true;
         } catch (error) {
             console.error("Falha no login", error);

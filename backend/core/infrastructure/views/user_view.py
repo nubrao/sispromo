@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema, extend_schema_view
 import logging
 from ..serializers.user_profile_serializer import UserSerializer
-from ..models.user_profile_model import UserProfile
+from ..models.user_profile_model import UserProfileModel
 
 logger = logging.getLogger(__name__)
 
@@ -187,7 +187,7 @@ class UserViewSet(viewsets.ModelViewSet):
             user = self.get_object()
             new_role = request.data.get('role')
 
-            if new_role not in dict(UserProfile.ROLE_CHOICES):
+            if new_role not in dict(UserProfileModel.ROLE_CHOICES):
                 return Response(
                     {"error": "Papel inválido"},
                     status=status.HTTP_400_BAD_REQUEST
