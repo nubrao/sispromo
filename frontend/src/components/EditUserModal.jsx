@@ -4,39 +4,22 @@ import "../styles/modal.css";
 import { Form, Input, Modal } from "antd";
 
 const EditUserModal = ({ open, setOpen, user, onSave }) => {
-    const [formData, setFormData] = useState({
-        first_name: "",
-        last_name: "",
-        email: "",
-        username: "",
-        cpf: "",
-        phone: "",
-    });
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
 
-    // Atualiza os valores do formulário quando formData mudar
     useEffect(() => {
-        if (open) {
-            form.setFieldsValue(formData);
-        }
-    }, [open, formData, form]);
-
-    useEffect(() => {
-        if (user) {
+        if (open && user) {
             const formattedData = {
                 first_name: user.first_name || "",
                 last_name: user.last_name || "",
                 email: user.email || "",
                 username: user.username || "",
-                cpf: formatCPF(user.profile.cpf) || "",
-                phone: formatPhone(user.profile.phone) || "",
+                cpf: formatCPF(user.profile?.cpf) || "",
+                phone: formatPhone(user.profile?.phone) || "",
             };
-
-            setFormData(formattedData);
             form.setFieldsValue(formattedData);
         }
-    }, [user, form]);
+    }, [open, user, form]);
 
     const formatCPF = (cpf) => {
         if (!cpf) return "";
@@ -86,59 +69,40 @@ const EditUserModal = ({ open, setOpen, user, onSave }) => {
         return true;
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        let formattedValue = value;
-
-        if (name === "cpf") {
-            formattedValue = value.replace(/\D/g, "");
-            if (formattedValue.length <= 11) {
-                formattedValue = formattedValue.replace(
-                    /^(\d{3})(\d{3})(\d{3})(\d{2})$/,
-                    "$1.$2.$3-$4"
-                );
-            }
-        } else if (name === "phone") {
-            formattedValue = value.replace(/\D/g, "");
-            if (formattedValue.length <= 11) {
-                formattedValue = formattedValue.replace(
-                    /^(\d{2})(\d{5})(\d{4})$/,
-                    "($1) $2-$3"
-                );
-            }
-        }
-
-        setFormData((prev) => ({
-            ...prev,
-            [name]: formattedValue,
-        }));
-    };
-
-    const validateForm = () => {
-        const newErrors = {};
-        const cpfNumbers = formData.cpf.replace(/\D/g, "");
-        const phoneNumbers = formData.phone.replace(/\D/g, "");
+    const handleSubmit = async (values) => {
+        const cpfNumbers = values.cpf.replace(/\D/g, "");
+        const phoneNumbers = values.phone.replace(/\D/g, "");
 
         if (!validateCPF(cpfNumbers)) {
-            newErrors.cpf = "CPF inválido";
+            form.setFields([
+                {
+                    name: "cpf",
+                    errors: ["CPF inválido"],
+                },
+            ]);
+            return;
         }
 
         if (phoneNumbers.length !== 11) {
-            newErrors.phone = "Telefone deve ter 11 dígitos";
+            form.setFields([
+                {
+                    name: "phone",
+                    errors: ["Telefone deve ter 11 dígitos"],
+                },
+            ]);
+            return;
         }
-
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = async (values) => {
-        if (!validateForm()) return;
 
         setLoading(true);
         try {
             const dataToSend = {
-                ...values,
-                cpf: values.cpf.replace(/\D/g, ""),
-                phone: values.phone.replace(/\D/g, ""),
+                first_name: values.first_name,
+                last_name: values.last_name,
+                email: values.email,
+                profile: {
+                    cpf: cpfNumbers,
+                    phone: phoneNumbers,
+                },
             };
             await onSave(dataToSend);
         } catch (error) {
@@ -148,17 +112,17 @@ const EditUserModal = ({ open, setOpen, user, onSave }) => {
         }
     };
 
-    if (!open) return null;
+    const handleCancel = () => {
+        form.resetFields();
+        setOpen(false);
+    };
 
     return (
         <Modal
             title="Editar Usuário"
             open={open}
             onOk={() => form.submit()}
-            onCancel={() => {
-                setOpen(false);
-                form.resetFields();
-            }}
+            onCancel={handleCancel}
             confirmLoading={loading}
             okText="Confirmar"
             cancelText="Cancelar"
@@ -171,8 +135,22 @@ const EditUserModal = ({ open, setOpen, user, onSave }) => {
                 type: "default",
                 className: "ant-btn-cancel",
             }}
+            destroyOnClose
         >
-            <Form form={form} onFinish={handleSubmit} layout="vertical">
+            <Form
+                form={form}
+                onFinish={handleSubmit}
+                layout="vertical"
+                preserve={false}
+                initialValues={{
+                    first_name: user?.first_name || "",
+                    last_name: user?.last_name || "",
+                    email: user?.email || "",
+                    username: user?.username || "",
+                    cpf: formatCPF(user?.profile?.cpf) || "",
+                    phone: formatPhone(user?.profile?.phone) || "",
+                }}
+            >
                 <Form.Item name="username" label="Usuário">
                     <Input disabled />
                 </Form.Item>
@@ -209,13 +187,7 @@ const EditUserModal = ({ open, setOpen, user, onSave }) => {
                     label="CPF"
                     rules={[{ required: true, message: "Informe o CPF" }]}
                 >
-                    <Input
-                        placeholder="000.000.000-00"
-                        maxLength={11}
-                        value={formData.cpf}
-                        onChange={handleChange}
-                        name="cpf"
-                    />
+                    <Input placeholder="000.000.000-00" maxLength={14} />
                 </Form.Item>
 
                 <Form.Item
@@ -223,13 +195,7 @@ const EditUserModal = ({ open, setOpen, user, onSave }) => {
                     label="Telefone"
                     rules={[{ required: true, message: "Informe o telefone" }]}
                 >
-                    <Input
-                        placeholder="(00) 00000-0000"
-                        maxLength={11}
-                        value={formData.phone}
-                        onChange={handleChange}
-                        name="phone"
-                    />
+                    <Input placeholder="(00) 00000-0000" maxLength={15} />
                 </Form.Item>
             </Form>
         </Modal>

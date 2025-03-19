@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
 import "../styles/login.css";
 import Logo from "../assets/img/logo";
-import { Button, Input, Form, message } from "antd";
+import { Button, Input, Form, Spin } from "antd";
 import {
     UserOutlined,
     LockOutlined,
@@ -14,7 +13,6 @@ import {
 import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { CustomModal } from "../components/CustomModal";
 import { formatCPF, formatPhone } from "../hooks/useMask";
-import Loader from "../components/Loader";
 import { Toast } from "../components/Toast";
 import userRepository from "../repositories/userRepository";
 
@@ -24,7 +22,6 @@ const Register = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const [form] = Form.useForm();
     const navigate = useNavigate();
-    const API_URL = import.meta.env.VITE_API_URL;
     const { translateMessage } = useTranslateMessage();
     const [errorMessage, setErrorMessage] = useState("");
 
@@ -38,7 +35,10 @@ const Register = () => {
             formattedValue = formatPhone(value);
         }
 
-        form.setFieldValue(name, formattedValue);
+        // Usa setTimeout para evitar referência circular
+        setTimeout(() => {
+            form.setFieldValue(name, formattedValue);
+        }, 0);
     };
 
     // Função para validar campo quando perder o foco
@@ -46,43 +46,58 @@ const Register = () => {
         form.validateFields([field]);
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (values) => {
         setLoading(true);
         setErrorMessage("");
-
-        if (password !== confirmPassword) {
-            setErrorMessage("As senhas não coincidem");
-            setLoading(false);
-            return;
-        }
-
-        const userData = {
-            first_name: firstName,
-            last_name: lastName,
-            email,
-            cpf: cpf.replace(/\D/g, ""),
-            phone: phone.replace(/\D/g, ""),
-            password,
-            password_confirm: confirmPassword,
-            role,
-        };
+        setModalVisible(true);
 
         try {
-            await userRepository.registerUser(userData);
-            showToast("Usuário registrado com sucesso!", "success");
-            navigate("/login");
-        } catch (error) {
-            let errorMsg = "Erro ao registrar usuário.";
+            // Extrair os valores do formulário
+            const {
+                first_name,
+                last_name,
+                email,
+                cpf,
+                phone,
+                password,
+                password_confirm,
+            } = values;
 
-            if (error.response?.data?.cpf) {
-                errorMsg = await translateMessage(error.response.data.cpf[0]);
-            } else if (error.response?.data?.error) {
-                errorMsg = error.response.data.error;
+            // Verificar se as senhas coincidem
+            if (password !== password_confirm) {
+                throw new Error(translateMessage("register.password.mismatch"));
             }
 
+            const userData = {
+                first_name,
+                last_name,
+                email,
+                cpf: cpf.replace(/\D/g, ""),
+                phone: phone.replace(/\D/g, ""),
+                password,
+                password_confirm,
+                role: "promoter", // Definindo o papel padrão como promoter
+            };
+
+            await userRepository.registerUser(userData);
+            Toast.showToast("Usuário registrado com sucesso!", "success");
+            setSuccess(true);
+
+            // Aguarda um pouco antes de redirecionar
+            setTimeout(() => {
+                setModalVisible(false);
+                navigate("/login");
+            }, 1500);
+        } catch (error) {
+            setSuccess(false);
+            const errorMsg = error.message || "Erro ao registrar usuário.";
             setErrorMessage(errorMsg);
-            showToast(errorMsg, "error");
+            Toast.showToast(errorMsg, "error");
+
+            // Aguarda um pouco antes de fechar o modal
+            setTimeout(() => {
+                setModalVisible(false);
+            }, 1500);
         } finally {
             setLoading(false);
         }
@@ -301,8 +316,12 @@ const Register = () => {
                             htmlType="submit"
                             className="login-button"
                             loading={loading}
+                            icon={loading ? <Spin size="small" /> : null}
+                            disabled={loading}
                         >
-                            {translateMessage("register.submit")}
+                            {loading
+                                ? "Processando..."
+                                : translateMessage("register.submit")}
                         </Button>
                     </Form.Item>
                     <Link to="/login" className="login-form-register">

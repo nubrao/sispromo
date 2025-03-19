@@ -69,7 +69,20 @@ const AuthProvider = ({ children }) => {
         const interceptor = axios.interceptors.response.use(
             (response) => response,
             async (error) => {
-                if (error.response?.status === 401) {
+                // Rotas que não devem causar logout automático em caso de 401
+                const publicRoutes = [
+                    `${API_URL}/api/users/`, // rota de registro
+                    `${API_URL}/api/reset-password/`, // rota de reset de senha
+                ];
+
+                // Verificamos se o erro é 401 e se não é uma das rotas públicas
+                if (
+                    error.response?.status === 401 &&
+                    error.config?.url &&
+                    !publicRoutes.some((route) =>
+                        error.config.url.startsWith(route)
+                    )
+                ) {
                     console.error("Sessão expirada. Deslogando usuário...");
                     logout();
                 }

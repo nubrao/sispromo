@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema, extend_schema_view
 import logging
-from ..serializers.user_profile_serializer import UserSerializer
+from ..serializers import user_profile_serializer as user_serializers
 from ..models.user_profile_model import UserProfileModel
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
     list=extend_schema(
         description="Lista todos os usuários",
         responses={
-            200: UserSerializer(many=True),
+            200: user_serializers.UserSerializer(many=True),
             500: {
                 "type": "object",
                 "properties": {"error": {"type": "string"}}
@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
     ),
     update=extend_schema(
         description="Atualiza um usuário existente",
-        request=UserSerializer,
+        request=user_serializers.UserUpdateSerializer,
         responses={
-            200: UserSerializer,
+            200: user_serializers.UserUpdateSerializer,
             400: {
                 "type": "object",
                 "properties": {"error": {"type": "string"}}
@@ -55,8 +55,12 @@ logger = logging.getLogger(__name__)
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciar Usuários"""
 
-    serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.action in ['partial_update', 'update']:
+            return user_serializers.UserUpdateSerializer
+        return user_serializers.UserSerializer
 
     def get_queryset(self):
         """
@@ -165,9 +169,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         description="Atualiza o papel do usuário",
-        request=UserSerializer,
+        request=user_serializers.UserSerializer,
         responses={
-            200: UserSerializer,
+            200: user_serializers.UserSerializer,
             400: {
                 "type": "object",
                 "properties": {"error": {"type": "string"}}
@@ -211,7 +215,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         description="Retorna os dados do usuário logado",
-        responses={200: UserSerializer}
+        responses={200: user_serializers.UserSerializer}
     )
     @action(detail=False, methods=['get'])
     def me(self, request):
@@ -228,9 +232,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         description="Registra um novo usuário",
-        request=UserSerializer,
+        request=user_serializers.UserSerializer,
         responses={
-            201: UserSerializer,
+            201: user_serializers.UserSerializer,
             400: {
                 "type": "object",
                 "properties": {"error": {"type": "string"}}

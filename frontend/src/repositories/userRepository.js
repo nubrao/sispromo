@@ -55,20 +55,47 @@ class UserRepository {
     // Registra um novo usuário
     async registerUser(userData) {
         try {
-            const response = await axios.post(this.baseURL, userData, this.getHeaders());
-            Toast.showToast("Usuário cadastrado com sucesso!", "success");
+            // Usa o endpoint register em vez do endpoint principal
+            const response = await axios.post(`${this.baseURL}register/`, userData);
             return response.data;
         } catch (error) {
             console.error("Erro ao registrar usuário:", error);
-            Toast.showToast("Erro ao cadastrar usuário", "error");
-            throw error;
+
+            // Tratamento específico de erros da API
+            if (error.response?.data) {
+                const errorData = error.response.data;
+
+                // Se for um objeto com mensagens de erro
+                if (typeof errorData === "object" && !Array.isArray(errorData)) {
+                    // Se tiver a estrutura de erro do DRF
+                    if (errorData.detail) {
+                        throw new Error(errorData.detail);
+                    }
+
+                    // Para outros erros estruturados
+                    const messages = Object.entries(errorData)
+                        .map(([field, errors]) => {
+                            const fieldName = field === "non_field_errors" ? "" : `${field}: `;
+                            return `${fieldName}${Array.isArray(errors) ? errors.join(", ") : errors}`;
+                        })
+                        .filter(msg => msg)
+                        .join(". ");
+
+                    throw new Error(messages || "Erro ao registrar usuário");
+                }
+
+                // Se for uma string ou array
+                throw new Error(typeof errorData === "string" ? errorData : JSON.stringify(errorData));
+            }
+
+            throw new Error("Erro ao registrar usuário. Por favor, tente novamente.");
         }
     }
 
     // Atualiza um usuário existente
     async updateUser(id, userData) {
         try {
-            const response = await axios.put(`${this.baseURL}${id}/`, userData, this.getHeaders());
+            const response = await axios.patch(`${this.baseURL}${id}/`, userData, this.getHeaders());
             Toast.showToast("Usuário atualizado com sucesso!", "success");
             return response.data;
         } catch (error) {

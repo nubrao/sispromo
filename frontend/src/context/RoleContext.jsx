@@ -24,15 +24,18 @@ const ROUTE_ACCESS = {
 
 export const RoleProvider = ({ children }) => {
     const [userRole, setUserRole] = useState(null);
+    const [userProfileId, setUserProfileId] = useState(null);
     const [loading, setLoading] = useState(true);
     const { user } = useContext(AuthContext);
 
     useEffect(() => {
         if (user) {
             setUserRole(user.current_role);
+            setUserProfileId(user.profile?.id || null);
             setLoading(false);
         } else {
             setUserRole(null);
+            setUserProfileId(null);
             setLoading(true);
         }
     }, [user]);
@@ -50,6 +53,7 @@ export const RoleProvider = ({ children }) => {
         <RoleContext.Provider
             value={{
                 userRole,
+                userProfileId,
                 loading,
                 isManager,
                 isAnalyst,

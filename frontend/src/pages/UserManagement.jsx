@@ -4,8 +4,9 @@ import Loader from "../components/Loader";
 import { RoleContext } from "../context/RoleContext";
 import { Toast } from "../components/Toast";
 import EditUserModal from "../components/EditUserModal";
-import { Modal, Input, Form } from "antd";
 import userRepository from "../repositories/userRepository";
+import { DeleteUserModal } from "../components/DeleteUserModal";
+import { ChangePasswordModal } from "../components/ChangePasswordModal";
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
@@ -21,8 +22,8 @@ const UserManagement = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
         useState(false);
-    const [passwordModalLoading, setPasswordModalLoading] = useState(false);
-    const [form] = Form.useForm();
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [userToDelete, setUserToDelete] = useState(null);
 
     useEffect(() => {
         if (isManager) {
@@ -96,33 +97,20 @@ const UserManagement = () => {
         }
     };
 
-    const handleDelete = async (userId) => {
-        try {
-            await userRepository.deleteUser(userId);
-            await fetchUsers();
-            Toast.showToast("Usuário excluído com sucesso!", "success");
-        } catch (error) {
-            console.error("Erro ao excluir usuário:", error);
-            Toast.showToast("Erro ao excluir usuário", "error");
-        }
+    const handleDelete = (userId) => {
+        setUserToDelete(userId);
+        setDeleteModalVisible(true);
     };
 
-    const handleChangePassword = async (values) => {
-        setPasswordModalLoading(true);
-        try {
-            await userRepository.updateUser(selectedUser.id, {
-                password: values.newPassword,
-                password_confirm: values.confirmPassword,
-            });
-            setIsChangePasswordModalOpen(false);
-            form.resetFields();
-            Toast.showToast("Senha alterada com sucesso!", "success");
-        } catch (error) {
-            console.error("Erro ao alterar senha:", error);
-            Toast.showToast("Erro ao alterar senha", "error");
-        } finally {
-            setPasswordModalLoading(false);
-        }
+    const handleDeleteSuccess = async () => {
+        setDeleteModalVisible(false);
+        setUserToDelete(null);
+        await fetchUsers();
+    };
+
+    const handleDeleteError = (error) => {
+        console.error("Erro ao excluir usuário:", error);
+        Toast.showToast("Erro ao excluir usuário", "error");
     };
 
     const handleToggleActive = async (userId, currentStatus) => {
@@ -203,6 +191,16 @@ const UserManagement = () => {
         }
     };
 
+    const handlePasswordModalOpen = (user) => {
+        setSelectedUser(user);
+        setIsChangePasswordModalOpen(true);
+    };
+
+    const handlePasswordModalClose = () => {
+        setSelectedUser(null);
+        setIsChangePasswordModalOpen(false);
+    };
+
     if (!isManager) {
         return (
             <div className="form-container">
@@ -244,8 +242,8 @@ const UserManagement = () => {
                     className="form-input-text"
                 >
                     <option value="">Todos os status</option>
-                    <option value="active">Ativo</option>
-                    <option value="inactive">Inativo</option>
+                    <option value="active">Ativos</option>
+                    <option value="inactive">Inativos</option>
                 </select>
                 <button
                     onClick={clearFilters}
@@ -264,9 +262,9 @@ const UserManagement = () => {
                         <thead>
                             <tr>
                                 <th>Nome</th>
-                                <th>Usuário</th>
                                 <th>E-mail</th>
-                                <th>Regra</th>
+                                <th>Usuário</th>
+                                <th>Função</th>
                                 <th>Status</th>
                                 <th>Ações</th>
                             </tr>
@@ -278,13 +276,11 @@ const UserManagement = () => {
                                         {user.first_name.toUpperCase()}{" "}
                                         {user.last_name.toUpperCase()}
                                     </td>
-                                    <td>{user.username}</td>
                                     <td>{user.email}</td>
+                                    <td>{user.username}</td>
                                     <td>
                                         <select
-                                            value={
-                                                user.current_role || "promoter"
-                                            }
+                                            value={user.current_role}
                                             onChange={(e) =>
                                                 handleRoleChange(
                                                     user.id,
@@ -292,7 +288,10 @@ const UserManagement = () => {
                                                 )
                                             }
                                             className="form-input-text"
-                                            disabled={user.id === userProfileId}
+                                            disabled={
+                                                user.userprofile_id ===
+                                                userProfileId
+                                            }
                                         >
                                             <option value="promoter">
                                                 Promotor
@@ -306,22 +305,38 @@ const UserManagement = () => {
                                         </select>
                                     </td>
                                     <td>
-                                        <label className="switch">
-                                            <input
-                                                type="checkbox"
-                                                checked={user.profile.is_active}
-                                                onChange={() =>
-                                                    handleToggleActive(
-                                                        user.id,
-                                                        user.profile.is_active
-                                                    )
-                                                }
-                                                disabled={
-                                                    user.id === userProfileId
-                                                }
-                                            />
-                                            <span className="slider round"></span>
-                                        </label>
+                                        <button
+                                            className={`status-btn ${
+                                                user.profile.is_active
+                                                    ? "active"
+                                                    : "inactive"
+                                            } ${
+                                                user.userprofile_id ===
+                                                userProfileId
+                                                    ? "disabled-action"
+                                                    : ""
+                                            }`}
+                                            onClick={() =>
+                                                handleToggleActive(
+                                                    user.id,
+                                                    user.profile.is_active
+                                                )
+                                            }
+                                            disabled={
+                                                user.userprofile_id ===
+                                                userProfileId
+                                            }
+                                            title={
+                                                user.userprofile_id ===
+                                                userProfileId
+                                                    ? "Não é possível alterar o status do seu próprio usuário"
+                                                    : ""
+                                            }
+                                        >
+                                            {user.profile.is_active
+                                                ? "Ativo"
+                                                : "Inativo"}
+                                        </button>
                                     </td>
                                     <td>
                                         <div className="form-actions">
@@ -336,8 +351,8 @@ const UserManagement = () => {
                                             </button>
                                             <button
                                                 onClick={() =>
-                                                    handleChangePassword(
-                                                        user.id
+                                                    handlePasswordModalOpen(
+                                                        user
                                                     )
                                                 }
                                                 className="form-button password-button"
@@ -349,11 +364,22 @@ const UserManagement = () => {
                                                 onClick={() =>
                                                     handleDelete(user.id)
                                                 }
-                                                className="form-button delete-button"
+                                                className={`form-button delete-button ${
+                                                    user.userprofile_id ===
+                                                    userProfileId
+                                                        ? "disabled-action"
+                                                        : ""
+                                                }`}
                                                 disabled={
-                                                    user.id === userProfileId
+                                                    user.userprofile_id ===
+                                                    userProfileId
                                                 }
-                                                title="Excluir usuário"
+                                                title={
+                                                    user.userprofile_id ===
+                                                    userProfileId
+                                                        ? "Não é possível excluir seu próprio usuário"
+                                                        : "Excluir usuário"
+                                                }
                                             >
                                                 🗑️
                                             </button>
@@ -366,81 +392,32 @@ const UserManagement = () => {
                 )}
             </div>
 
-            {/* Modal de edição */}
-            {isEditModalOpen && selectedUser && (
-                <EditUserModal
-                    open={isEditModalOpen}
-                    setOpen={setIsEditModalOpen}
-                    user={selectedUser}
-                    onClose={() => setIsEditModalOpen(false)}
-                    onSave={handleEditSave}
-                />
-            )}
+            {/* Modais */}
+            <EditUserModal
+                open={isEditModalOpen}
+                setOpen={setIsEditModalOpen}
+                user={selectedUser}
+                onSave={handleEditSave}
+            />
 
-            {/* Modal de alterar senha */}
-            <Modal
-                title="Alterar Senha"
-                open={isChangePasswordModalOpen}
-                onOk={() => form.submit()}
-                okText="Confirmar"
-                okButtonProps={{
-                    type: "primary",
-                    loading: passwordModalLoading,
-                    className: "ant-btn-ok",
+            <ChangePasswordModal
+                visible={isChangePasswordModalOpen}
+                onClose={handlePasswordModalClose}
+                userId={selectedUser?.id}
+            />
+
+            <DeleteUserModal
+                visible={deleteModalVisible}
+                onClose={() => {
+                    setDeleteModalVisible(false);
+                    setUserToDelete(null);
                 }}
-                confirmLoading={passwordModalLoading}
-                onCancel={() => {
-                    setIsChangePasswordModalOpen(false);
-                    form.resetFields();
-                }}
-                cancelText="Cancelar"
-                cancelButtonProps={{
-                    type: "default",
-                    className: "ant-btn-cancel",
-                }}
-            >
-                <Form form={form} onFinish={handleChangePassword}>
-                    <Form.Item
-                        name="newPassword"
-                        rules={[
-                            { required: true, message: "Digite a nova senha" },
-                        ]}
-                    >
-                        <Input.Password
-                            placeholder="Nova senha"
-                            className="ant-input"
-                        />
-                    </Form.Item>
-                    <Form.Item
-                        name="confirmPassword"
-                        dependencies={["newPassword"]}
-                        rules={[
-                            {
-                                required: true,
-                                message: "Confirme a nova senha",
-                            },
-                            ({ getFieldValue }) => ({
-                                validator(_, value) {
-                                    if (
-                                        !value ||
-                                        getFieldValue("newPassword") === value
-                                    ) {
-                                        return Promise.resolve();
-                                    }
-                                    return Promise.reject(
-                                        "As senhas não coincidem"
-                                    );
-                                },
-                            }),
-                        ]}
-                    >
-                        <Input.Password
-                            placeholder="Confirme a nova senha"
-                            className="ant-input"
-                        />
-                    </Form.Item>
-                </Form>
-            </Modal>
+                onConfirm={handleDeleteSuccess}
+                userId={userToDelete}
+                onSuccess={handleDeleteSuccess}
+                onError={handleDeleteError}
+                currentUserId={userProfileId}
+            />
         </div>
     );
 };

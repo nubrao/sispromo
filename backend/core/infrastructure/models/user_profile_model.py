@@ -38,7 +38,8 @@ class UserProfileModel(models.Model):
     role = models.CharField(
         max_length=10,
         choices=ROLE_CHOICES,
-        default='promoter'
+        default='promoter',
+        help_text='Todo usuário novo é criado como promotor por padrão'
     )
     cpf = models.CharField(
         max_length=11,
@@ -60,6 +61,28 @@ class UserProfileModel(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_role_display()}"
+
+    def save(self, *args, **kwargs):
+        """
+        Sobrescreve o método save para garantir que superusers sempre tenham papel 'manager'
+        e cria automaticamente um promotor quando o papel for 'promoter'
+        """
+        if self.user.is_superuser:
+            self.role = 'manager'
+
+        # Salva o perfil primeiro
+        super().save(*args, **kwargs)
+
+        # Se o papel for promoter e não houver um promotor vinculado, cria um
+        if self.role == 'promoter' and not hasattr(self, 'promoter'):
+            from .promoter_model import PromoterModel
+            PromoterModel.objects.create(
+                first_name=self.user.first_name,
+                last_name=self.user.last_name,
+                cpf=self.cpf or self.user.username,
+                phone=self.phone or '',
+                user_profile=self
+            )
 
     class Meta:
         db_table = 'core_userprofile'
