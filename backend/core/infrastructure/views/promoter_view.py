@@ -120,7 +120,7 @@ class PromoterViewSet(viewsets.ViewSet):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            serializer = self.get_serializer_class()(data=request.data, partial=True)
+            serializer = self.get_serializer_class()(data=request.data, partial=True)  # noqa: E501
             serializer.is_valid(raise_exception=True)
 
             # Atualiza os dados da entidade

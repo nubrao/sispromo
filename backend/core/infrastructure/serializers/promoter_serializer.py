@@ -21,7 +21,7 @@ class PromoterUpdateSerializer(serializers.Serializer):
     temporary_password = serializers.CharField(read_only=True)
 
     def validate_cpf(self, value):
-        """Valida se o CPF contém apenas números e se já não existe usuário/promotor"""
+        """Valida se o CPF contém apenas números e se já não existe usuário/promotor"""  # noqa: E501
         # Remove caracteres especiais do CPF
         cpf_numbers = ''.join(filter(str.isdigit, value))
 
@@ -30,9 +30,9 @@ class PromoterUpdateSerializer(serializers.Serializer):
                 "CPF deve conter 11 dígitos numéricos."
             )
 
-        # Verifica se já existe um usuário com este CPF como username, exceto o atual
+        # Verifica se já existe um usuário com este CPF como username, exceto o atual  # noqa: E501
         existing_user = User.objects.filter(username=cpf_numbers).first()
-        if existing_user and existing_user.id != self.instance.user_profile.user.id:
+        if existing_user and existing_user.id != self.instance.user_profile.user.id:  # noqa: E501
             raise serializers.ValidationError(
                 "Já existe um usuário cadastrado com este CPF."
             )
