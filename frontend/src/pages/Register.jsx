@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "../styles/login.css";
 import Logo from "../assets/img/logo";
 import { Button, Input, Form, Spin } from "antd";
@@ -10,40 +11,38 @@ import {
     IdcardOutlined,
     PhoneOutlined,
 } from "@ant-design/icons";
-import { useTranslateMessage } from "../hooks/useTranslateMessage";
 import { CustomModal } from "../components/CustomModal";
-import { formatCPF, formatPhone } from "../hooks/useMask";
-import { Toast } from "../components/Toast";
+import { formatCPF, formatPhone } from "../utils/formatters";
+import { useToast } from "../components/Toast";
 import userRepository from "../repositories/userRepository";
 
 const Register = () => {
+    const { t } = useTranslation(["auth", "validation"]);
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [form] = Form.useForm();
     const navigate = useNavigate();
-    const { translateMessage } = useTranslateMessage();
     const [errorMessage, setErrorMessage] = useState("");
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        let formattedValue = value;
-
-        if (name === "cpf") {
-            formattedValue = formatCPF(value);
-        } else if (name === "phone") {
-            formattedValue = formatPhone(value);
-        }
-
-        // Usa setTimeout para evitar referência circular
-        setTimeout(() => {
-            form.setFieldValue(name, formattedValue);
-        }, 0);
-    };
 
     // Função para validar campo quando perder o foco
     const handleFieldBlur = (field) => {
         form.validateFields([field]);
+    };
+
+    // Função para formatar CPF enquanto digita
+    const handleCPFChange = (e) => {
+        const { value } = e.target;
+        const formattedValue = formatCPF(value);
+        form.setFieldsValue({ cpf: formattedValue });
+    };
+
+    // Função para formatar telefone enquanto digita
+    const handlePhoneChange = (e) => {
+        const { value } = e.target;
+        const formattedValue = formatPhone(value);
+        form.setFieldsValue({ phone: formattedValue });
     };
 
     const handleSubmit = async (values) => {
@@ -65,23 +64,23 @@ const Register = () => {
 
             // Verificar se as senhas coincidem
             if (password !== password_confirm) {
-                throw new Error(translateMessage("register.password.mismatch"));
+                throw new Error(t("validation:password.mismatch"));
             }
 
             const userData = {
+                username: cpf.replace(/\D/g, ""),
                 first_name,
                 last_name,
                 email,
                 cpf: cpf.replace(/\D/g, ""),
-                phone: phone.replace(/\D/g, ""),
+                telefone: phone.replace(/\D/g, ""),
                 password,
                 password_confirm,
-                role: "promoter", // Definindo o papel padrão como promoter
             };
 
             await userRepository.registerUser(userData);
-            Toast.showToast("Usuário registrado com sucesso!", "success");
             setSuccess(true);
+            toast.success("auth:register.success");
 
             // Aguarda um pouco antes de redirecionar
             setTimeout(() => {
@@ -90,9 +89,12 @@ const Register = () => {
             }, 1500);
         } catch (error) {
             setSuccess(false);
-            const errorMsg = error.message || "Erro ao registrar usuário.";
+            const errorMsg =
+                error.response?.data?.error ||
+                error.message ||
+                t("auth:register.error.generic");
             setErrorMessage(errorMsg);
-            Toast.showToast(errorMsg, "error");
+            toast.error("auth:register.error.generic");
 
             // Aguarda um pouco antes de fechar o modal
             setTimeout(() => {
@@ -105,9 +107,7 @@ const Register = () => {
 
     return (
         <>
-            <span className="welcome">
-                {translateMessage("register.title")}
-            </span>
+            <span className="welcome">{t("auth:register.title")}</span>
             <div className="login-container">
                 <Logo />
                 <Form
@@ -123,16 +123,14 @@ const Register = () => {
                         rules={[
                             {
                                 required: true,
-                                message: translateMessage(
-                                    "register.firstName.required"
-                                ),
+                                message: t("auth:register.firstName.required"),
                             },
                         ]}
                     >
                         <Input
                             prefix={<UserOutlined />}
-                            placeholder={translateMessage(
-                                "register.firstName.placeholder"
+                            placeholder={t(
+                                "auth:register.firstName.placeholder"
                             )}
                             onBlur={() => handleFieldBlur("first_name")}
                         />
@@ -143,16 +141,14 @@ const Register = () => {
                         rules={[
                             {
                                 required: true,
-                                message: translateMessage(
-                                    "register.lastName.required"
-                                ),
+                                message: t("auth:register.lastName.required"),
                             },
                         ]}
                     >
                         <Input
                             prefix={<UserOutlined />}
-                            placeholder={translateMessage(
-                                "register.lastName.placeholder"
+                            placeholder={t(
+                                "auth:register.lastName.placeholder"
                             )}
                             onBlur={() => handleFieldBlur("last_name")}
                         />
@@ -163,39 +159,19 @@ const Register = () => {
                         rules={[
                             {
                                 required: true,
-                                message: translateMessage(
-                                    "register.cpf.required"
-                                ),
+                                message: t("validation:required"),
                             },
                             {
                                 pattern: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
-                                message: translateMessage(
-                                    "register.cpf.invalid"
-                                ),
-                            },
-                            {
-                                validator: (_, value) => {
-                                    const numbers = value?.replace(/\D/g, "");
-                                    if (numbers && numbers.length !== 11) {
-                                        return Promise.reject(
-                                            translateMessage(
-                                                "register.cpf.length"
-                                            )
-                                        );
-                                    }
-                                    return Promise.resolve();
-                                },
+                                message: t("validation:format.cpf"),
                             },
                         ]}
                     >
                         <Input
                             prefix={<IdcardOutlined />}
-                            placeholder={translateMessage(
-                                "register.cpf.placeholder"
-                            )}
-                            onChange={handleInputChange}
+                            placeholder={t("auth:register.cpf.placeholder")}
+                            onChange={handleCPFChange}
                             onBlur={() => handleFieldBlur("cpf")}
-                            name="cpf"
                             maxLength={14}
                         />
                     </Form.Item>
@@ -205,26 +181,20 @@ const Register = () => {
                         rules={[
                             {
                                 required: true,
-                                message: translateMessage(
-                                    "register.phone.required"
-                                ),
+                                message: t("validation:required"),
                             },
                             {
                                 pattern: /^\(\d{2}\) \d{5}-\d{4}$/,
-                                message: translateMessage(
-                                    "register.phone.invalid"
-                                ),
+                                message: t("validation:format.phone"),
                             },
                         ]}
                     >
                         <Input
                             prefix={<PhoneOutlined />}
-                            placeholder={translateMessage(
-                                "register.phone.placeholder"
-                            )}
-                            onChange={handleInputChange}
+                            placeholder={t("auth:register.phone.placeholder")}
+                            onChange={handlePhoneChange}
                             onBlur={() => handleFieldBlur("phone")}
-                            name="phone"
+                            maxLength={15}
                         />
                     </Form.Item>
 
@@ -233,23 +203,17 @@ const Register = () => {
                         rules={[
                             {
                                 required: true,
-                                message: translateMessage(
-                                    "register.email.required"
-                                ),
+                                message: t("validation:required"),
                             },
                             {
                                 type: "email",
-                                message: translateMessage(
-                                    "register.email.invalid"
-                                ),
+                                message: t("validation:format.email"),
                             },
                         ]}
                     >
                         <Input
                             prefix={<MailOutlined />}
-                            placeholder={translateMessage(
-                                "register.email.placeholder"
-                            )}
+                            placeholder={t("auth:register.email.placeholder")}
                             onBlur={() => handleFieldBlur("email")}
                         />
                     </Form.Item>
@@ -259,17 +223,19 @@ const Register = () => {
                         rules={[
                             {
                                 required: true,
-                                message: translateMessage(
-                                    "register.password.required"
-                                ),
+                                message: t("validation:required"),
+                            },
+                            {
+                                min: 8,
+                                message: t("validation:password.requirements"),
                             },
                         ]}
                         validateTrigger={["onChange", "onBlur"]}
                     >
                         <Input.Password
                             prefix={<LockOutlined />}
-                            placeholder={translateMessage(
-                                "register.password.placeholder"
+                            placeholder={t(
+                                "auth:register.password.placeholder"
                             )}
                         />
                     </Form.Item>
@@ -280,9 +246,7 @@ const Register = () => {
                         rules={[
                             {
                                 required: true,
-                                message: translateMessage(
-                                    "register.confirmPassword.required"
-                                ),
+                                message: t("validation:required"),
                             },
                             ({ getFieldValue }) => ({
                                 validator(_, value) {
@@ -293,9 +257,7 @@ const Register = () => {
                                         return Promise.resolve();
                                     }
                                     return Promise.reject(
-                                        translateMessage(
-                                            "register.password.mismatch"
-                                        )
+                                        t("validation:password.mismatch")
                                     );
                                 },
                             }),
@@ -304,8 +266,8 @@ const Register = () => {
                     >
                         <Input.Password
                             prefix={<LockOutlined />}
-                            placeholder={translateMessage(
-                                "register.confirmPassword.placeholder"
+                            placeholder={t(
+                                "auth:register.confirmPassword.placeholder"
                             )}
                         />
                     </Form.Item>
@@ -316,16 +278,15 @@ const Register = () => {
                             htmlType="submit"
                             className="login-button"
                             loading={loading}
-                            icon={loading ? <Spin size="small" /> : null}
                             disabled={loading}
                         >
                             {loading
-                                ? "Processando..."
-                                : translateMessage("register.submit")}
+                                ? t("auth:register.loading")
+                                : t("auth:register.submit")}
                         </Button>
                     </Form.Item>
                     <Link to="/login" className="login-form-register">
-                        {translateMessage("register.loginLink")}
+                        {t("auth:register.loginLink")}
                     </Link>
                 </Form>
 
@@ -333,7 +294,7 @@ const Register = () => {
                     loading={loading}
                     success={success}
                     errorMessage={errorMessage}
-                    title={"Processando..."}
+                    title={t("auth:register.loading")}
                     visible={modalVisible}
                     onClose={() => setModalVisible(false)}
                 />

@@ -3,6 +3,9 @@ from drf_spectacular.utils import extend_schema_field
 from ..models.visit_model import VisitModel
 from ..models.visit_price_model import VisitPriceModel
 from .visit_price_serializer import VisitPriceSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class VisitSerializer(serializers.ModelSerializer):
@@ -16,25 +19,22 @@ class VisitSerializer(serializers.ModelSerializer):
         model = VisitModel
         fields = [
             "id", "promoter", "store", "brand", "visit_date",
-            "visit_price", "total_price"
+            "visit_price", "total_price", "status"
         ]
 
     @extend_schema_field(serializers.CharField())
     def get_promoter(self, obj):
         """Retorna os dados do promoter"""
-        from ..models.promoter_model import PromoterModel
         try:
-            promoter = PromoterModel.objects.get(id=obj.promoter_id)
+            promoter = User.objects.get(id=obj.promoter_id)
             return {
                 "id": promoter.id,
-                "name": promoter.name,
-                "email": (
-                    promoter.user_profile.user.email
-                    if promoter.user_profile and promoter.user_profile.user
-                    else None
-                )
+                "name": promoter.get_full_name(),
+                "email": promoter.email,
+                "role": promoter.role,
+                "role_display": promoter.get_role_display()
             }
-        except PromoterModel.DoesNotExist:
+        except User.DoesNotExist:
             return None
 
     @extend_schema_field(serializers.CharField())
@@ -114,7 +114,7 @@ class VisitSerializer(serializers.ModelSerializer):
                 )
 
         # Se o usuário for promotor, usa a data atual
-        if self.context['request'].user.userprofile.role == 'promoter':
+        if self.context['request'].user.role == 1:  # Promotor
             from datetime import date
             internal_data["visit_date"] = date.today()
         elif "visit_date" in data:
@@ -123,37 +123,17 @@ class VisitSerializer(serializers.ModelSerializer):
         return internal_data
 
     def validate(self, data):
-        """
-        Validação adicional dos dados da visita
-        """
-        from datetime import date
+        """Valida os dados da visita"""
         user = self.context['request'].user
 
-        # Validação da data para promotores
-        if user.userprofile.role == 'promoter':
-            if data.get('visit_date') and data['visit_date'] != date.today():
+        # Se o usuário for promotor, força o uso do próprio usuário
+        if user.role == 1:  # Promotor
+            data['promoter'] = user
+        else:
+            # Se for gestor ou analista, valida o promotor informado
+            if 'promoter' not in data:
                 raise serializers.ValidationError(
-                    "Promotores não podem criar visitas retroativas."
-                )
-
-        # Validação da loja
-        if 'store_id' in data:
-            from ..models.store_model import StoreModel
-            try:
-                StoreModel.objects.get(id=data['store_id'])
-            except StoreModel.DoesNotExist:
-                raise serializers.ValidationError(
-                    {"store": "Loja não encontrada"}
-                )
-
-        # Validação da marca
-        if 'brand_id' in data:
-            from ..models.brand_model import BrandModel
-            try:
-                BrandModel.objects.get(id=data['brand_id'])
-            except BrandModel.DoesNotExist:
-                raise serializers.ValidationError(
-                    {"brand": "Marca não encontrada"}
+                    "O campo promoter é obrigatório."
                 )
 
         return data

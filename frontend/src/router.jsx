@@ -1,47 +1,63 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
-import Login from "./pages/Login";
+import { Root } from "./Root";
+import LoginForm from "./pages/LoginForm";
 import Dashboard from "./pages/Dashboard";
 import BrandForm from "./pages/BrandForm";
 import StoreForm from "./pages/StoreForm";
 import PromoterForm from "./pages/PromoterForm";
-import PromoterBrandAssignment from "./pages/PromoterBrandAssignment";
+import PromoterList from "./pages/PromoterList";
 import Visits from "./pages/Visits";
+import ResetPassword from "./pages/ResetPassword";
 
 const router = createBrowserRouter([
     {
         path: "/",
-        element: <App />,
+        element: <Root />,
         children: [
             {
                 path: "/",
-                element: <Dashboard />,
-            },
-            {
-                path: "/brands",
-                element: <BrandForm />,
-            },
-            {
-                path: "/stores",
-                element: <StoreForm />,
-            },
-            {
-                path: "/promoters",
-                element: <PromoterForm />,
-            },
-            {
-                path: "/visits",
-                element: <Visits />,
-            },
-            {
-                path: "/promoter-brands",
-                element: <PromoterBrandAssignment />,
+                element: <App />,
+                children: [
+                    {
+                        path: "/",
+                        element: <Dashboard />,
+                    },
+                    {
+                        path: "/brands",
+                        element: <BrandForm />,
+                    },
+                    {
+                        path: "/stores",
+                        element: <StoreForm />,
+                    },
+                    {
+                        path: "/promoters",
+                        element: <PromoterList />,
+                    },
+                    {
+                        path: "/promoters/new",
+                        element: <PromoterForm />,
+                    },
+                    {
+                        path: "/promoters/:id",
+                        element: <PromoterForm />,
+                    },
+                    {
+                        path: "/visits",
+                        element: <Visits />,
+                    },
+                ],
             },
         ],
     },
     {
         path: "/login",
-        element: <Login />,
+        element: <LoginForm />,
+    },
+    {
+        path: "/reset-password",
+        element: <ResetPassword />,
     },
 ]);
 

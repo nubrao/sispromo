@@ -1,7 +1,11 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect, useContext } from "react";
+import { useTranslation } from "react-i18next";
+import { Card, Row, Col, Statistic, Table, Progress } from "antd";
+import { toast } from "react-toastify";
+import api from "../services/api";
 import "../styles/dashboard.css";
 import Loader from "../components/Loader";
+import { AuthContext } from "../contexts/AuthContext";
 import {
     BarChart,
     Bar,
@@ -14,182 +18,169 @@ import {
 } from "recharts";
 
 const Dashboard = () => {
-    const [dashboardData, setDashboardData] = useState([]);
-    const [filteredData, setFilteredData] = useState([]);
+    const { t } = useTranslation(["dashboard", "common"]);
+    const { user } = useContext(AuthContext);
+    const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [filterBrand, setFilterBrand] = useState("");
-    const [filterStore, setFilterStore] = useState("");
-    const [viewMode, setViewMode] = useState("detalhado"); // "detalhado" ou "simplificado"
-    const API_URL = import.meta.env.VITE_API_URL;
-    const token = localStorage.getItem("token");
 
     useEffect(() => {
-        fetchDashboardData();
+        loadDashboardData();
     }, []);
 
-    useEffect(() => {
-        applyFilters();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dashboardData, filterBrand, filterStore]);
-
-    const fetchDashboardData = async () => {
-        setLoading(true);
-        setError(null);
+    const loadDashboardData = async () => {
         try {
-            const response = await axios.get(
-                `${API_URL}/api/visits/dashboard/`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+            setLoading(true);
+            const response = await api.get("/api/dashboard/");
             setDashboardData(response.data);
-            setFilteredData(response.data);
         } catch (error) {
-            console.error("Erro ao buscar dados do dashboard:", error);
-            if (error.response?.data?.error) {
-                setError(error.response.data.error);
-            } else {
-                setError("Erro ao carregar dados do dashboard");
-            }
+            console.error("Erro ao carregar dados do dashboard:", error);
+            toast.error(t("dashboard:messages.error.load"));
         } finally {
             setLoading(false);
         }
     };
 
-    const applyFilters = () => {
-        let filtered = [...dashboardData];
+    const renderPromoterDashboard = () => {
+        if (!dashboardData) return null;
 
-        if (filterBrand) {
-            const searchBrand = filterBrand.toLowerCase();
-            filtered = filtered.filter((brand) =>
-                brand.brand_name.toLowerCase().includes(searchBrand)
-            );
-        }
+        const {
+            total_visits,
+            pending_visits,
+            completed_visits,
+            brands_progress,
+            pending_stores,
+        } = dashboardData;
 
-        if (filterStore) {
-            const searchStore = filterStore.toLowerCase();
-            filtered = filtered.filter((brand) =>
-                brand.stores.some(
-                    (store) =>
-                        store.store_name.toLowerCase().includes(searchStore) ||
-                        store.store_number.toString().includes(searchStore)
-                )
-            );
-        }
+        return (
+            <div className="promoter-dashboard">
+                <Row gutter={[16, 16]}>
+                    <Col span={8}>
+                        <Card>
+                            <Statistic
+                                title={t("dashboard:stats.totalVisits")}
+                                value={total_visits}
+                            />
+                        </Card>
+                    </Col>
+                    <Col span={8}>
+                        <Card>
+                            <Statistic
+                                title={t("dashboard:stats.completedVisits")}
+                                value={completed_visits}
+                                valueStyle={{ color: "#3f8600" }}
+                            />
+                        </Card>
+                    </Col>
+                    <Col span={8}>
+                        <Card>
+                            <Statistic
+                                title={t("dashboard:stats.pendingVisits")}
+                                value={pending_visits}
+                                valueStyle={{ color: "#cf1322" }}
+                            />
+                        </Card>
+                    </Col>
+                </Row>
 
-        setFilteredData(filtered);
+                <Card title={t("dashboard:brandProgress")} className="mt-4">
+                    {brands_progress.map((brand) => (
+                        <div
+                            key={brand.brand_id}
+                            className="brand-progress-item"
+                        >
+                            <h4>{brand.brand_name}</h4>
+                            <Progress
+                                percent={Math.round(
+                                    (brand.visits_done / brand.total_visits) *
+                                        100
+                                )}
+                                format={(percent) =>
+                                    `${brand.visits_done}/${brand.total_visits}`
+                                }
+                            />
+                        </div>
+                    ))}
+                </Card>
+
+                <Card title={t("dashboard:pendingStores")} className="mt-4">
+                    <Table
+                        dataSource={pending_stores}
+                        columns={[
+                            {
+                                title: t("dashboard:table.store"),
+                                render: (_, record) =>
+                                    `${record.store__name} - ${record.store__number}`,
+                            },
+                            {
+                                title: t("dashboard:table.brand"),
+                                dataIndex: "brand__name",
+                            },
+                            {
+                                title: t("dashboard:table.date"),
+                                dataIndex: "visit_date",
+                                render: (date) =>
+                                    new Date(date).toLocaleDateString(),
+                            },
+                        ]}
+                        pagination={false}
+                    />
+                </Card>
+            </div>
+        );
     };
 
-    const clearFilters = () => {
-        setFilterBrand("");
-        setFilterStore("");
-        setFilteredData(dashboardData);
-    };
+    const renderManagerDashboard = () => {
+        if (!dashboardData) return null;
 
-    const renderBrandCardSimplified = (brand) => (
-        <div key={brand.brand_id} className="brand-card simplified">
-            <div className="brand-header">
-                <h3>{brand.brand_name.toUpperCase()}</h3>
-                <div className="brand-quick-stats">
-                    <span>
-                        {brand.total_visits_done}/{brand.total_visits_expected}{" "}
-                        visitas
-                    </span>
-                </div>
-            </div>
-            <div className="progress-bar">
-                <div
-                    className="progress-fill"
-                    style={{ width: `${brand.total_progress}%` }}
-                ></div>
-            </div>
-        </div>
-    );
+        const {
+            total_visits,
+            total_completed,
+            total_pending,
+            brands_progress,
+            promoters_progress,
+            stores_progress,
+        } = dashboardData;
 
-    const renderBrandCardDetailed = (brand) => (
-        <div key={brand.brand_id} className="brand-card">
-            <h3>{brand.brand_name.toUpperCase()}</h3>
-            <div className="brand-progress">
-                <div className="progress-bar">
-                    <div
-                        className="progress-fill"
-                        style={{ width: `${brand.total_progress}%` }}
-                    ></div>
-                </div>
-                <span className="progress-text">
-                    {brand.total_visits_done}/{brand.total_visits_expected}{" "}
-                    visitas
-                </span>
-            </div>
-            <div className="brand-stats">
-                <div className="stat-item">
-                    <span className="stat-label">Lojas:</span>
-                    <span className="stat-value">{brand.total_stores}</span>
-                </div>
-                <div className="stat-item">
-                    <span className="stat-label">Progresso:</span>
-                    <span className="stat-value">
-                        {brand.total_progress.toFixed(1)}%
-                    </span>
-                </div>
-            </div>
-            <div className="store-list">
-                {brand.stores.map((store) => (
-                    <div key={store.store_id} className="store-item">
-                        <div className="store-header">
-                            <h4>
-                                {store.store_name.toUpperCase()} -{" "}
-                                {store.store_number}
-                            </h4>
-                            <span className="store-frequency">
-                                {store.visit_frequency}x/semana
-                            </span>
-                        </div>
-                        <div className="store-progress">
-                            <div className="progress-bar">
-                                <div
-                                    className="progress-fill"
-                                    style={{ width: `${store.progress}%` }}
-                                ></div>
-                            </div>
-                            <span className="progress-text">
-                                {store.visits_done}/{store.visit_frequency}{" "}
-                                visitas
-                            </span>
-                        </div>
-                        <div className="store-details">
-                            <span>
-                                Última visita:{" "}
-                                {store.last_visit
-                                    ? new Date(
-                                          store.last_visit
-                                      ).toLocaleDateString("pt-BR")
-                                    : "Nenhuma"}
-                            </span>
-                            <span>
-                                Faltam: {store.visits_remaining} visitas
-                            </span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
-    const renderCharts = () => {
-        const chartData = filteredData.map((brand) => ({
-            name: brand.brand_name.toUpperCase(),
-            visitasRealizadas: brand.total_visits_done,
-            visitasEsperadas: brand.total_visits_expected,
-            progresso: brand.total_progress,
+        const chartData = brands_progress.map((brand) => ({
+            name: brand.brand_name,
+            completed: brand.visits_done,
+            pending: brand.visits_pending,
+            total: brand.total_visits,
         }));
 
         return (
-            <div className="charts-section">
-                <div className="chart-card">
-                    <h3>Visitas Realizadas vs Esperadas</h3>
-                    <ResponsiveContainer width="100%" height={400}>
+            <div className="manager-dashboard">
+                <Row gutter={[16, 16]}>
+                    <Col span={8}>
+                        <Card>
+                            <Statistic
+                                title={t("dashboard:stats.totalVisits")}
+                                value={total_visits}
+                            />
+                        </Card>
+                    </Col>
+                    <Col span={8}>
+                        <Card>
+                            <Statistic
+                                title={t("dashboard:stats.completedVisits")}
+                                value={total_completed}
+                                valueStyle={{ color: "#3f8600" }}
+                            />
+                        </Card>
+                    </Col>
+                    <Col span={8}>
+                        <Card>
+                            <Statistic
+                                title={t("dashboard:stats.pendingVisits")}
+                                value={total_pending}
+                                valueStyle={{ color: "#cf1322" }}
+                            />
+                        </Card>
+                    </Col>
+                </Row>
+
+                <Card title={t("dashboard:brandProgress")} className="mt-4">
+                    <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={chartData}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="name" />
@@ -197,107 +188,94 @@ const Dashboard = () => {
                             <Tooltip />
                             <Legend />
                             <Bar
-                                dataKey="visitasRealizadas"
-                                name="Realizadas"
-                                fill="#4CAF50"
+                                dataKey="completed"
+                                name={t("dashboard:chart.completed")}
+                                fill="#3f8600"
                             />
                             <Bar
-                                dataKey="visitasEsperadas"
-                                name="Esperadas"
-                                fill="#2196F3"
+                                dataKey="pending"
+                                name={t("dashboard:chart.pending")}
+                                fill="#cf1322"
                             />
                         </BarChart>
                     </ResponsiveContainer>
-                </div>
+                </Card>
+
+                <Row gutter={[16, 16]} className="mt-4">
+                    <Col span={12}>
+                        <Card title={t("dashboard:promoterProgress")}>
+                            <Table
+                                dataSource={promoters_progress}
+                                columns={[
+                                    {
+                                        title: t("dashboard:table.promoter"),
+                                        dataIndex: "promoter_name",
+                                    },
+                                    {
+                                        title: t("dashboard:table.progress"),
+                                        render: (_, record) => (
+                                            <Progress
+                                                percent={Math.round(
+                                                    (record.visits_done /
+                                                        record.total_visits) *
+                                                        100
+                                                )}
+                                                format={(percent) =>
+                                                    `${record.visits_done}/${record.total_visits}`
+                                                }
+                                            />
+                                        ),
+                                    },
+                                ]}
+                                pagination={false}
+                            />
+                        </Card>
+                    </Col>
+                    <Col span={12}>
+                        <Card title={t("dashboard:storeProgress")}>
+                            <Table
+                                dataSource={stores_progress}
+                                columns={[
+                                    {
+                                        title: t("dashboard:table.store"),
+                                        render: (_, record) =>
+                                            `${record.store_name} - ${record.store_number}`,
+                                    },
+                                    {
+                                        title: t("dashboard:table.progress"),
+                                        render: (_, record) => (
+                                            <Progress
+                                                percent={Math.round(
+                                                    (record.visits_done /
+                                                        record.total_visits) *
+                                                        100
+                                                )}
+                                                format={(percent) =>
+                                                    `${record.visits_done}/${record.total_visits}`
+                                                }
+                                            />
+                                        ),
+                                    },
+                                ]}
+                                pagination={false}
+                            />
+                        </Card>
+                    </Col>
+                </Row>
             </div>
         );
     };
 
-    return (
-        <div className="dashboard-container">
-            <h2 className="dashboard-title">Dashboard de Visitas</h2>
+    if (loading) {
+        return <Loader />;
+    }
 
-            <div className="dashboard-content">
-                {loading ? (
-                    <div className="dashboard-content-loading">
-                        <Loader />
-                    </div>
-                ) : error ? (
-                    <div className="dashboard-error">
-                        <p>{error}</p>
-                    </div>
-                ) : filteredData.length === 0 ? (
-                    <div className="dashboard-empty">
-                        <p>
-                            Nenhuma marca encontrada.{" "}
-                            {filterBrand || filterStore
-                                ? "Tente limpar os filtros."
-                                : "Você ainda não possui marcas atribuídas."}
-                        </p>
-                    </div>
-                ) : (
-                    <>
-                        {renderCharts()}
-                        <div className="dashboard-controls">
-                            <div className="filters">
-                                <input
-                                    type="text"
-                                    placeholder="Filtrar por marca..."
-                                    value={filterBrand}
-                                    onChange={(e) =>
-                                        setFilterBrand(e.target.value)
-                                    }
-                                    className="filter-input"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Filtrar por loja..."
-                                    value={filterStore}
-                                    onChange={(e) =>
-                                        setFilterStore(e.target.value)
-                                    }
-                                    className="filter-input"
-                                />
-                                {(filterBrand || filterStore) && (
-                                    <button
-                                        onClick={clearFilters}
-                                        className="clear-button"
-                                    >
-                                        Limpar Filtros
-                                    </button>
-                                )}
-                            </div>
-                            <div className="view-mode-buttons">
-                                <button
-                                    className={`view-mode-button ${
-                                        viewMode === "detalhado" ? "active" : ""
-                                    }`}
-                                    onClick={() => setViewMode("detalhado")}
-                                >
-                                    Visão Detalhada
-                                </button>
-                                <button
-                                    className={`view-mode-button ${
-                                        viewMode === "simplificado"
-                                            ? "active"
-                                            : ""
-                                    }`}
-                                    onClick={() => setViewMode("simplificado")}
-                                >
-                                    Visão Simplificada
-                                </button>
-                            </div>
-                        </div>
-                        <div className={`brands-grid ${viewMode}`}>
-                            {filteredData.map((brand) =>
-                                viewMode === "simplificado"
-                                    ? renderBrandCardSimplified(brand)
-                                    : renderBrandCardDetailed(brand)
-                            )}
-                        </div>
-                    </>
-                )}
-            </div>
+    return (
+        <div className="dashboard">
+            <h1>{t("dashboard:title")}</h1>
+            {user.role === 1
+                ? renderPromoterDashboard()
+                : renderManagerDashboard()}
         </div>
     );
 };

@@ -6,7 +6,6 @@ from core.infrastructure.models.store_model import StoreModel
 from core.infrastructure.serializers.brand_serializer import BrandSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view
 import logging
-from rest_framework.decorators import action
 from core.infrastructure.permissions import IsManagerOrAnalyst
 
 logger = logging.getLogger(__name__)
@@ -88,8 +87,8 @@ class BrandViewSet(viewsets.ModelViewSet):
 
     def check_manager_analyst_permission(self):
         """Verifica se o usuário é gerente ou analista"""
-        user_role = self.request.user.userprofile.role
-        if user_role not in ['manager', 'analyst']:
+        user_role = self.request.user.role
+        if user_role not in [2, 3]:  # 2 = Analista, 3 = Gestor
             raise PermissionError(
                 "Apenas gerentes e analistas podem realizar esta operação."
             )

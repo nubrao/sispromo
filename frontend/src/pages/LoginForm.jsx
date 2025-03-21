@@ -1,110 +1,109 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslateMessage } from "../hooks/useTranslateMessage";
-import { useAuth } from "../contexts/AuthContext";
-import { Button, Input, Form, message } from "antd";
+import { useTranslation } from "react-i18next";
+import { Form, Input, Button, Card, Typography } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
-import { CustomModal } from "../components/CustomModal";
+import { Link, Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import "../styles/login.css";
+import Logo from "../assets/img/logo";
+
+const { Title } = Typography;
 
 const LoginForm = () => {
-    const navigate = useNavigate();
-    const { login } = useAuth();
-    const { translateMessage } = useTranslateMessage();
-    const [loading, setLoading] = useState(false);
+    const { t } = useTranslation(["auth", "common"]);
+    const { login, loading, signed } = useAuth();
     const [form] = Form.useForm();
 
-    const onFinish = async (values) => {
-        setLoading(true);
-        try {
-            await login(values.username, values.password);
-            message.success(translateMessage("login.success"));
-            navigate("/dashboard");
-        } catch (error) {
-            let errorMessage = translateMessage("login.error");
+    // Se já estiver autenticado, redireciona para a dashboard
+    if (signed) {
+        return <Navigate to="/" replace />;
+    }
 
-            if (error.response?.data) {
-                const errorData = error.response.data;
-                if (Array.isArray(errorData)) {
-                    errorMessage = errorData
-                        .map((err) => translateMessage(err))
-                        .join("\n");
-                } else if (typeof errorData === "object") {
-                    errorMessage = Object.values(errorData)
-                        .flat()
-                        .map((err) => translateMessage(err))
-                        .join("\n");
-                } else {
-                    errorMessage = translateMessage(errorData);
-                }
-            }
+    const handleSubmit = async (values) => {
+        await login(values.username, values.password);
+    };
 
-            message.error(errorMessage);
-        } finally {
-            setLoading(false);
-        }
+    const handleUsernameChange = (e) => {
+        const { value } = e.target;
+        form.setFieldsValue({
+            username: value.toLowerCase(),
+        });
     };
 
     return (
         <div className="login-container">
-            <div className="login-box">
-                <h1>{translateMessage("login.title")}</h1>
-                <Form
-                    form={form}
-                    name="login"
-                    onFinish={onFinish}
-                    layout="vertical"
-                >
-                    <Form.Item
-                        name="username"
-                        rules={[
-                            {
-                                required: true,
-                                message: translateMessage(
-                                    "login.username.required"
-                                ),
-                            },
-                        ]}
+            <Card className="login-card">
+                <div className="login-header">
+                    <Title level={2} className="welcome">
+                        {t("auth:login.title")}
+                    </Title>
+                </div>
+                <div className="login-content">
+                    <Logo size={100} />
+                    <Form
+                        form={form}
+                        name="login"
+                        onFinish={handleSubmit}
+                        layout="vertical"
+                        className="login-form"
                     >
-                        <Input
-                            prefix={<UserOutlined />}
-                            placeholder={translateMessage(
-                                "login.username.placeholder"
-                            )}
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="password"
-                        rules={[
-                            {
-                                required: true,
-                                message: translateMessage(
-                                    "login.password.required"
-                                ),
-                            },
-                        ]}
-                    >
-                        <Input.Password
-                            prefix={<LockOutlined />}
-                            placeholder={translateMessage(
-                                "login.password.placeholder"
-                            )}
-                        />
-                    </Form.Item>
-
-                    <Form.Item>
-                        <Button
-                            type="primary"
-                            htmlType="submit"
-                            block
-                            loading={loading}
+                        <Form.Item
+                            name="username"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: t("auth:login.username.required"),
+                                },
+                            ]}
                         >
-                            {translateMessage("login.submit")}
-                        </Button>
-                    </Form.Item>
-                </Form>
-            </div>
-            <CustomModal visible={loading} />
+                            <Input
+                                prefix={<UserOutlined />}
+                                placeholder={t("auth:login.username.label")}
+                                size="large"
+                                onChange={handleUsernameChange}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="password"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: t("auth:login.password.required"),
+                                },
+                            ]}
+                        >
+                            <Input.Password
+                                prefix={<LockOutlined />}
+                                placeholder={t("auth:login.password.label")}
+                                size="large"
+                            />
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={loading}
+                                block
+                                size="large"
+                            >
+                                {loading
+                                    ? t("auth:login.buttons.processing")
+                                    : t("auth:login.buttons.submit")}
+                            </Button>
+                        </Form.Item>
+
+                        <div className="auth-links">
+                            <Link to="/reset-password" className="auth-link">
+                                {t("auth:login.buttons.forgot_password")}
+                            </Link>
+                            <Link to="/register" className="auth-link">
+                                {t("auth:register.title")}
+                            </Link>
+                        </div>
+                    </Form>
+                </div>
+            </Card>
         </div>
     );
 };

@@ -1,0 +1,55 @@
+{
+    "title": "Marcas",
+    "form": {
+        "title": {
+            "new": "Nova Marca",
+            "edit": "Editar Marca"
+        },
+        "fields": {
+            "name": {
+                "label": "Nome",
+                "placeholder": "Digite o nome da marca",
+                "required": "Digite o nome da marca"
+            }
+        },
+        "buttons": {
+            "save": "Salvar",
+            "cancel": "Cancelar",
+            "processing": "Processando..."
+        }
+    },
+    "list": {
+        "columns": {
+            "name": "Nome",
+            "promoters": "Promotores",
+            "stores": "Lojas"
+        },
+        "empty": "Nenhuma marca encontrada"
+    },
+    "search": {
+        "placeholder": "Buscar por nome"
+    },
+    "buttons": {
+        "new": "Nova Marca"
+    },
+    "messages": {
+        "success": {
+            "create": "Marca criada com sucesso",
+            "update": "Marca atualizada com sucesso",
+            "delete": "Marca excluída com sucesso"
+        },
+        "error": {
+            "load": "Erro ao carregar marcas",
+            "create": "Erro ao criar marca",
+            "update": "Erro ao atualizar marca",
+            "delete": "Erro ao excluir marca",
+            "duplicate": "Já existe uma marca com este nome"
+        }
+    },
+    "confirm": {
+        "delete": {
+            "title": "Excluir Marca",
+            "content": "Tem certeza que deseja excluir esta marca?"
+        }
+    }
+}

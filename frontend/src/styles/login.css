@@ -18,73 +18,52 @@
     --modal-input-dark: #141414;
 }
 
-html,
-body {
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
-    padding: 0;
-    background-color: var(--background-light);
-    color: var(--text-light);
-    transition: background 0.3s, color 0.3s;
-}
-
 @media screen and (max-width: 768px) {
     html,
     body {
-        overflow: hidden;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .welcome {
-        font-size: 6cqb;
-        padding-bottom: 20px;
-        white-space: pre-line;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
     }
 
     .login-container {
-        flex-direction: column;
+        min-height: 100vh;
+        padding: 10px;
+        margin: 0;
         width: 100%;
-        max-width: 350px;
-        padding: 20px;
-        gap: 16px;
-
-        svg {
-            height: 150px;
-            width: auto;
-            margin-bottom: 20px;
-        }
-    }
-
-    .login-container img {
-        height: 50px;
-        width: auto;
-        margin-bottom: 20px;
-    }
-
-    .login-form {
-        align-items: center;
-        max-width: 0px;
-    }
-
-    .login-input {
-        width: 100%;
-        max-width: 230px;
-    }
-
-    .login-button {
-        width: 100%;
-        max-width: 250px;
-    }
-
-    .loading-container {
-        display: flex;
+        box-sizing: border-box;
         justify-content: center;
-        align-items: center;
-        height: 100px;
+    }
+
+    .login-card {
         width: 100%;
+        box-shadow: none;
+        margin: 0;
+        padding: 10px;
+    }
+
+    .login-content {
+        flex-direction: column;
+        padding: 5px 0;
+    }
+
+    .welcome {
+        font-size: 1.5rem;
+        margin: 5px 0;
+    }
+
+    .login-header {
+        margin-bottom: 10px;
+    }
+
+    .login-card .logo {
+        width: 50px;
+        height: 50px;
+        margin: 5px 0;
+    }
+
+    .auth-links {
+        margin: 10px 0;
     }
 }
 
@@ -92,29 +71,75 @@ body {
     font-weight: 500;
     text-align: center;
     font-size: 6cqb;
-    padding-bottom: 32px;
-    color: var(--title-light);
+    color: var(--text-light);
     transition: color 0.3s;
+}
+
+@media (prefers-color-scheme: dark) {
+    .welcome {
+        color: var(--text-dark) !important;
+    }
 }
 
 .login-container {
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
     align-items: center;
-    height: 100%;
-    width: 700px;
+    min-height: 100vh;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
 
-    svg {
-        min-width: fit-content;
+.login-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 800px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    transition: background-color 0.3s;
+    margin: 0 auto;
+}
+
+.login-header {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.login-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 30px;
+    align-items: flex-end;
+}
+
+@media screen and (max-width: 768px) {
+    .login-content {
+        flex-direction: column;
+    }
+
+    .logo-container {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        margin-bottom: 20px;
     }
 }
 
 .login-form {
-    align-items: center;
+    min-width: 300px;
     display: flex;
     flex-direction: column;
-    width: 100%;
-    max-width: 300px;
+    align-items: center;
+    justify-content: center;
 }
 
 .login-input {
@@ -159,6 +184,11 @@ body {
         color: var(--text-dark);
     }
 
+    .login-card {
+        background-color: var(--modal-bg-dark);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
     .welcome {
         color: var(--text-dark);
     }
@@ -166,106 +196,26 @@ body {
     .login-input {
         border-color: var(--input-border-dark);
         color: var(--text-dark);
+        background-color: var(--input-bg-dark);
     }
 
     .login-button {
         background-color: var(--button-bg-dark);
-        height: 40px;
     }
 
     .login-button:hover {
         background-color: var(--button-hover-dark);
     }
 
-    /* Estilos para campos Ant Design no tema escuro */
-    .ant-input,
-    .ant-input-password,
-    .ant-input-affix-wrapper {
-        background-color: var(--input-bg-dark) !important;
-        border-color: var(--input-border-dark) !important;
-        color: var(--text-dark) !important;
-        height: 40px;
-        align-items: center;
-    }
-
-    .ant-input-affix-wrapper > input.ant-input {
-        background-color: transparent !important;
-    }
-
-    .ant-input-prefix,
-    .ant-input-suffix {
-        color: var(--text-dark) !important;
-    }
-
-    .ant-input-password-icon {
-        color: var(--text-dark) !important;
-    }
-
-    /* Estilos para placeholders no tema escuro */
-    .ant-input::placeholder,
-    .ant-input-password input::placeholder {
-        color: rgba(255, 255, 255, 0.45) !important;
-        opacity: 1 !important;
-    }
-
-    /* Estilos para placeholders em diferentes navegadores */
-    .ant-input::-webkit-input-placeholder,
-    .ant-input-password input::-webkit-input-placeholder {
-        color: rgba(255, 255, 255, 0.45) !important;
-        opacity: 1 !important;
-    }
-
-    .ant-input::-moz-placeholder,
-    .ant-input-password input::-moz-placeholder {
-        color: rgba(255, 255, 255, 0.45) !important;
-        opacity: 1 !important;
-    }
-
-    .ant-input:-ms-input-placeholder,
-    .ant-input-password input:-ms-input-placeholder {
-        color: rgba(255, 255, 255, 0.45) !important;
-        opacity: 1 !important;
-    }
-
-    .ant-input:-moz-placeholder,
-    .ant-input-password input:-moz-placeholder {
-        color: rgba(255, 255, 255, 0.45) !important;
-        opacity: 1 !important;
-    }
-
-    /* Estilos para labels no tema escuro */
-    .ant-form-item-label > label,
-    .ant-form-item-required,
-    .ant-form-item-label {
-        color: var(--text-dark) !important;
-    }
-
-    .ant-form-item-label > label::before,
-    .ant-form-item-required::before {
-        color: #ff4d4f !important;
-    }
-
-    .ant-input:focus,
-    .ant-input-password:focus,
-    .ant-input:hover,
-    .ant-input-password:hover,
-    .ant-input-affix-wrapper:hover,
-    .ant-input-affix-wrapper-focused {
-        border-color: #646cff !important;
-        box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2) !important;
-    }
-
-    .ant-input-password-icon:hover {
-        color: #646cff !important;
-    }
+    
 }
 
 .auth-links {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 10px;
-    margin-top: 15px;
-    text-align: center;
+    margin-top: 20px;
 }
 
 .auth-link {

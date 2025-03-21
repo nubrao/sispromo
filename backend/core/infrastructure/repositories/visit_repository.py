@@ -1,11 +1,13 @@
 from typing import List, Optional
 from datetime import datetime
 from django.db.models import QuerySet
+from django.contrib.auth import get_user_model
 from core.infrastructure.domain.repositories.visit_repository import VisitRepository  # noqa: E501
 from core.infrastructure.domain.entities.visit import Visit
 from core.infrastructure.models.visit_model import VisitModel
-from core.infrastructure.models.promoter_model import PromoterModel
 from core.infrastructure.cache.cache_config import CacheConfig
+
+User = get_user_model()
 
 
 class DjangoVisitRepository(VisitRepository):
@@ -102,11 +104,9 @@ class DjangoVisitRepository(VisitRepository):
 
         if user_id:
             try:
-                promoter = PromoterModel.objects.get(
-                    user_profile__user_id=user_id
-                )
+                promoter = User.objects.get(id=user_id, role=1)
                 queryset = queryset.filter(promoter=promoter)
-            except PromoterModel.DoesNotExist:
+            except User.DoesNotExist:
                 return []
 
         if promoter_id:
@@ -143,11 +143,9 @@ class DjangoVisitRepository(VisitRepository):
 
         if user_id:
             try:
-                promoter = PromoterModel.objects.get(
-                    user_profile__user_id=user_id
-                )
+                promoter = User.objects.get(id=user_id, role=1)
                 queryset = queryset.filter(promoter=promoter)
-            except PromoterModel.DoesNotExist:
+            except User.DoesNotExist:
                 return VisitModel.objects.none()
 
         return queryset

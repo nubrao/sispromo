@@ -11,10 +11,7 @@ from rest_framework.decorators import action
 from decimal import Decimal
 import pandas as pd
 import logging
-from datetime import datetime, timedelta
-from core.infrastructure.models.brand_model import BrandModel
-from core.infrastructure.models.promoter_model import PromoterModel
-from core.infrastructure.models.promoter_brand_model import PromoterBrandModel
+from core.infrastructure.models.user_model import User
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
@@ -27,7 +24,9 @@ logger = logging.getLogger(__name__)
 
 @extend_schema_view(
     list=extend_schema(
-        description="Lista todas as visitas cadastradas",
+        description="""Lista todas as visitas cadastradas.
+        - Promotores (role=1) veem apenas suas próprias visitas
+        - Analistas (role=2) e Gestores (role=3) veem todas as visitas""",
         responses={
             200: VisitSerializer(many=True),
             500: {
@@ -37,13 +36,30 @@ logger = logging.getLogger(__name__)
         }
     ),
     create=extend_schema(
-        description="Cria uma nova visita",
+        description="""Cria uma nova visita.
+        - Promotores (role=1) só podem criar visitas para si mesmos
+        - Analistas (role=2) e Gestores (role=3) podem criar para qualquer promotor""",
         request=VisitSerializer,
         responses={
             201: VisitSerializer,
             400: {
                 "type": "object",
-                "properties": {"error": {"type": "string"}}
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "description": "Detalhes do erro de validação"
+                    },
+                    "promoter": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Erros relacionados ao promotor"
+                    },
+                    "brand": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Erros relacionados à marca"
+                    }
+                }
             },
             500: {
                 "type": "object",
@@ -52,13 +68,20 @@ logger = logging.getLogger(__name__)
         }
     ),
     update=extend_schema(
-        description="Atualiza uma visita existente",
+        description="""Atualiza uma visita existente.
+        - Promotores (role=1) só podem atualizar suas próprias visitas
+        - Analistas (role=2) e Gestores (role=3) podem atualizar qualquer visita""",
         request=VisitSerializer,
         responses={
             200: VisitSerializer,
             400: {
                 "type": "object",
-                "properties": {"error": {"type": "string"}}
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "description": "Detalhes do erro de validação"
+                    }
+                }
             },
             500: {
                 "type": "object",
@@ -67,7 +90,9 @@ logger = logging.getLogger(__name__)
         }
     ),
     destroy=extend_schema(
-        description="Deleta uma visita",
+        description="""Deleta uma visita.
+        - Promotores (role=1) só podem deletar suas próprias visitas
+        - Analistas (role=2) e Gestores (role=3) podem deletar qualquer visita""",
         responses={
             204: None,
             500: {
@@ -93,7 +118,7 @@ class VisitViewSet(viewsets.ModelViewSet):
         Se for analista ou gerente, retorna todas as visitas.
         """
         user = self.request.user
-        if user.userprofile.role == 'promoter':
+        if user.role == 1:  # Promotor
             return self.visit_repository.get_visits_by_filters(user_id=user.id)
         return self.visit_repository.list_all()
 
@@ -222,12 +247,12 @@ class VisitViewSet(viewsets.ModelViewSet):
         - end_date: Data final (YYYY-MM-DD)
         """
         # Se for promotor, força o filtro para mostrar apenas suas visitas
-        if request.user.userprofile.role == 'promoter':
+        if request.user.role == 1:
             try:
-                promoter = PromoterModel.objects.get(
+                promoter = User.objects.get(
                     user_profile=request.user.userprofile)
                 promoter_id = promoter.id
-            except PromoterModel.DoesNotExist:
+            except User.DoesNotExist:
                 return Response(
                     {"error": "Usuário não possui um promotor associado."},
                     status=status.HTTP_400_BAD_REQUEST
@@ -243,7 +268,7 @@ class VisitViewSet(viewsets.ModelViewSet):
             start_date=request.query_params.get("start_date"),
             end_date=request.query_params.get("end_date"),
             user_id=request.user.id if (
-                request.user.userprofile.role == 'promoter') else None
+                request.user.role == 1) else None
         )
 
         # Agrupa as visitas por promotor para calcular totais
@@ -608,136 +633,98 @@ class VisitViewSet(viewsets.ModelViewSet):
             }
         }
     )
-    @action(detail=False, methods=['get'])
-    def dashboard(self, request):
-        """Retorna dados para o dashboard"""
-        try:
-            user = request.user
-            today = datetime.now()
-            # Encontra o início da semana (segunda-feira)
-            start_of_week = today - timedelta(days=today.weekday())
-            start_of_week = start_of_week.replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
-            # Encontra o fim da semana (domingo)
-            end_of_week = (
-                start_of_week +
-                timedelta(days=6, hours=23, minutes=59, seconds=59)
-            )
-
-            # Busca visitas usando o repositório
-            user_id = (
-                user.id if user.userprofile.role == 'promoter' else None
-            )
-            visits = self.visit_repository.get_visits_for_dashboard(
-                start_date=start_of_week,
-                end_date=end_of_week,
-                user_id=user_id
-            )
-
-            # Se for promotor, filtra apenas as marcas atribuídas
-            if user.userprofile.role == 'promoter':
-                try:
-                    promoter = PromoterModel.objects.get(
-                        user_profile=user.userprofile
-                    )
-                    # Obtém as marcas atribuídas ao promotor
-                    brand_assignments = PromoterBrandModel.objects.filter(
-                        promoter=promoter
-                    )
-                    brands = BrandModel.objects.filter(
-                        id__in=brand_assignments.values('brand_id')
-                    ).prefetch_related('brandstore_set__store')
-                except PromoterModel.DoesNotExist:
-                    return Response(
-                        {"error": "Usuário não possui um promotor associado."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            else:
-                # Para gestores e analistas, mostra todas as marcas
-                brands = BrandModel.objects.prefetch_related(
-                    'brandstore_set__store'
-                ).all()
-
-            # Prepara os dados para o dashboard
-            dashboard_data = []
-
-            for brand in brands:
-                brand_data = {
-                    'brand_id': brand.brand_id,
-                    'brand_name': brand.name,
-                    'stores': []
-                }
-
-                for brand_store in brand.brandstore_set.all():
-                    store_visits = visits.filter(
-                        brand=brand,
-                        store=brand_store.store
-                    )
-
-                    # Calcula o número de visitas realizadas e esperadas
-                    visits_done = store_visits.count()
-                    expected_visits = brand_store.visit_frequency
-
-                    # Calcula o progresso
-                    progress = (
-                        min(100, (visits_done / expected_visits) * 100)
-                        if expected_visits > 0 else 0
-                    )
-
-                    store_data = {
-                        'store_id': brand_store.store.id,
-                        'store_name': brand_store.store.name,
-                        'store_number': brand_store.store.number,
-                        'visit_frequency': brand_store.visit_frequency,
-                        'visits_done': visits_done,
-                        'visits_remaining': (
-                            max(0, expected_visits - visits_done)
-                        ),
-                        'progress': progress,
-                        'last_visit': (
-                            store_visits.order_by('-visit_date')
-                            .first().visit_date if store_visits.exists()
-                            else None
-                        )
-                    }
-
-                    brand_data['stores'].append(store_data)
-
-                # Calcula totais para a marca
-                brand_data['total_stores'] = len(brand_data['stores'])
-                brand_data['total_visits_done'] = sum(
-                    store['visits_done'] for store in brand_data['stores']
-                )
-                brand_data['total_visits_expected'] = sum(
-                    store['visit_frequency']
-                    for store in brand_data['stores']
-                )
-
-                total_expected = brand_data['total_visits_expected']
-                total_done = brand_data['total_visits_done']
-                brand_data['total_progress'] = (
-                    (total_done / total_expected) * 100
-                    if total_expected > 0 else 0
-                )
-
-                dashboard_data.append(brand_data)
-
-            return Response(dashboard_data, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            logger.error(f"Erro ao gerar dados do dashboard: {e}")
-            return Response(
-                {"error": "Erro ao gerar dados do dashboard."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
+    # @action(detail=False, methods=['get'])
+    # def dashboard(self, request):
+    #     """Retorna dados para o dashboard"""
+    #     try:
+    #         user = request.user
+    #         today = datetime.now()
+    #         # Encontra o início da semana (segunda-feira)
+    #         start_of_week = today - timedelta(days=today.weekday())
+    #         start_of_week = start_of_week.replace(
+    #             hour=0, minute=0, second=0, microsecond=0
+    #         )
+    #         # Encontra o fim da semana (domingo)
+    #         end_of_week = (
+    #             start_of_week +
+    #             timedelta(days=6, hours=23, minutes=59, seconds=59)
+    #         )
+    #         # Busca visitas usando o repositório
+    #         user_id = (
+    #             user.id if user.role == 1 else None
+    #         )
+    #         visits = self.visit_repository.get_visits_for_dashboard(
+    #             start_date=start_of_week,
+    #             end_date=end_of_week,
+    #             user_id=user_id
+    #         )
+    #         # Prepara os dados para o dashboard
+    #         dashboard_data = []
+    #         for brand in brands:
+    #             brand_data = {
+    #                 'brand_id': brand.brand_id,
+    #                 'brand_name': brand.name,
+    #                 'stores': []
+    #             }
+    #             for brand_store in brand.brandstore_set.all():
+    #                 store_visits = visits.filter(
+    #                     brand=brand,
+    #                     store=brand_store.store
+    #                 )
+    #                 # Calcula o número de visitas realizadas e esperadas
+    #                 visits_done = store_visits.count()
+    #                 expected_visits = brand_store.visit_frequency
+    #                 # Calcula o progresso
+    #                 progress = (
+    #                     min(100, (visits_done / expected_visits) * 100)
+    #                     if expected_visits > 0 else 0
+    #                 )
+    #                 store_data = {
+    #                     'store_id': brand_store.store.id,
+    #                     'store_name': brand_store.store.name,
+    #                     'store_number': brand_store.store.number,
+    #                     'visit_frequency': brand_store.visit_frequency,
+    #                     'visits_done': visits_done,
+    #                     'visits_remaining': (
+    #                         max(0, expected_visits - visits_done)
+    #                     ),
+    #                     'progress': progress,
+    #                     'last_visit': (
+    #                         store_visits.order_by('-visit_date')
+    #                         .first().visit_date if store_visits.exists()
+    #                         else None
+    #                     )
+    #                 }
+    #                 brand_data['stores'].append(store_data)
+    #             # Calcula totais para a marca
+    #             brand_data['total_stores'] = len(brand_data['stores'])
+    #             brand_data['total_visits_done'] = sum(
+    #                 store['visits_done'] for store in brand_data['stores']
+    #             )
+    #             brand_data['total_visits_expected'] = sum(
+    #                 store['visit_frequency']
+    #                 for store in brand_data['stores']
+    #             )
+    #             total_expected = brand_data['total_visits_expected']
+    #             total_done = brand_data['total_visits_done']
+    #             brand_data['total_progress'] = (
+    #                 (total_done / total_expected) * 100
+    #                 if total_expected > 0 else 0
+    #             )
+    #             dashboard_data.append(brand_data)
+    #         return Response(dashboard_data, status=status.HTTP_200_OK)
+    #     except Exception as e:
+    #         logger.error(f"Erro ao gerar dados do dashboard: {e}")
+    #         return Response(
+    #             {"error": "Erro ao gerar dados do dashboard."},
+    #             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    #         )
     def perform_create(self, serializer):
         """Executa a criação de uma visita"""
         # Se o usuário for promotor, associa o promotor atual à visita
-        if self.request.user.userprofile.role == 'promoter':
+        if self.request.user.role == 1:  # Promotor
             try:
-                promoter = PromoterModel.get_promoter_by_user(
+                promoter = User.get_promoter_by_user(
                     self.request.user
                 )
                 if not promoter:
@@ -745,7 +732,7 @@ class VisitViewSet(viewsets.ModelViewSet):
                         "Usuário não possui um promotor associado."
                     )
                 serializer.save(promoter=promoter)
-            except PromoterModel.DoesNotExist:
+            except User.DoesNotExist:
                 raise serializers.ValidationError(
                     "Usuário não possui um promotor associado."
                 )
@@ -758,9 +745,9 @@ class VisitViewSet(viewsets.ModelViewSet):
                 )
 
             try:
-                promoter = PromoterModel.objects.get(id=promoter_id)
+                promoter = User.objects.get(id=promoter_id)
                 serializer.save(promoter=promoter)
-            except PromoterModel.DoesNotExist:
+            except User.DoesNotExist:
                 raise serializers.ValidationError(
                     "Promotor não encontrado."
                 )

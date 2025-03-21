@@ -1,0 +1,104 @@
+{
+    "title": "Promotores",
+    "form": {
+        "title": {
+            "new": "Novo Promotor",
+            "edit": "Editar Promotor",
+            "create": "Criar Promotor"
+        },
+        "fields": {
+            "first_name": {
+                "label": "Nome",
+                "placeholder": "Digite o nome do promotor",
+                "required": "Digite o nome do promotor"
+            },
+            "last_name": {
+                "label": "Sobrenome",
+                "placeholder": "Digite o sobrenome do promotor",
+                "required": "Digite o sobrenome do promotor"
+            },
+            "cpf": {
+                "label": "CPF",
+                "placeholder": "Digite o CPF do promotor",
+                "required": "Digite o CPF do promotor",
+                "invalid": "CPF inválido"
+            },
+            "phone": {
+                "label": "Telefone",
+                "placeholder": "Digite o telefone do promotor",
+                "required": "Digite o telefone do promotor",
+                "invalid": "Telefone inválido"
+            },
+            "email": {
+                "label": "E-mail",
+                "placeholder": "Digite o e-mail do promotor",
+                "required": "Digite o e-mail do promotor",
+                "invalid": "E-mail inválido"
+            },
+            "brands": {
+                "label": "Vincular marcas",
+                "placeholder": "Selecione as marcas do promotor",
+                "required": "Selecione as marcas do promotor"
+            }
+        }
+    },
+    "list": {
+        "columns": {
+            "name": "Nome",
+            "cpf": "CPF",
+            "phone": "Telefone",
+            "email": "E-mail",
+            "brands": "Marcas"
+        },
+        "empty": "Nenhum promotor encontrado",
+        "title": "Lista de Promotores"
+    },
+    "search": {
+        "placeholder": "Buscar por nome, CPF ou e-mail"
+    },
+    "buttons": {
+        "new": "Novo Promotor",
+        "clear_filters": "Limpar Filtros",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "search": "Buscar",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "processing": "Processando...",
+        "create": "Criar Promotor",
+        "update": "Atualizar Promotor",
+        "copy": "Copiar",
+        "ok": "OK"
+    },
+    "messages": {
+        "success": {
+            "create": "Promotor criado com sucesso!",
+            "update": "Promotor atualizado com sucesso!",
+            "delete": "Promotor excluído com sucesso!"
+        },
+        "error": {
+            "load": "Erro ao carregar promotores",
+            "create": "Erro ao criar promotor",
+            "update": "Erro ao atualizar promotor",
+            "delete": "Erro ao excluir promotor",
+            "duplicate_cpf": "Já existe um promotor com este CPF",
+            "duplicate_email": "Já existe um promotor com este e-mail",
+            "load_brands": "Erro ao carregar marcas"
+        },
+        "confirm": {
+            "delete": "Tem certeza que deseja excluir este promotor?"
+        }
+    },
+    "table": {
+        "name": "Nome",
+        "email": "E-mail",
+        "cpf": "CPF",
+        "phone": "Telefone",
+        "actions": "Ações"
+    },
+    "filters": {
+        "name": "Filtrar por nome",
+        "cpf": "Filtrar por CPF",
+        "phone": "Filtrar por telefone"
+    }
+}

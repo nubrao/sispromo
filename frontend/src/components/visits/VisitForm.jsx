@@ -1,5 +1,8 @@
 import PropTypes from "prop-types";
+import { useTranslation } from "react-i18next";
+import { Form, Button, Select, DatePicker, Space } from "antd";
 import "../../styles/form.css";
+import { Navigate } from "react-router-dom";
 
 const VisitForm = ({
     promoterId,
@@ -11,17 +14,17 @@ const VisitForm = ({
     visitDate,
     setVisitDate,
     promoters,
-    stores,
     brands,
     handleSubmit,
     isPromoter,
     filteredStores,
     isEditing,
+    loading,
 }) => {
-    const handleBrandChange = (e) => {
-        const selectedBrand = brands.find(
-            (b) => b.brand_id === parseInt(e.target.value)
-        );
+    const { t } = useTranslation(["visits", "common"]);
+
+    const handleBrandChange = (value) => {
+        const selectedBrand = brands.find((b) => b.brand_id === value);
         setBrand({
             id: selectedBrand?.brand_id || "",
             name: selectedBrand?.brand_name || "",
@@ -29,68 +32,113 @@ const VisitForm = ({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="form">
+        <Form
+            onFinish={handleSubmit}
+            layout="vertical"
+            initialValues={{
+                promoter_id: promoterId,
+                brand_id: brand.id,
+                store_id: storeId,
+                visit_date: visitDate ? visitDate : undefined,
+            }}
+        >
             {!isPromoter && (
-                <select
-                    value={promoterId}
-                    onChange={(e) => setPromoterId(e.target.value)}
-                    className="form-input"
-                    required
+                <Form.Item
+                    name="promoter_id"
+                    label={t("visits:form.fields.promoter.label")}
+                    rules={[
+                        {
+                            required: true,
+                            message: t("visits:form.fields.promoter.required"),
+                        },
+                    ]}
                 >
-                    <option value="">Selecione um promotor</option>
-                    {promoters.map((promoter) => (
-                        <option key={promoter.id} value={promoter.id}>
-                            {promoter.name}
-                        </option>
-                    ))}
-                </select>
+                    <Select
+                        placeholder={t(
+                            "visits:form.fields.promoter.placeholder"
+                        )}
+                        onChange={(value) => setPromoterId(value)}
+                        options={promoters.map((promoter) => ({
+                            value: promoter.id,
+                            label: promoter.name,
+                        }))}
+                    />
+                </Form.Item>
             )}
 
-            <select
-                value={brand.id}
-                onChange={handleBrandChange}
-                className="form-input"
-                required
+            <Form.Item
+                name="brand_id"
+                label={t("visits:form.fields.brand.label")}
+                rules={[
+                    {
+                        required: true,
+                        message: t("visits:form.fields.brand.required"),
+                    },
+                ]}
             >
-                <option value="">Selecione uma marca</option>
-                {brands.map((brand) => (
-                    <option key={brand.brand_id} value={brand.brand_id}>
-                        {brand.brand_name}
-                    </option>
-                ))}
-            </select>
+                <Select
+                    placeholder={t("visits:form.fields.brand.placeholder")}
+                    onChange={handleBrandChange}
+                    options={brands.map((brand) => ({
+                        value: brand.brand_id,
+                        label: brand.brand_name,
+                    }))}
+                />
+            </Form.Item>
 
-            <select
-                value={storeId}
-                onChange={(e) => setStoreId(e.target.value)}
-                className="form-input"
-                required
-                disabled={!brand.id}
+            <Form.Item
+                name="store_id"
+                label={t("visits:form.fields.store.label")}
+                rules={[
+                    {
+                        required: true,
+                        message: t("visits:form.fields.store.required"),
+                    },
+                ]}
             >
-                <option value="">
-                    {brand.id
-                        ? "Selecione uma loja"
-                        : "Selecione uma marca primeiro"}
-                </option>
-                {filteredStores.map((store) => (
-                    <option key={store.id} value={store.id}>
-                        {store.name} - {store.number}
-                    </option>
-                ))}
-            </select>
+                <Select
+                    placeholder={t("visits:form.fields.store.placeholder")}
+                    onChange={(value) => setStoreId(value)}
+                    disabled={!brand.id}
+                    options={filteredStores.map((store) => ({
+                        value: store.id,
+                        label: `${store.name} - ${store.number}`,
+                    }))}
+                />
+            </Form.Item>
 
-            <input
-                type="date"
-                value={visitDate}
-                onChange={(e) => setVisitDate(e.target.value)}
-                className="form-input"
-                required
-            />
+            <Form.Item
+                name="visit_date"
+                label={t("visits:form.fields.date.label")}
+                rules={[
+                    {
+                        required: true,
+                        message: t("visits:form.fields.date.required"),
+                    },
+                ]}
+            >
+                <DatePicker
+                    placeholder={t("visits:form.fields.date.placeholder")}
+                    onChange={(date) => setVisitDate(date)}
+                    format="YYYY-MM-DD"
+                />
+            </Form.Item>
 
-            <button type="submit" className="form-button">
-                {isEditing ? "Atualizar Visita" : "Registrar Visita"}
-            </button>
-        </form>
+            <Form.Item>
+                <Space>
+                    <Button type="primary" htmlType="submit" loading={loading}>
+                        {loading
+                            ? t("visits:form.buttons.processing")
+                            : isEditing
+                            ? t("visits:form.buttons.update")
+                            : t("visits:form.buttons.save")}
+                    </Button>
+                    <Button onClick={() => Navigate("/visits")}>
+                        {t("visits:form.buttons.cancel")}
+                    </Button>
+                </Space>
+            </Form.Item>
+        </Form>
     );
 };
 
@@ -137,10 +185,12 @@ VisitForm.propTypes = {
         })
     ).isRequired,
     isEditing: PropTypes.bool,
+    loading: PropTypes.bool,
 };
 
 VisitForm.defaultProps = {
     isEditing: false,
+    loading: false,
 };
 
 export default VisitForm;

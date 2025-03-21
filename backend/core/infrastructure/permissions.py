@@ -7,13 +7,10 @@ class IsManagerOrAnalyst(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        # Verifica se o usuário está autenticado
+        """
+        Verifica se o usuário tem permissão para acessar a view.
+        Apenas gerentes e analistas têm acesso.
+        """
         if not request.user.is_authenticated:
             return False
-
-        # Verifica se o usuário tem um perfil
-        if not hasattr(request.user, 'userprofile'):
-            return False
-
-        # Verifica se o papel do usuário é manager ou analyst
-        return request.user.userprofile.role in ['manager', 'analyst']
+        return request.user.role in [2, 3]  # 2 = Analista, 3 = Gestor

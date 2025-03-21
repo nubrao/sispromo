@@ -1,0 +1,104 @@
+{
+    "title": "Visitas",
+    "form": {
+        "title": {
+            "new": "Nova Visita",
+            "edit": "Editar Visita"
+        },
+        "fields": {
+            "promoter": {
+                "label": "Promotor",
+                "placeholder": "Selecione o promotor",
+                "required": "Selecione o promotor"
+            },
+            "brand": {
+                "label": "Marca",
+                "placeholder": "Selecione a marca",
+                "required": "Selecione a marca"
+            },
+            "store": {
+                "label": "Loja",
+                "placeholder": "Selecione a loja",
+                "required": "Selecione a loja"
+            },
+            "date": {
+                "label": "Data",
+                "placeholder": "Selecione a data",
+                "required": "Selecione a data"
+            },
+            "time": {
+                "label": "Hora",
+                "placeholder": "Selecione a hora",
+                "required": "Selecione a hora"
+            },
+            "observations": {
+                "label": "Observações",
+                "placeholder": "Digite as observações da visita"
+            }
+        },
+        "buttons": {
+            "save": "Salvar",
+            "cancel": "Cancelar",
+            "processing": "Processando..."
+        }
+    },
+    "list": {
+        "columns": {
+            "promoter": "Promotor",
+            "brand": "Marca",
+            "store": "Loja",
+            "date": "Data",
+            "time": "Hora",
+            "price": "Valor"
+        },
+        "empty": "Nenhuma visita encontrada"
+    },
+    "filters": {
+        "date": {
+            "label": "Data",
+            "start": "Data inicial",
+            "end": "Data final"
+        },
+        "promoter": {
+            "label": "Promotor",
+            "placeholder": "Selecione o promotor"
+        },
+        "brand": {
+            "label": "Marca",
+            "placeholder": "Selecione a marca"
+        },
+        "store": {
+            "label": "Loja",
+            "placeholder": "Selecione a loja"
+        }
+    },
+    "search": {
+        "placeholder": "Buscar por promotor, marca ou loja"
+    },
+    "buttons": {
+        "new": "Nova Visita",
+        "filter": "Filtrar",
+        "clear": "Limpar Filtros"
+    },
+    "messages": {
+        "success": {
+            "create": "Visita registrada com sucesso",
+            "update": "Visita atualizada com sucesso",
+            "delete": "Visita excluída com sucesso"
+        },
+        "error": {
+            "load": "Erro ao carregar visitas",
+            "create": "Erro ao registrar visita",
+            "update": "Erro ao atualizar visita",
+            "delete": "Erro ao excluir visita",
+            "duplicate": "Já existe uma visita registrada para este promotor, marca e loja nesta data",
+            "no_price": "Não há preço definido para esta marca e loja"
+        }
+    },
+    "confirm": {
+        "delete": {
+            "title": "Excluir Visita",
+            "content": "Tem certeza que deseja excluir esta visita?"
+        }
+    }
+}

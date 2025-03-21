@@ -1,0 +1,78 @@
+{
+    "title": "Usuários",
+    "add_user": "Adicionar usuário",
+    "edit_user": "Editar usuário",
+    "delete_user": "Excluir usuário",
+    "user_list": "Lista de usuários",
+    "name": "Nome",
+    "email": "E-mail",
+    "role": "Cargo",
+    "actions": "Ações",
+    "roles": {
+        "1": "Promotor",
+        "2": "Analista",
+        "3": "Gestor"
+    },
+    "form": {
+        "title": {
+            "new": "Novo Usuário",
+            "edit": "Editar Usuário"
+        },
+        "fields": {
+            "name": {
+                "label": "Nome",
+                "placeholder": "Digite o nome",
+                "required": "O nome é obrigatório"
+            },
+            "email": {
+                "label": "E-mail",
+                "placeholder": "Digite o e-mail",
+                "required": "O e-mail é obrigatório",
+                "invalid": "E-mail inválido"
+            },
+            "password": {
+                "label": "Senha",
+                "placeholder": "Digite a senha",
+                "required": "A senha é obrigatória"
+            },
+            "role": {
+                "label": "Cargo",
+                "placeholder": "Selecione o cargo",
+                "required": "O cargo é obrigatório"
+            }
+        },
+        "buttons": {
+            "save": "Salvar",
+            "cancel": "Cancelar",
+            "processing": "Processando..."
+        }
+    },
+    "list": {
+        "columns": {
+            "name": "Nome",
+            "email": "E-mail",
+            "role": "Cargo",
+            "actions": "Ações"
+        }
+    },
+    "search": {
+        "placeholder": "Buscar usuários..."
+    },
+    "buttons": {
+        "new": "Novo Usuário"
+    },
+    "messages": {
+        "success": {
+            "create": "Usuário criado com sucesso!",
+            "update": "Usuário atualizado com sucesso!",
+            "delete": "Usuário excluído com sucesso!"
+        },
+        "error": {
+            "load": "Erro ao carregar usuários",
+            "create": "Erro ao criar usuário",
+            "update": "Erro ao atualizar usuário",
+            "delete": "Erro ao excluir usuário",
+            "duplicate_email": "Já existe um usuário com este e-mail"
+        }
+    }
+}

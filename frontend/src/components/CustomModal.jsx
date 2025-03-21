@@ -1,54 +1,52 @@
+import { Modal, Spin } from "antd";
+import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import "../styles/customModal.css";
 import PropTypes from "prop-types";
-import Loader from "./Loader";
-import "../styles/modal.css";
-
 export const CustomModal = ({
-    visible,
-    success,
     loading,
+    success,
     errorMessage,
     title,
-    message,
+    visible,
     onClose,
 }) => {
-    if (!visible) return null;
-
     return (
-        <div className="modal-overlay">
+        <Modal
+            visible={visible}
+            footer={null}
+            closable={!loading}
+            onCancel={onClose}
+            centered
+            className="custom-modal"
+        >
             <div className="modal-content">
-                <h3>{title || "" }</h3>
                 {loading ? (
-                    <div className="loading-container">
-                        <Loader />
-                        <p>{message || "Por favor, aguarde..."}</p>
+                    <div className="modal-loading">
+                        <Spin size="large" />
+                        <p>{title}</p>
                     </div>
                 ) : success ? (
-                    <div className="success-container">
-                        <span className="success-icon">✓</span>
-                        <p>{message || "Operação realizada com sucesso!"}</p>
+                    <div className="modal-success">
+                        <CheckCircleOutlined className="success-icon" />
+                        <p>Operação realizada com sucesso!</p>
                     </div>
                 ) : (
-                    <div className="error-container">
-                        <span className="error-icon">✕</span>
-                        <p>{errorMessage || "Ocorreu um erro."}</p>
+                    <div className="modal-error">
+                        <CloseCircleOutlined className="error-icon" />
+                        <p>{errorMessage}</p>
                     </div>
                 )}
-                {!loading && (
-                    <button onClick={onClose} className="modal-close-button">
-                        Fechar
-                    </button>
-                )}
             </div>
-        </div>
+        </Modal>
     );
 };
 
 CustomModal.propTypes = {
-    visible: PropTypes.bool,
-    success: PropTypes.bool,
-    loading: PropTypes.bool,
-    errorMessage: PropTypes.string,
-    title: PropTypes.string,
-    message: PropTypes.string,
-    onClose: PropTypes.func,
-};
+    loading: PropTypes.bool.isRequired,
+    success: PropTypes.bool.isRequired,
+    errorMessage: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    visible: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+};  
+

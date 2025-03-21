@@ -1,0 +1,456 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #1677ff;
+    --success-color: #52c41a;
+    --warning-color: #faad14;
+    --error-color: #ff4d4f;
+    --text-color: #000000d9;
+    --text-secondary: #00000073;
+    --border-color: #d9d9d9;
+    --background-color: #f5f5f5;
+    --white: #ffffff;
+    --background-light: #d4e9d4;
+    --background-dark: #141414;
+    --text-light: #000;
+    --text-dark: #fff;
+    --title-light: #213547;
+    --input-border-light: #ccc;
+    --input-border-dark: #444;
+    --button-bg-light: #89b789;
+    --button-bg-dark: #89b789;
+    --button-hover-light: #b3d0b3;
+    --button-hover-dark: #b3d0b3;
+    --input-bg-dark: #2d2d2d;
+    --modal-bg-dark: #2d2d2d;
+    --modal-title-dark: #fff;
+    --modal-header-dark: #2d2d2d;
+    --modal-body-dark: #2d2d2d;
+    --modal-input-dark: #141414;
+}
+
+body,
+html {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+        "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-light);
+    color: var(--text-light);
+    transition: background 0.3s, color 0.3s;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    background-color: var(--white);
+    box-shadow: 0 2px 8px #00000026;
+}
+
+.header .logo {
+    height: 64px;
+    display: flex;
+    align-items: center;
+}
+
+.header .logo h1 {
+    color: var(--primary-color);
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.content {
+    padding: 24px;
+    min-height: calc(100vh - 64px);
+}
+
+.ant-card {
+    box-shadow: 0 1px 2px -2px #00000029, 0 3px 6px #0000001f,
+        0 5px 12px 4px #00000017;
+}
+
+.ant-table-wrapper {
+    background-color: var(--white);
+    border-radius: 8px;
+}
+
+.ant-form-item-label > label {
+    font-weight: 500;
+}
+
+.ant-btn-primary {
+    background-color: var(--primary-color);
+}
+
+.ant-btn-primary:hover {
+    background-color: #4096ff;
+}
+
+.ant-btn-primary:active {
+    background-color: #0958d9;
+}
+
+.ant-btn-dangerous {
+    background-color: var(--error-color);
+}
+
+.ant-btn-dangerous:hover {
+    background-color: #ff7875;
+}
+
+.ant-btn-dangerous:active {
+    background-color: #d9363e;
+}
+
+.ant-tag-blue {
+    color: #1677ff;
+    background: #e6f4ff;
+    border-color: #91caff;
+}
+
+.ant-tag-green {
+    color: #52c41a;
+    background: #f6ffed;
+    border-color: #b7eb8f;
+}
+
+.ant-tag-orange {
+    color: #faad14;
+    background: #fff7e6;
+    border-color: #ffd591;
+}
+
+.ant-tag-red {
+    color: #ff4d4f;
+    background: #fff1f0;
+    border-color: #ffa39e;
+}
+
+.ant-statistic-title {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.ant-statistic-content {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.ant-table-row-expand-icon {
+    background: var(--white);
+}
+
+.ant-pagination-total-text {
+    margin-right: 8px;
+}
+
+.ant-select-selection-placeholder {
+    color: var(--text-secondary);
+}
+
+.ant-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.ant-picker-input > input::placeholder {
+    color: var(--text-secondary);
+}
+
+.ant-form-item-explain-error {
+    color: var(--error-color);
+}
+
+.ant-message-notice-content {
+    box-shadow: 0 3px 6px -4px #0000001f, 0 6px 16px #00000014,
+        0 9px 28px 8px #0000000d;
+}
+
+.ant-popover-inner {
+    box-shadow: 0 3px 6px -4px #0000001f, 0 6px 16px #00000014,
+        0 9px 28px 8px #0000000d;
+}
+
+.ant-modal-content {
+    box-shadow: 0 3px 6px -4px #0000001f, 0 6px 16px #00000014,
+        0 9px 28px 8px #0000000d;
+}
+
+.ant-drawer-content {
+    box-shadow: 0 3px 6px -4px #0000001f, 0 6px 16px #00000014,
+        0 9px 28px 8px #0000000d;
+}
+
+.ant-tooltip-inner {
+    box-shadow: 0 3px 6px -4px #0000001f, 0 6px 16px #00000014,
+        0 9px 28px 8px #0000000d;
+}
+
+/* Estilos base */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-light);
+    color: var(--text-light);
+    transition: background 0.3s, color 0.3s;
+}
+
+/* Tema escuro */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: var(--background-dark);
+        color: var(--text-dark);
+    }
+
+    /* Ant Design - Tema escuro */
+    .ant-layout {
+        background-color: var(--background-dark);
+    }
+
+    .ant-card {
+        background-color: var(--modal-bg-dark);
+        border-color: var(--input-border-dark);
+    }
+
+    .ant-modal-content,
+    .ant-modal-header {
+        background-color: var(--modal-bg-dark);
+        color: var(--text-dark);
+    }
+
+    .ant-modal-title {
+        color: var(--modal-title-dark);
+    }
+
+    .ant-input,
+    .ant-input-password,
+    .ant-input-number,
+    .ant-select-selector,
+    .ant-picker,
+    .ant-input-affix-wrapper {
+        background-color: var(--input-bg-dark) !important;
+        border-color: var(--input-border-dark) !important;
+        color: var(--text-dark) !important;
+    }
+
+    .ant-input-number-input {
+        background-color: transparent !important;
+        color: var(--text-dark) !important;
+    }
+
+    .ant-select-selection-item {
+        color: var(--text-dark) !important;
+    }
+
+    .ant-select-arrow,
+    .ant-picker-suffix {
+        color: var(--text-dark) !important;
+    }
+
+    .ant-table {
+        background-color: var(--modal-bg-dark);
+        color: var(--text-dark);
+    }
+
+    .ant-table-thead > tr > th {
+        background-color: var(--background-dark) !important;
+        color: var(--text-dark) !important;
+        border-color: var(--input-border-dark) !important;
+    }
+
+    .ant-table-tbody > tr > td {
+        border-color: var(--input-border-dark) !important;
+    }
+
+    .ant-table-tbody > tr:hover > td {
+        background-color: var(--background-dark) !important;
+    }
+
+    .ant-pagination-item-active {
+        background-color: var(--button-bg-dark);
+        border-color: var(--button-bg-dark);
+    }
+
+    .ant-pagination-item-active a {
+        color: var(--text-dark);
+    }
+
+    .ant-btn-primary {
+        background-color: var(--button-bg-dark);
+    }
+
+    .ant-btn-primary:hover {
+        background-color: var(--button-hover-dark) !important;
+    }
+
+    .ant-menu.ant-menu-dark {
+        background-color: var(--modal-bg-dark);
+    }
+
+    .ant-menu-dark .ant-menu-item-selected {
+        background-color: var(--button-bg-dark);
+    }
+
+    /* Form labels */
+    .ant-form-item-label > label {
+        color: var(--text-dark) !important;
+    }
+
+    /* Placeholders */
+    .ant-input::placeholder,
+    .ant-input-password input::placeholder,
+    .ant-input-number-input::placeholder {
+        color: rgba(255, 255, 255, 0.45) !important;
+    }
+
+    /* Select dropdown */
+    .ant-select-dropdown {
+        background-color: var(--modal-bg-dark);
+    }
+
+    .ant-select-item {
+        color: var(--text-dark);
+    }
+
+    .ant-select-item-option-selected {
+        background-color: var(--button-bg-dark);
+    }
+
+    .ant-select-item-option-active {
+        background-color: var(--background-dark);
+    }
+    /* Estilos para campos Ant Design no tema escuro */
+    .ant-input,
+    .ant-input-password,
+    .ant-input-affix-wrapper {
+        background-color: var(--input-bg-dark) !important;
+        border-color: var(--input-border-dark) !important;
+        color: var(--text-dark) !important;
+        height: 40px;
+        align-items: center;
+    }
+
+    .ant-input-affix-wrapper > input.ant-input {
+        background-color: transparent !important;
+    }
+
+    .ant-input-prefix,
+    .ant-input-suffix {
+        color: var(--text-dark) !important;
+    }
+
+    .ant-input-password-icon {
+        color: var(--text-dark) !important;
+    }
+
+    .ant-input::placeholder,
+    .ant-input-password input::placeholder {
+        color: rgba(255, 255, 255, 0.45) !important;
+        opacity: 1 !important;
+    }
+
+    /* Estilos para placeholders em diferentes navegadores */
+    .ant-input::-webkit-input-placeholder,
+    .ant-input-password input::-webkit-input-placeholder {
+        color: rgba(255, 255, 255, 0.45) !important;
+        opacity: 1 !important;
+    }
+
+    .ant-input::-moz-placeholder,
+    .ant-input-password input::-moz-placeholder {
+        color: rgba(255, 255, 255, 0.45) !important;
+        opacity: 1 !important;
+    }
+
+    .ant-input:-ms-input-placeholder,
+    .ant-input-password input:-ms-input-placeholder {
+        color: rgba(255, 255, 255, 0.45) !important;
+        opacity: 1 !important;
+    }
+
+    .ant-input:-moz-placeholder,
+    .ant-input-password input:-moz-placeholder {
+        color: rgba(255, 255, 255, 0.45) !important;
+        opacity: 1 !important;
+    }
+
+    /* Estilos para labels no tema escuro */
+    .ant-form-item-label > label,
+    .ant-form-item-required,
+    .ant-card-head-title,
+    .ant-form-item-label {
+        color: var(--text-dark) !important;
+    }
+
+    .ant-form-item-label > label::before,
+    .ant-form-item-required::before {
+        color: #ff4d4f !important;
+    }
+
+    .ant-input:focus,
+    .ant-input-password:focus,
+    .ant-input:hover,
+    .ant-input-password:hover,
+    .ant-input-affix-wrapper:hover,
+    .ant-input-affix-wrapper-focused {
+        border-color: #646cff !important;
+        box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2) !important;
+    }
+
+    .ant-input-password-icon:hover {
+        color: #646cff !important;
+    }
+}
+
+/* Tema claro - Ajustes específicos */
+.ant-btn-primary {
+    background-color: var(--button-bg-light);
+}
+
+.ant-btn-primary:hover {
+    background-color: var(--button-hover-light) !important;
+}
+
+.ant-input,
+.ant-input-password,
+.ant-input-number,
+.ant-select-selector,
+.ant-picker {
+    border-color: var(--input-border-light);
+}
+
+/* Títulos */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--title-light);
+}
+
+@media (prefers-color-scheme: dark) {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: var(--text-dark);
+    }
+}

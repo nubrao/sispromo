@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import "../styles/form.css";
 import Loader from "../components/Loader";
-import { RoleContext } from "../context/RoleContext";
+import { RoleContext } from "../contexts/RoleContext";
 import { Toast } from "../components/Toast";
 import EditUserModal from "../components/EditUserModal";
 import userRepository from "../repositories/userRepository";
@@ -292,6 +292,12 @@ const UserManagement = () => {
                                                 user.userprofile_id ===
                                                 userProfileId
                                             }
+                                            title={
+                                                user.userprofile_id ===
+                                                userProfileId
+                                                    ? "Não é possível alterar a função do seu próprio usuário"
+                                                    : "Ativar/inativar usuário"
+                                            }
                                         >
                                             <option value="promoter">
                                                 Promotor
@@ -330,7 +336,7 @@ const UserManagement = () => {
                                                 user.userprofile_id ===
                                                 userProfileId
                                                     ? "Não é possível alterar o status do seu próprio usuário"
-                                                    : ""
+                                                    : "Ativar/inativar usuário"
                                             }
                                         >
                                             {user.profile.is_active

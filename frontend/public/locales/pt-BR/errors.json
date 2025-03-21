@@ -1,0 +1,85 @@
+{
+    "connection": "Erro ao conectar com o servidor",
+    "auth": {
+        "invalidCredentials": "E-mail ou senha inválidos",
+        "sessionExpired": "Sessão expirada",
+        "unauthorized": "Não autorizado",
+        "forbidden": "Acesso negado",
+        "role": "Erro ao obter dados do usuário: Campo `role` não é válido para o modelo `User` em `core.infrastructure.serializers.user_serializer.UserSerializer`."
+    },
+    "user": {
+        "create": "Erro ao cadastrar usuário. Verifique os dados",
+        "update": "Erro ao atualizar usuário",
+        "delete": "Erro ao excluir usuário",
+        "notFound": "Usuário não encontrado"
+    },
+    "promoter": {
+        "create": "Erro ao cadastrar promotor. Verifique os dados",
+        "update": "Erro ao atualizar promotor",
+        "delete": "Erro ao excluir promotor",
+        "notFound": "Promotor não encontrado"
+    },
+    "store": {
+        "create": "Erro ao cadastrar loja. Verifique os dados",
+        "update": "Erro ao atualizar loja",
+        "delete": "Erro ao excluir loja",
+        "notFound": "Loja não encontrada"
+    },
+    "visit": {
+        "create": "Erro ao cadastrar visita. Verifique os dados",
+        "update": "Erro ao atualizar visita",
+        "delete": "Erro ao excluir visita",
+        "notFound": "Visita não encontrada"
+    },
+    "assignment": {
+        "create": "Erro ao criar atribuição",
+        "delete": "Erro ao excluir atribuição",
+        "notFound": "Atribuição não encontrada"
+    },
+    "http": {
+        "400": "Requisição inválida",
+        "401": "Não autorizado",
+        "403": "Acesso negado",
+        "404": "Não encontrado",
+        "409": "Conflito",
+        "422": "Dados inválidos",
+        "500": "Erro interno do servidor",
+        "502": "Serviço indisponível",
+        "503": "Serviço temporariamente indisponível",
+        "504": "Tempo limite excedido"
+    },
+    "validation": {
+        "required": "Campo obrigatório",
+        "email": "E-mail inválido",
+        "min": "Valor mínimo: {{min}}",
+        "max": "Valor máximo: {{max}}",
+        "minLength": "Mínimo de {{min}} caracteres",
+        "maxLength": "Máximo de {{max}} caracteres",
+        "pattern": "Formato inválido",
+        "passwordMismatch": "As senhas não conferem",
+        "invalidCPF": "CPF inválido",
+        "invalidCNPJ": "CNPJ inválido",
+        "invalidPhone": "Telefone inválido",
+        "invalidDate": "Data inválida",
+        "invalidTime": "Hora inválida",
+        "invalidNumber": "Número inválido",
+        "invalidCurrency": "Valor inválido",
+        "invalidPercentage": "Porcentagem inválida"
+    },
+    "network": {
+        "offline": "Sem conexão com a internet",
+        "timeout": "Tempo limite excedido",
+        "serverError": "Erro no servidor",
+        "connectionError": "Erro de conexão"
+    },
+    "file": {
+        "invalidType": "Tipo de arquivo inválido",
+        "maxSize": "Tamanho máximo excedido",
+        "uploadError": "Erro ao enviar arquivo"
+    },
+    "generic": {
+        "unexpected": "Ocorreu um erro inesperado",
+        "tryAgain": "Tente novamente mais tarde",
+        "contact": "Entre em contato com o suporte"
+    }
+}

@@ -1,0 +1,88 @@
+.app-layout {
+    min-height: 100vh;
+}
+
+.app-content {
+    padding: 24px;
+}
+
+.app-content.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--background-light);
+}
+
+@media (prefers-color-scheme: dark) {
+    .app-content.login-page {
+        background: var(--background-dark);
+    }
+}
+
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f0f2f5;
+}
+
+/* Ant Design customizations */
+.ant-layout-header {
+    background: #fff;
+    padding: 0 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ant-card {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.ant-form-item-label > label {
+    font-weight: 500;
+}
+
+.ant-btn-primary {
+    background: #1890ff;
+    border-color: #1890ff;
+}
+
+.ant-btn-primary:hover {
+    background: #40a9ff;
+    border-color: #40a9ff;
+}
+
+.ant-btn-danger {
+    background: #ff4d4f;
+    border-color: #ff4d4f;
+    color: #fff;
+}
+
+.ant-btn-danger:hover {
+    background: #ff7875;
+    border-color: #ff7875;
+    color: #fff;
+}
+
+/* Toast customizations */
+.Toastify__toast {
+    border-radius: 4px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+}
+
+.Toastify__toast--success {
+    background: #52c41a;
+}
+
+.Toastify__toast--error {
+    background: #ff4d4f;
+}
+
+.Toastify__toast--warning {
+    background: #faad14;
+}
+
+.Toastify__toast--info {
+    background: #1890ff;
+}

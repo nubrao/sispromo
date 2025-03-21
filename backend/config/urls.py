@@ -20,15 +20,12 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
-from core.infrastructure.views.promoter_view import PromoterViewSet
 from core.infrastructure.views.store_view import StoreViewSet
 from core.infrastructure.views.visit_view import VisitViewSet
 from core.infrastructure.views.auth_view import LogoutView
 from core.infrastructure.views.state_view import StateListView
 from core.infrastructure.views.brand_view import BrandViewSet
-from core.infrastructure.views.visit_price_view import VisitPriceViewSet
 from core.infrastructure.views.user_view import UserViewSet
-from core.infrastructure.views.promoter_brand_view import PromoterBrandViewSet
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -36,14 +33,10 @@ from drf_spectacular.views import (
 )
 
 router = DefaultRouter()
-router.register(r"promoters", PromoterViewSet, basename="promoter")
 router.register(r"stores", StoreViewSet)
 router.register(r"visits", VisitViewSet, basename="visit")
 router.register(r'brands', BrandViewSet)
-router.register(r"visit-prices", VisitPriceViewSet, basename="visit-prices")
 router.register(r"users", UserViewSet, basename="user")
-router.register(r"promoter-brands", PromoterBrandViewSet,
-                basename="promoter-brand")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

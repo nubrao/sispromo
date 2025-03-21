@@ -1,0 +1,90 @@
+{
+    "title": "Lojas",
+    "form": {
+        "title": {
+            "create": "Nova Loja",
+            "edit": "Editar Loja"
+        },
+        "fields": {
+            "name": {
+                "label": "Nome",
+                "placeholder": "Digite o nome da loja",
+                "required": "Por favor, insira o nome da loja"
+            },
+            "cnpj": {
+                "label": "CNPJ",
+                "placeholder": "Digite o CNPJ da loja",
+                "required": "Por favor, insira o CNPJ da loja",
+                "invalid": "CNPJ inválido"
+            },
+            "address": {
+                "label": "Endereço",
+                "placeholder": "Digite o endereço da loja",
+                "required": "Por favor, insira o endereço da loja"
+            },
+            "city": {
+                "label": "Cidade",
+                "placeholder": "Digite a cidade da loja",
+                "required": "Por favor, insira a cidade da loja"
+            },
+            "state": {
+                "label": "Estado",
+                "placeholder": "Digite o estado da loja",
+                "required": "Por favor, insira o estado da loja"
+            }
+        },
+        "buttons": {
+            "save": "Salvar",
+            "cancel": "Cancelar",
+            "processing": "Processando..."
+        },
+        "messages": {
+            "success": {
+                "create": "Loja cadastrada com sucesso!",
+                "update": "Loja atualizada com sucesso!"
+            },
+            "error": {
+                "create": "Erro ao cadastrar loja",
+                "update": "Erro ao atualizar loja",
+                "load": "Erro ao carregar dados da loja"
+            }
+        }
+    },
+    "list": {
+        "title": "Lista de Lojas",
+        "empty": "Nenhuma loja encontrada",
+        "filters": {
+            "name": "Filtrar por nome",
+            "cnpj": "Filtrar por CNPJ"
+        },
+        "columns": {
+            "name": "Nome",
+            "cnpj": "CNPJ",
+            "address": "Endereço",
+            "city": "Cidade",
+            "state": "Estado",
+            "actions": "Ações"
+        }
+    },
+    "buttons": {
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "processing": "Processando..."
+    },
+    "messages": {
+        "success": {
+            "create": "Loja cadastrada com sucesso!",
+            "update": "Loja atualizada com sucesso!",
+            "delete": "Loja excluída com sucesso!"
+        },
+        "error": {
+            "create": "Erro ao cadastrar loja",
+            "update": "Erro ao atualizar loja",
+            "delete": "Erro ao excluir loja",
+            "load": "Erro ao carregar lojas",
+            "duplicate_cnpj": "Já existe uma loja cadastrada com este CNPJ"
+        }
+    }
+}

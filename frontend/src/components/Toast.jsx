@@ -1,5 +1,7 @@
 import PropTypes from "prop-types";
 import "../styles/toast.css";
+import { message } from "antd";
+import { useTranslation } from "react-i18next";
 
 const ToastComponent = ({ message, type = "success", onClose }) => {
     return (
@@ -20,41 +22,52 @@ ToastComponent.propTypes = {
     onClose: PropTypes.func.isRequired,
 };
 
-class Toast {
-    static removeToast(toast) {
-        toast.classList.add("fade-out");
-        setTimeout(() => {
-            if (document.body.contains(toast)) {
-                document.body.removeChild(toast);
-            }
-        }, 300); // Tempo da animação de fade-out
-    }
+const defaultDuration = 3; // segundos
 
-    static showToast(message, type = "success") {
-        const toast = document.createElement("div");
-        toast.className = `toast ${type}`;
-        toast.innerHTML = `
-            <div class="toast-content">
-                <span>${message}</span>
-                <button class="toast-close">✖</button>
-            </div>
-        `;
-        document.body.appendChild(toast);
-
-        // Adiciona evento de clique no botão de fechar
-        const closeButton = toast.querySelector(".toast-close");
-        closeButton.addEventListener("click", () => {
-            Toast.removeToast(toast);
+export const Toast = {
+    success: (content) => {
+        message.success({
+            content,
+            duration: defaultDuration,
         });
+    },
+    error: (content) => {
+        message.error({
+            content,
+            duration: defaultDuration,
+        });
+    },
+    warning: (content) => {
+        message.warning({
+            content,
+            duration: defaultDuration,
+        });
+    },
+    info: (content) => {
+        message.info({
+            content,
+            duration: defaultDuration,
+        });
+    },
+    loading: (content) => {
+        return message.loading({
+            content,
+            duration: 0,
+        });
+    },
+};
 
-        // Remove o toast automaticamente após 3 segundos
-        setTimeout(() => {
-            if (document.body.contains(toast)) {
-                Toast.removeToast(toast);
-            }
-        }, 3000);
-    }
-}
+// Hook para usar o Toast com traduções
+export const useToast = () => {
+    const { t } = useTranslation(["common", "errors"]);
 
-export { Toast };
+    return {
+        success: (key, options = {}) => Toast.success(t(key, options)),
+        error: (key, options = {}) => Toast.error(t(key, options)),
+        warning: (key, options = {}) => Toast.warning(t(key, options)),
+        info: (key, options = {}) => Toast.info(t(key, options)),
+        loading: (key, options = {}) => Toast.loading(t(key, options)),
+    };
+};
+
 export default ToastComponent;

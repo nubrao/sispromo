@@ -1,0 +1,38 @@
+{
+    "title": "Dashboard",
+    "stats": {
+        "visits": "Total de Visitas",
+        "promoters": "Total de Promotores",
+        "stores": "Total de Lojas",
+        "brands": "Total de Marcas"
+    },
+    "recentVisits": "Visitas Recentes",
+    "table": {
+        "columns": {
+            "promoter": "Promotor",
+            "store": "Loja",
+            "brand": "Marca",
+            "date": "Data"
+        }
+    },
+    "filters": {
+        "brand": {
+            "label": "Filtrar por Marca",
+            "placeholder": "Selecione uma marca"
+        },
+        "store": {
+            "label": "Filtrar por Loja",
+            "placeholder": "Selecione uma loja"
+        }
+    },
+    "viewMode": {
+        "detailed": "Visualização Detalhada",
+        "simplified": "Visualização Simplificada"
+    },
+    "messages": {
+        "error": {
+            "load": "Erro ao carregar dados do dashboard"
+        },
+        "empty": "Nenhum dado disponível"
+    }
+}
