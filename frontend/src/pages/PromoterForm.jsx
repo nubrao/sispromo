@@ -150,11 +150,7 @@ const PromoterForm = () => {
     return (
         <>
             <Card
-                title={
-                    id
-                        ? t("promoters:form.title.edit")
-                        : t("promoters:form.title.create")
-                }
+                title={t("promoters:form.title.create")}
                 className="form-title"
             >
                 <Form
@@ -165,12 +161,12 @@ const PromoterForm = () => {
                 >
                     <Form.Item
                         name="first_name"
-                        label={t("promoters:form.fields.name.label")}
+                        label={t("promoters:form.fields.first_name.label")}
                         rules={[
                             {
                                 required: true,
                                 message: t(
-                                    "promoters:form.fields.name.required"
+                                    "promoters:form.fields.first_name.required"
                                 ),
                             },
                         ]}
@@ -178,7 +174,7 @@ const PromoterForm = () => {
                     >
                         <Input
                             placeholder={t(
-                                "promoters:form.fields.name.placeholder"
+                                "promoters:form.fields.first_name.placeholder"
                             )}
                         />
                     </Form.Item>
@@ -198,7 +194,7 @@ const PromoterForm = () => {
                     >
                         <Input
                             placeholder={t(
-                                "promoters:form.fields.name.placeholder"
+                                "promoters:form.fields.last_name.placeholder"
                             )}
                         />
                     </Form.Item>
@@ -343,6 +339,7 @@ const PromoterForm = () => {
                         type="primary"
                         icon={<CopyOutlined />}
                         onClick={handleCopyPassword}
+                        className="form-button"
                     >
                         {t("promoters:modal.password.copy")}
                     </Button>,
@@ -350,8 +347,9 @@ const PromoterForm = () => {
                         key="ok"
                         type="primary"
                         onClick={handleClosePasswordModal}
+                        className="form-button"
                     >
-                        {t("common:buttons.ok")}
+                        {t("promoters:modal.password.ok")}
                     </Button>,
                 ]}
             >

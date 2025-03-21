@@ -1,11 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
-from core.infrastructure.models import (
-    BrandModel,
-    StoreModel,
-    VisitModel
-)
+from core.infrastructure.models.store_model import StoreModel
+from core.infrastructure.models.brand_model import BrandModel
+from core.infrastructure.models.visit_model import VisitModel
+from core.infrastructure.models.promoter_brand_model import PromoterBrand
 
 User = get_user_model()
 
@@ -25,7 +24,8 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('first_name', 'last_name', 'email', 'cpf', 'phone')
         }),
         ('Permissões', {
-            'fields': ('is_active', 'is_staff', 'is_superuser', 'role', 'status')
+            'fields': ('is_active', 'is_staff',
+                       'is_superuser', 'role', 'status')
         }),
         ('Datas Importantes', {
             'fields': ('last_login',)
@@ -49,24 +49,31 @@ class CustomUserAdmin(UserAdmin):
 
 
 @admin.register(BrandModel)
-class BrandAdmin(admin.ModelAdmin):
+class BrandModelAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
 
 
 @admin.register(StoreModel)
-class StoreAdmin(admin.ModelAdmin):
+class StoreModelAdmin(admin.ModelAdmin):
     list_display = ('name', 'number', 'city', 'state')
-    search_fields = ('name', 'number', 'city')
+    search_fields = ('name', 'number', 'city', 'state')
     list_filter = ('state',)
 
 
 @admin.register(VisitModel)
 class VisitAdmin(admin.ModelAdmin):
-    list_display = ('promoter', 'store', 'visit_date', 'status')
+    list_display = ('promoter', 'brand', 'visit_date', 'status')
+    search_fields = ('promoter__first_name', 'brand__name')
+    list_filter = ('visit_date', 'brand', 'status')
+
+
+@admin.register(PromoterBrand)
+class PromoterBrandAdmin(admin.ModelAdmin):
+    list_display = ('promoter', 'brand', 'created_at', 'updated_at')
     search_fields = ('promoter__first_name',
-                     'promoter__last_name', 'store__name')
-    list_filter = ('status', 'visit_date')
+                     'promoter__last_name', 'brand__name')
+    list_filter = ('brand', 'created_at')
 
 
 # Registra o modelo User com o CustomUserAdmin

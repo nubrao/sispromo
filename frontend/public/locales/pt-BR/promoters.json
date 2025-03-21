@@ -54,7 +54,10 @@
         "title": "Lista de Promotores"
     },
     "search": {
-        "placeholder": "Buscar por nome, CPF ou e-mail"
+        "placeholder": "Buscar por nome, CPF ou e-mail",
+        "name": "Buscar por nome",
+        "cpf": "Buscar por CPF",
+        "phone": "Buscar por telefone"
     },
     "buttons": {
         "new": "Novo Promotor",
@@ -74,7 +77,8 @@
         "success": {
             "create": "Promotor criado com sucesso!",
             "update": "Promotor atualizado com sucesso!",
-            "delete": "Promotor excluído com sucesso!"
+            "delete": "Promotor excluído com sucesso!",
+            "password_copied": "Senha do promotor copiada para a área de transferência"
         },
         "error": {
             "load": "Erro ao carregar promotores",
@@ -83,7 +87,8 @@
             "delete": "Erro ao excluir promotor",
             "duplicate_cpf": "Já existe um promotor com este CPF",
             "duplicate_email": "Já existe um promotor com este e-mail",
-            "load_brands": "Erro ao carregar marcas"
+            "load_brands": "Erro ao carregar marcas",
+            "password_copy_failed": "Erro ao copiar senha do promotor"
         },
         "confirm": {
             "delete": "Tem certeza que deseja excluir este promotor?"
@@ -100,5 +105,13 @@
         "name": "Filtrar por nome",
         "cpf": "Filtrar por CPF",
         "phone": "Filtrar por telefone"
+    },
+    "modal": {
+        "password": {
+            "title": "Senha do Promotor",
+            "description": "A senha do promotor é:",
+            "copy": "Copiar senha",
+            "ok": "OK"
+        }
     }
 }

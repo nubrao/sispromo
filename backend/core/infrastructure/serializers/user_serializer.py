@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 
 User = get_user_model()
 
@@ -23,10 +25,12 @@ class BaseUserSerializer(serializers.ModelSerializer):
             'status_display', 'full_name', 'created_at', 'updated_at'
         ]
 
-    def get_role_display(self, obj):
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_role_display(self, obj) -> str:
         return dict(User.ROLE_CHOICES).get(obj.role, '')
 
-    def get_status_display(self, obj):
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_status_display(self, obj) -> str:
         return dict(User.STATUS_CHOICES).get(obj.status, '')
 
     def to_representation(self, instance):

@@ -16,6 +16,14 @@ const router = createBrowserRouter([
         element: <Root />,
         children: [
             {
+                path: "/login",
+                element: <LoginForm />,
+            },
+            {
+                path: "/reset-password",
+                element: <ResetPassword />,
+            },
+            {
                 path: "/",
                 element: <App />,
                 children: [
@@ -50,14 +58,6 @@ const router = createBrowserRouter([
                 ],
             },
         ],
-    },
-    {
-        path: "/login",
-        element: <LoginForm />,
-    },
-    {
-        path: "/reset-password",
-        element: <ResetPassword />,
     },
 ]);
 

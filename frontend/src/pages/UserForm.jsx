@@ -72,16 +72,16 @@ const UserForm = () => {
             >
                 <Form.Item
                     name="name"
-                    label={t("users:form.fields.name.label")}
+                    label={t("users:form.fields.first_name.label")}
                     rules={[
                         {
                             required: true,
-                            message: t("users:form.fields.name.required"),
+                            message: t("users:form.fields.first_name.required"),
                         },
                     ]}
                 >
                     <Input
-                        placeholder={t("users:form.fields.name.placeholder")}
+                        placeholder={t("users:form.fields.first_name.placeholder")}
                     />
                 </Form.Item>
 

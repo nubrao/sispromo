@@ -26,6 +26,21 @@
     color: var(--text-dark);
 }
 
+.form-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    width: 70%;
+}
+
+.search-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    width: 20%;
+}
+
 .form-input-break {
     display: flex;
     flex-direction: row;
@@ -93,6 +108,13 @@
     height: 100% !important;
 }
 
+.ant-modal-footer {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
 /* Estilos específicos para o Select no tema escuro */
 @media (prefers-color-scheme: dark) {
     .ant-select-selector {
@@ -144,6 +166,39 @@
     .ant-select-selection-item-remove {
         color: var(--text-dark) !important;
     }
+
+    .brand-tag {
+        background-color: #111d2c;
+        border-color: #177ddc;
+        color: #177ddc;
+    }
+
+    .ant-table {
+        background-color: var(--modal-bg-dark);
+    }
+
+    .ant-table-thead > tr > th {
+        background-color: var(--button-bg-dark) !important;
+        color: var(--text-dark) !important;
+    }
+
+    .ant-table-tbody > tr > td {
+        background-color: var(--modal-bg-dark);
+        color: var(--text-dark);
+        border-color: var(--input-border-dark);
+    }
+
+    .ant-table-tbody > tr:hover > td {
+        background-color: var(--background-dark) !important;
+    }
+
+    .ant-table-cell-row-hover {
+        background-color: var(--background-dark) !important;
+    }
+
+    .ant-table-row-selected > td {
+        background-color: var(--button-bg-dark) !important;
+    }
 }
 
 .ant-btn-cancel {
@@ -178,6 +233,21 @@
 
 .clear-button:hover {
     background-color: #ff4747;
+}
+
+.delete-button {
+    background: #f44336 !important;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.delete-button:hover {
+    background-color: #ffebee !important;
+    color: #177ddc !important;
 }
 
 .ant-btn {
@@ -318,47 +388,27 @@
 
 .brand-tag {
     display: inline-block;
-    background: #e6f4ff;
-    border: 1px solid #91caff;
+    padding: 4px 8px;
+    background-color: #e6f7ff;
+    border: 1px solid #91d5ff;
     border-radius: 4px;
-    padding: 2px 8px;
+    color: #1890ff;
     font-size: 12px;
     margin: 2px;
-    color: #0958d9;
+    white-space: nowrap;
 }
 
 [data-theme="dark"] .brand-tag {
-    background: #111b26;
-    border-color: #1668dc;
-    color: #1668dc;
+    background-color: #111d2c;
+    border-color: #177ddc;
+    color: #177ddc;
 }
 
 @media (prefers-color-scheme: dark) {
-    .ant-table {
-        background-color: var(--modal-bg-dark);
-    }
-
-    .ant-table-thead > tr > th {
-        background-color: var(--button-bg-dark) !important;
-        color: var(--text-dark) !important;
-    }
-
-    .ant-table-tbody > tr > td {
-        background-color: var(--modal-bg-dark);
-        color: var(--text-dark);
-        border-color: var(--input-border-dark);
-    }
-
-    .ant-table-tbody > tr:hover > td {
-        background-color: var(--background-dark) !important;
-    }
-
-    .ant-table-cell-row-hover {
-        background-color: var(--background-dark) !important;
-    }
-
-    .ant-table-row-selected > td {
-        background-color: var(--button-bg-dark) !important;
+    .brand-tag {
+        background-color: #111d2c;
+        border-color: #177ddc;
+        color: #177ddc;
     }
 }
 
@@ -500,4 +550,137 @@
 [data-theme="dark"] .temp-password {
     background-color: #1f1f1f;
     color: white;
+}
+
+.promoter-form {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.promoter-form .ant-form-item {
+    margin-bottom: 16px;
+}
+
+.promoter-form .ant-card {
+    margin-bottom: 24px;
+}
+
+.promoter-form .ant-card-head {
+    background-color: #f5f5f5;
+}
+
+.promoter-form .ant-form-item-label {
+    font-weight: 500;
+}
+
+.promoter-form .ant-btn {
+    margin-right: 8px;
+}
+
+.promoter-form .ant-input[disabled] {
+    color: rgba(0, 0, 0, 0.65);
+    background-color: #f5f5f5;
+}
+
+.promoter-form .ant-form-item-explain {
+    font-size: 12px;
+}
+
+.promoter-list {
+    padding: 24px;
+}
+
+.promoter-list .search-form {
+    margin-bottom: 24px;
+}
+
+.promoter-list .ant-form-item {
+    margin-bottom: 16px;
+}
+
+.promoter-list .search-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+}
+
+.add-button {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.promoter-list .editable-row td {
+    padding: 12px 8px !important;
+}
+
+.promoter-list .ant-table-cell .ant-form-item {
+    margin: 0;
+}
+
+.promoter-list .ant-tag {
+    margin: 2px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.promoter-list .ant-select-multiple .ant-select-selection-item {
+    background-color: #1890ff;
+    color: white;
+    border: none;
+}
+
+.promoter-list .ant-select-multiple .ant-select-selection-item-remove {
+    color: white;
+}
+
+.promoter-list .ant-select-multiple .ant-select-selection-item-remove:hover {
+    color: #ffd591;
+}
+
+.promoter-list .ant-table-row-editing .ant-form-item {
+    margin: -6px 0;
+}
+
+.promoter-list .ant-table-cell .ant-space {
+    gap: 8px;
+}
+
+.promoter-list .ant-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.promoter-list .ant-table-thead > tr > th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+}
+
+.promoter-list .ant-table-tbody > tr:hover > td {
+    background-color: #f0f7ff;
+}
+
+.transparent-select-dropdown .ant-select-item {
+    background-color: transparent !important;
+}
+
+.transparent-select-dropdown .ant-select-item-option-selected {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.transparent-select-dropdown .ant-select-item-option-active {
+    background-color: rgba(24, 144, 255, 0.1) !important;
+}
+
+/* Tema escuro */
+@media (prefers-color-scheme: dark) {
+    .transparent-select-dropdown .ant-select-item-option-active {
+        background-color: rgba(24, 144, 255, 0.15) !important;
+    }
 }

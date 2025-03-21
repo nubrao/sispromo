@@ -1,25 +1,15 @@
-import axios from 'axios';
+import api from '../services/api';
 import { Toast } from '../components/Toast';
-
-const API_URL = import.meta.env.VITE_API_URL;
 
 class UserRepository {
     constructor() {
-        this.baseURL = `${API_URL}/api/users/`;
-    }
-
-    // Configura o header de autorização
-    getHeaders() {
-        const token = localStorage.getItem('token');
-        return {
-            headers: { Authorization: `Bearer ${token}` }
-        };
+        this.baseURL = '/api/users/';
     }
 
     // Busca todos os usuários
     async getAllUsers() {
         try {
-            const response = await axios.get(this.baseURL, this.getHeaders());
+            const response = await api.get(this.baseURL);
             return response.data;
         } catch (error) {
             console.error("Erro ao buscar usuários:", error);
@@ -31,7 +21,7 @@ class UserRepository {
     // Busca um usuário específico
     async getUserById(id) {
         try {
-            const response = await axios.get(`${this.baseURL}${id}/`, this.getHeaders());
+            const response = await api.get(`${this.baseURL}${id}/`);
             return response.data;
         } catch (error) {
             console.error(`Erro ao buscar usuário ${id}:`, error);
@@ -43,10 +33,7 @@ class UserRepository {
     // Busca o usuário atual
     async getCurrentUser() {
         try {
-            const response = await axios.get(
-                `${this.baseURL}me/`,
-                this.getHeaders()
-            );
+            const response = await api.get(`${this.baseURL}me/`);
             return response.data;
         } catch (error) {
             console.error('Erro ao obter usuário atual:', error);
@@ -64,7 +51,7 @@ class UserRepository {
                 status: 1
             };
 
-            const response = await axios.post(
+            const response = await api.post(
                 `${this.baseURL}register/`,
                 dataToSend
             );
@@ -83,7 +70,7 @@ class UserRepository {
     // Atualiza um usuário existente
     async updateUser(id, userData) {
         try {
-            const response = await axios.patch(`${this.baseURL}${id}/`, userData, this.getHeaders());
+            const response = await api.patch(`${this.baseURL}${id}/`, userData);
             Toast.showToast("Usuário atualizado com sucesso!", "success");
             return response.data;
         } catch (error) {
@@ -96,7 +83,7 @@ class UserRepository {
     // Remove um usuário
     async deleteUser(id) {
         try {
-            await axios.delete(`${this.baseURL}${id}/`, this.getHeaders());
+            await api.delete(`${this.baseURL}${id}/`);
             Toast.showToast("Usuário excluído com sucesso!", "success");
         } catch (error) {
             console.error(`Erro ao excluir usuário ${id}:`, error);
@@ -108,10 +95,9 @@ class UserRepository {
     // Atualiza o papel do usuário
     async updateUserRole(userId, role) {
         try {
-            const response = await axios.patch(
+            const response = await api.patch(
                 `${this.baseURL}${userId}/update_role/`,
-                { role },
-                this.getHeaders()
+                { role }
             );
             Toast.showToast('Papel do usuário atualizado com sucesso!', 'success');
             return response.data;
@@ -125,10 +111,9 @@ class UserRepository {
     // Atualiza o status do usuário
     async updateUserStatus(userId, status) {
         try {
-            const response = await axios.patch(
+            const response = await api.patch(
                 `${this.baseURL}${userId}/update_status/`,
-                { status },
-                this.getHeaders()
+                { status }
             );
             Toast.showToast('Status do usuário atualizado com sucesso!', 'success');
             return response.data;
@@ -142,10 +127,7 @@ class UserRepository {
     // Lista todos os usuários
     async listUsers() {
         try {
-            const response = await axios.get(
-                this.baseURL,
-                this.getHeaders()
-            );
+            const response = await api.get(this.baseURL);
             return response.data;
         } catch (error) {
             console.error('Erro ao listar usuários:', error);
@@ -157,8 +139,8 @@ class UserRepository {
     // Reseta a senha do usuário
     async resetPassword(resetData) {
         try {
-            const response = await axios.post(
-                `${API_URL}/api/auth/reset-password/`,
+            const response = await api.post(
+                `/api/auth/reset-password/`,
                 resetData
             );
             Toast.showToast('Senha resetada com sucesso!', 'success');

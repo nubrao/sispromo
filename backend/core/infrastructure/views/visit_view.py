@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from core.infrastructure.serializers.visit_serializer import VisitSerializer
 from core.infrastructure.repositories.visit_repository import DjangoVisitRepository  # noqa: E501
 from core.infrastructure.domain.entities.visit import Visit
+from core.infrastructure.models.visit_model import VisitModel
 from reportlab.pdfgen import canvas
 from io import BytesIO
 from rest_framework.decorators import action
@@ -15,9 +16,11 @@ from core.infrastructure.models.user_model import User
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
-    OpenApiParameter
+    OpenApiParameter,
+    OpenApiTypes
 )
 from typing import List, Optional
+from django.urls import path
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +33,25 @@ logger = logging.getLogger(__name__)
         responses={
             200: VisitSerializer(many=True),
             500: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}}
+            }
+        }
+    ),
+    retrieve=extend_schema(
+        description="Busca uma visita específica pelo ID",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.PATH,
+                description="ID da visita",
+                required=True
+            )
+        ],
+        responses={
+            200: VisitSerializer,
+            404: {
                 "type": "object",
                 "properties": {"error": {"type": "string"}}
             }
@@ -71,6 +93,15 @@ logger = logging.getLogger(__name__)
         description="""Atualiza uma visita existente.
         - Promotores (role=1) só podem atualizar suas próprias visitas
         - Analistas (role=2) e Gestores (role=3) podem atualizar qualquer visita""",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.PATH,
+                description="ID da visita",
+                required=True
+            )
+        ],
         request=VisitSerializer,
         responses={
             200: VisitSerializer,
@@ -93,6 +124,15 @@ logger = logging.getLogger(__name__)
         description="""Deleta uma visita.
         - Promotores (role=1) só podem deletar suas próprias visitas
         - Analistas (role=2) e Gestores (role=3) podem deletar qualquer visita""",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.PATH,
+                description="ID da visita",
+                required=True
+            )
+        ],
         responses={
             204: None,
             500: {
@@ -107,9 +147,24 @@ class VisitViewSet(viewsets.ModelViewSet):
 
     serializer_class = VisitSerializer
     visit_repository = DjangoVisitRepository()
+    queryset = VisitModel.objects.all()
+    lookup_field = 'pk'
+    lookup_url_kwarg = 'id'
 
     def get_permissions(self):
         return [IsAuthenticated()]
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<int:id>/',
+                self.as_view(
+                    {'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}),
+                name=f'{self.basename}-detail'
+            ),
+        ]
+        return custom_urls + urls
 
     def get_queryset(self):
         """

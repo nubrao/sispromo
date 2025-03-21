@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Toast } from '../components/Toast';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -13,7 +14,7 @@ const api = axios.create({
 // Interceptor para adicionar o token em todas as requisições
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('@SisPromo:token');
+        const token = localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -24,44 +25,35 @@ api.interceptors.request.use(
     }
 );
 
-// Interceptor para tratamento de erros
+// Interceptor para tratar erros de token expirado
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        // Se o erro for 401 (Unauthorized) e não for uma tentativa de refresh
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Se o erro for de token inválido/expirado e ainda não tentamos renovar
+        if (error.response?.data?.code === 'token_not_valid' && !originalRequest._retry) {
             originalRequest._retry = true;
 
             try {
-                const refreshToken = localStorage.getItem('@SisPromo:refresh');
-                if (!refreshToken) {
-                    throw new Error('No refresh token available');
-                }
-
-                // Tenta renovar o token
-                const response = await api.post('/api/auth/refresh/', {
-                    refresh: refreshToken,
+                // Tenta renovar o token usando o refresh token
+                const refreshToken = localStorage.getItem('refreshToken');
+                const response = await axios.post(`${API_URL}/api/token/refresh/`, {
+                    refresh: refreshToken
                 });
 
-                const { access: newToken } = response.data;
-
-                // Atualiza o token no localStorage
-                localStorage.setItem('@SisPromo:token', newToken);
-
-                // Atualiza o token no header da requisição original
-                originalRequest.headers.Authorization = `Bearer ${newToken}`;
-
-                // Refaz a requisição original com o novo token
-                return api(originalRequest);
+                // Se conseguiu renovar, atualiza o token e refaz a requisição original
+                if (response.data.access) {
+                    localStorage.setItem('token', response.data.access);
+                    api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+                    return api(originalRequest);
+                }
             } catch (refreshError) {
-                // Se não conseguir renovar o token, limpa o storage e redireciona para login
-                localStorage.removeItem('@SisPromo:user');
-                localStorage.removeItem('@SisPromo:token');
-                localStorage.removeItem('@SisPromo:refresh');
+                // Se não conseguiu renovar, limpa os tokens e redireciona para login
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
                 window.location.href = '/login';
-                return Promise.reject(refreshError);
+                Toast.showToast('Sua sessão expirou. Por favor, faça login novamente.', 'warning');
             }
         }
 

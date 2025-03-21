@@ -158,10 +158,39 @@ REST_FRAMEWORK = {
 
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "SisPromo API",
-    "DESCRIPTION": "Documentação da API do SisPromo",
-    "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": True,
+    'TITLE': 'SisPromo API',
+    'DESCRIPTION': 'API para gerenciamento de promotores e visitas',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '/api',
+    'COMPONENT_SPLIT_REQUEST': True,
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    'ENUM_NAME_OVERRIDES': {
+        'UserStatusEnum': 'core.models.User.STATUS_CHOICES',
+        'UserRoleEnum': 'core.models.User.ROLE_CHOICES',
+        'VisitStatusEnum': 'core.infrastructure.models.visit_model.VisitModel.STATUS_CHOICES'
+    },
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'filter': True
+    },
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
+    'SERVE_AUTHENTICATION': None,
+    'SERVE_PUBLIC': True,
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'CAMELIZE_NAMES': True,
+    'COMPONENT_SPLIT_PATCH': True,
+    'COMPONENT_SPLIT_RESPONSE': True,
+    'SORT_OPERATIONS': True,
+    'EXAMPLES_PATTERN': None,
+    'ENUM_ADD_EXPLICIT_BLANK_NULL_CHOICE': False,
+    'DISABLE_ERRORS_AND_WARNINGS': True,
+    'POSTPROCESSING_HOOKS': [],
+    'PREPROCESSING_HOOKS': []
 }
 
 SIMPLE_JWT = {

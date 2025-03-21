@@ -9,7 +9,10 @@ i18n
     .use(initReactI18next)
     .init({
         fallbackLng: "pt-BR",
-        debug: process.env.NODE_ENV === "development",
+        lng: "pt-BR",
+        supportedLngs: ["pt-BR"],
+        load: "currentOnly",
+        debug: false,
         ns: [
             "common",
             "auth",
@@ -28,7 +31,20 @@ i18n
         },
         backend: {
             loadPath: "/locales/{{lng}}/{{ns}}.json"
-        }
+        },
+        react: {
+            useSuspense: false
+        },
+        detection: {
+            order: ["querystring", "localStorage"],
+            lookupQuerystring: "lng",
+            caches: ["localStorage"],
+            checkWhitelist: true
+        },
+        whitelist: ["pt-BR"]
     });
+
+// Força o idioma para pt-BR
+i18n.changeLanguage("pt-BR");
 
 export default i18n; 

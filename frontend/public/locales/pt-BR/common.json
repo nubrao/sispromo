@@ -21,7 +21,8 @@
         "clear": "Limpar",
         "add": "Adicionar",
         "remove": "Remover",
-        "processing": "Processando..."
+        "processing": "Processando...",
+        "clear_filters": "Limpar Filtros"
     },
     "validation": {
         "required": "Este campo é obrigatório",
@@ -111,7 +112,7 @@
             "message": "A senha temporária para o promotor {{name}} é: {{password}}",
             "copy": "Copiar senha",
             "close": "Fechar",
-            "ok": "OK",
+            "ok": "OK"
         }
     }
 }

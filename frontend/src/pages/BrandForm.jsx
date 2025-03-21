@@ -90,16 +90,16 @@ const BrandForm = () => {
             >
                 <Form.Item
                     name="name"
-                    label={t("brands:form.fields.name.label")}
+                    label={t("brands:form.fields.first_name.label")}
                     rules={[
                         {
                             required: true,
-                            message: t("brands:form.fields.name.required"),
+                            message: t("brands:form.fields.first_name.required"),
                         },
                     ]}
                 >
                     <Input
-                        placeholder={t("brands:form.fields.name.placeholder")}
+                        placeholder={t("brands:form.fields.first_name.placeholder")}
                     />
                 </Form.Item>
 

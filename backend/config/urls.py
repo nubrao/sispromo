@@ -18,14 +18,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from core.infrastructure.views.store_view import StoreViewSet
 from core.infrastructure.views.visit_view import VisitViewSet
 from core.infrastructure.views.auth_view import LogoutView
 from core.infrastructure.views.state_view import StateListView
 from core.infrastructure.views.brand_view import BrandViewSet
 from core.infrastructure.views.user_view import UserViewSet
+from core.infrastructure.views.promoter_brand_view import PromoterBrandViewSet
+from core.infrastructure.views.visit_price_view import VisitPriceViewSet
+from core.infrastructure.views.dashboard_view import DashboardView
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -33,14 +35,25 @@ from drf_spectacular.views import (
 )
 
 router = DefaultRouter()
-router.register(r"stores", StoreViewSet)
+router.register(r"stores", StoreViewSet, basename="store")
 router.register(r"visits", VisitViewSet, basename="visit")
-router.register(r'brands', BrandViewSet)
+router.register(r"brands", BrandViewSet, basename="brand")
 router.register(r"users", UserViewSet, basename="user")
+router.register(
+    r"promoter-brands",
+    PromoterBrandViewSet,
+    basename="promoter-brand"
+)
+router.register(
+    r"visit-prices",
+    VisitPriceViewSet,
+    basename="visit-price"
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include(router.urls)),
+    path("api/dashboard/", DashboardView.as_view(), name="dashboard"),
     path(
         "api/token/",
         TokenObtainPairView.as_view(),
@@ -53,13 +66,29 @@ urlpatterns = [
     ),
     path("api/logout/", LogoutView.as_view(), name="logout"),
     path("api/states/", StateListView.as_view(), name="state-list"),
-
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("swagger/", SpectacularSwaggerView.as_view(url_name="schema"),
-         name="swagger-ui"),
+    path(
+        "api/schema/",
+        SpectacularAPIView.as_view(
+            serve_public=True,
+            authentication_classes=[],
+            permission_classes=[]
+        ),
+        name="schema"
+    ),
+    path(
+        "swagger/",
+        SpectacularSwaggerView.as_view(
+            url_name="schema",
+            permission_classes=[]
+        ),
+        name="swagger-ui"
+    ),
     path(
         "redoc/",
-        SpectacularRedocView.as_view(url_name="schema"),
+        SpectacularRedocView.as_view(
+            url_name="schema",
+            permission_classes=[]
+        ),
         name="redoc-ui"
     ),
 ]

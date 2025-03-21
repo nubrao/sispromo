@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import extend_schema, extend_schema_view
 import logging
 from django.contrib.auth import get_user_model
 from ..serializers.user_serializer import UserSerializer, UserCreateSerializer, UserUpdateSerializer
@@ -76,51 +76,16 @@ User = get_user_model()
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciar Usuários"""
 
-    http_method_names = ['get', 'post', 'patch', 'delete']
-
-    def get_serializer_class(self):
-        if self.action == 'create' or self.action == 'register':
-            return UserCreateSerializer
-        elif self.action in ['update', 'partial_update']:
-            return UserUpdateSerializer
-        return UserSerializer
-
-    def get_queryset(self):
-        """Retorna o queryset de usuários"""
-        return User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.all()
 
     def get_permissions(self):
-        if self.action == 'register' or self.action == 'me':
+        if self.action == 'create':
             return [AllowAny()]
+        if self.action in ['list', 'destroy']:
+            return [IsManagerOrAnalyst()]
         return [IsAuthenticated()]
-
-    @extend_schema(
-        summary="Lista todos os usuários",
-        description="Retorna a lista de todos os usuários. Requer papel de Gestor (role=3).",
-        responses={
-            200: UserSerializer(many=True),
-            403: {"description": "Sem permissão para listar usuários"}
-        }
-    )
-    def list(self, request):
-        """Lista todos os usuários"""
-        try:
-            # Verifica se o usuário é um gestor
-            if request.user.role != 3:  # 3 = Gestor
-                return Response(
-                    {"error": "Apenas gestores podem listar usuários."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-
-            users = self.get_queryset()
-            serializer = self.get_serializer(users, many=True)
-            return Response(serializer.data)
-        except Exception as e:
-            logger.error(f"Erro ao listar usuários: {str(e)}")
-            return Response(
-                {"error": "Erro ao listar usuários"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
 
     @extend_schema(
         summary="Cria um novo usuário",
@@ -140,27 +105,14 @@ class UserViewSet(viewsets.ModelViewSet):
         responses={
             201: UserSerializer,
             400: {
-                "description": "Erro de validação",
-                "examples": [
-                    OpenApiExample(
-                        "CPF Inválido",
-                        value={
-                            "cpf": ["CPF inválido."]
-                        }
-                    ),
-                    OpenApiExample(
-                        "CPF Duplicado",
-                        value={
-                            "cpf": ["Já existe um usuário cadastrado com este CPF"]
-                        }
-                    ),
-                    OpenApiExample(
-                        "CPF Formato Incorreto",
-                        value={
-                            "cpf": ["CPF deve ter 11 dígitos."]
-                        }
-                    )
-                ]
+                "type": "object",
+                "properties": {
+                    "cpf": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Lista de erros relacionados ao CPF"
+                    }
+                }
             }
         }
     )
@@ -183,21 +135,14 @@ class UserViewSet(viewsets.ModelViewSet):
         responses={
             200: UserSerializer,
             400: {
-                "description": "Erro de validação",
-                "examples": [
-                    OpenApiExample(
-                        "CPF Inválido",
-                        value={
-                            "cpf": ["CPF inválido."]
-                        }
-                    ),
-                    OpenApiExample(
-                        "CPF Duplicado",
-                        value={
-                            "cpf": ["Já existe um usuário cadastrado com este CPF"]
-                        }
-                    )
-                ]
+                "type": "object",
+                "properties": {
+                    "cpf": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Lista de erros relacionados ao CPF"
+                    }
+                }
             },
             404: {"description": "Usuário não encontrado"}
         }
