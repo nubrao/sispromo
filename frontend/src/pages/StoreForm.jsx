@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Form, Input, Button, Card, Space, Table } from "antd";
+import { Form, Input, Button, Card, Space } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { formatCNPJ } from "../utils/formatters";
-import storeRepository from "../repositories/storeRepository";
+import api from "../services/api";
+import "../styles/storeForm.css";
 
 const StoreForm = () => {
     const { t } = useTranslation(["stores", "common"]);
@@ -12,9 +13,6 @@ const StoreForm = () => {
     const { id } = useParams();
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
-    const [stores, setStores] = useState([]);
-    const [filterName, setFilterName] = useState("");
-    const [filterCNPJ, setFilterCNPJ] = useState("");
 
     useEffect(() => {
         if (id) {
@@ -25,12 +23,13 @@ const StoreForm = () => {
     const loadStore = async () => {
         try {
             setLoading(true);
-            const response = await storeRepository.getStore(id);
+            const response = await api.get(`/api/stores/${id}/`);
             form.setFieldsValue({
-                ...response,
-                cnpj: formatCNPJ(response.cnpj),
+                ...response.data,
+                cnpj: formatCNPJ(response.data.cnpj),
             });
         } catch (error) {
+            console.error("Erro ao carregar loja:", error);
             toast.error(t("stores:messages.error.load"));
         } finally {
             setLoading(false);
@@ -40,240 +39,194 @@ const StoreForm = () => {
     const handleSubmit = async (values) => {
         try {
             setLoading(true);
-            const data = {
+            const storeData = {
                 ...values,
                 cnpj: values.cnpj.replace(/\D/g, ""),
+                name: String(values.name || "").toUpperCase(),
+                number: String(values.number || "").toUpperCase(),
+                city: String(values.city || "").toUpperCase(),
+                state: String(values.state || "").toUpperCase(),
             };
 
             if (id) {
-                await storeRepository.updateStore(id, data);
+                await api.patch(`/api/stores/${id}/`, storeData);
                 toast.success(t("stores:messages.success.update"));
             } else {
-                await storeRepository.createStore(data);
+                await api.post("/api/stores/", storeData);
                 toast.success(t("stores:messages.success.create"));
             }
+
             navigate("/stores");
         } catch (error) {
-            const message =
-                error.response?.data?.detail ||
-                (id
-                    ? t("stores:messages.error.update")
-                    : t("stores:messages.error.create"));
-            toast.error(message);
+            console.error("Erro ao salvar:", error);
+
+            if (error.response?.data) {
+                // Se o erro vier do backend com detalhes
+                const errorData = error.response.data;
+                if (typeof errorData === "object") {
+                    // Se for um objeto com campos específicos
+                    Object.keys(errorData).forEach((key) => {
+                        const errorMessage = Array.isArray(errorData[key])
+                            ? errorData[key].join(", ")
+                            : errorData[key];
+                        toast.error(`${key}: ${errorMessage}`);
+                    });
+                } else {
+                    // Se for uma mensagem simples
+                    toast.error(errorData);
+                }
+            } else {
+                // Se for um erro genérico
+                toast.error(t("stores:messages.error.save"));
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDelete = async (storeId) => {
-        try {
-            await storeRepository.deleteStore(storeId);
-            toast.success(t("stores:messages.success.delete"));
-            loadStores();
-        } catch (error) {
-            toast.error(t("stores:messages.error.delete"));
-        }
-    };
-
     const handleCNPJChange = (e) => {
-        const value = e.target.value.replace(/\D/g, "");
-        if (value.length <= 14) {
-            form.setFieldsValue({
-                cnpj: formatCNPJ(value),
-            });
-        }
+        const { value } = e.target;
+        form.setFieldsValue({
+            cnpj: formatCNPJ(value),
+        });
     };
-
-    const filteredStores = stores.filter((store) => {
-        const matchName = store.name
-            .toLowerCase()
-            .includes(filterName.toLowerCase());
-        const matchCNPJ = store.cnpj.includes(filterCNPJ.replace(/\D/g, ""));
-        return matchName && matchCNPJ;
-    });
-
-    const columns = [
-        {
-            title: t("stores:list.columns.name"),
-            dataIndex: "name",
-            key: "name",
-        },
-        {
-            title: t("stores:list.columns.cnpj"),
-            dataIndex: "cnpj",
-            key: "cnpj",
-            render: (cnpj) => formatCNPJ(cnpj),
-        },
-        {
-            title: t("stores:list.columns.address"),
-            dataIndex: "address",
-            key: "address",
-        },
-        {
-            title: t("stores:list.columns.city"),
-            dataIndex: "city",
-            key: "city",
-        },
-        {
-            title: t("stores:list.columns.state"),
-            dataIndex: "state",
-            key: "state",
-        },
-        {
-            title: t("stores:list.columns.actions"),
-            key: "actions",
-            render: (_, record) => (
-                <Space>
-                    <Button
-                        onClick={() => navigate(`/stores/edit/${record.id}`)}
-                    >
-                        {t("stores:buttons.edit")}
-                    </Button>
-                    <Button danger onClick={() => handleDelete(record.id)}>
-                        {t("stores:buttons.delete")}
-                    </Button>
-                </Space>
-            ),
-        },
-    ];
 
     return (
-        <>
-            <Card
-                title={
-                    id
-                        ? t("stores:form.title.edit")
-                        : t("stores:form.title.create")
-                }
-                className="form-title"
+        <Card title={t("stores:form.title.new")} className="form-title">
+            <Form
+                form={form}
+                layout="vertical"
+                onFinish={handleSubmit}
+                className="form"
             >
-                <Form
-                    form={form}
-                    layout="vertical"
-                    onFinish={handleSubmit}
-                    className="form"
+                <Form.Item
+                    name="name"
+                    label={t("stores:form.fields.name.label")}
+                    rules={[
+                        {
+                            required: true,
+                            message: t("stores:form.fields.name.required"),
+                        },
+                    ]}
+                    className="form-input"
                 >
-                    <Form.Item
-                        name="name"
-                        label={t("stores:form.fields.name.label")}
-                        rules={[
-                            {
-                                required: true,
-                                message: t("stores:form.fields.name.required"),
-                            },
-                        ]}
-                        className="form-input"
-                    >
-                        <Input
-                            placeholder={t(
-                                "stores:form.fields.name.placeholder"
-                            )}
-                        />
-                    </Form.Item>
+                    <Input
+                        placeholder={t("stores:form.fields.name.placeholder")}
+                        onChange={(e) =>
+                            form.setFieldsValue({
+                                name: e.target.value.toUpperCase(),
+                            })
+                        }
+                    />
+                </Form.Item>
 
-                    <Form.Item
-                        name="number"
-                        label={t("stores:form.fields.number.label")}
-                        rules={[
-                            {
-                                required: true,
-                                message: t(
-                                    "stores:form.fields.number.required"
-                                ),
-                            },
-                        ]}
-                        className="form-input"
-                    >
-                        <Input
-                            placeholder={t(
-                                "stores:form.fields.number.placeholder"
-                            )}
-                        />
-                    </Form.Item>
+                <Form.Item
+                    name="number"
+                    label={t("stores:form.fields.number.label")}
+                    rules={[
+                        {
+                            required: true,
+                            message: t("stores:form.fields.number.required"),
+                        },
+                    ]}
+                    className="form-input"
+                >
+                    <Input
+                        placeholder={t("stores:form.fields.number.placeholder")}
+                        onChange={(e) =>
+                            form.setFieldsValue({
+                                number: e.target.value.toUpperCase(),
+                            })
+                        }
+                    />
+                </Form.Item>
 
-                    <Form.Item
-                        name="cnpj"
-                        label={t("stores:form.fields.cnpj.label")}
-                        rules={[
-                            {
-                                required: true,
-                                message: t("stores:form.fields.cnpj.required"),
-                            },
-                            {
-                                pattern: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/,
-                                message: t("stores:form.fields.cnpj.invalid"),
-                            },
-                        ]}
-                        className="form-input"
-                    >
-                        <Input
-                            placeholder={t(
-                                "stores:form.fields.cnpj.placeholder"
-                            )}
-                            onChange={handleCNPJChange}
-                            maxLength={18}
-                        />
-                    </Form.Item>
+                <Form.Item
+                    name="cnpj"
+                    label={t("stores:form.fields.cnpj.label")}
+                    rules={[
+                        {
+                            required: true,
+                            message: t("stores:form.fields.cnpj.required"),
+                        },
+                        {
+                            pattern: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/,
+                            message: t("stores:form.fields.cnpj.invalid"),
+                        },
+                    ]}
+                    className="form-input"
+                >
+                    <Input
+                        placeholder={t("stores:form.fields.cnpj.placeholder")}
+                        onChange={handleCNPJChange}
+                        maxLength={18}
+                    />
+                </Form.Item>
 
-                    <Form.Item
-                        name="city"
-                        label={t("stores:form.fields.city.label")}
-                        rules={[
-                            {
-                                required: true,
-                                message: t("stores:form.fields.city.required"),
-                            },
-                        ]}
-                        className="form-input"
-                    >
-                        <Input
-                            placeholder={t(
-                                "stores:form.fields.city.placeholder"
-                            )}
-                        />
-                    </Form.Item>
+                <Form.Item
+                    name="city"
+                    label={t("stores:form.fields.city.label")}
+                    rules={[
+                        {
+                            required: true,
+                            message: t("stores:form.fields.city.required"),
+                        },
+                    ]}
+                    className="form-input"
+                >
+                    <Input
+                        placeholder={t("stores:form.fields.city.placeholder")}
+                        onChange={(e) =>
+                            form.setFieldsValue({
+                                city: e.target.value.toUpperCase(),
+                            })
+                        }
+                    />
+                </Form.Item>
 
-                    <Form.Item
-                        name="state"
-                        label={t("stores:form.fields.state.label")}
-                        rules={[
-                            {
-                                required: true,
-                                message: t("stores:form.fields.state.required"),
-                            },
-                        ]}
-                        className="form-input"
-                    >
-                        <Input
-                            placeholder={t(
-                                "stores:form.fields.state.placeholder"
-                            )}
-                        />
-                    </Form.Item>
+                <Form.Item
+                    name="state"
+                    label={t("stores:form.fields.state.label")}
+                    rules={[
+                        {
+                            required: true,
+                            message: t("stores:form.fields.state.required"),
+                        },
+                    ]}
+                    className="form-input"
+                >
+                    <Input
+                        placeholder={t("stores:form.fields.state.placeholder")}
+                        onChange={(e) =>
+                            form.setFieldsValue({
+                                state: e.target.value.toUpperCase(),
+                            })
+                        }
+                    />
+                </Form.Item>
 
-                    <Form.Item className="form-actions">
-                        <Space>
-                            <Button
-                                type="primary"
-                                htmlType="submit"
-                                loading={loading}
-                                className="form-button"
-                            >
-                                {id
-                                    ? t("common:buttons.update")
-                                    : t("common:buttons.create_store")}
-                            </Button>
-                            <Button
-                                onClick={() => navigate("/stores")}
-                                className="form-button clear-button"
-                            >
-                                {t("common:buttons.cancel")}
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </Card>
-        </>
+                <Form.Item className="form-actions">
+                    <Space>
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            loading={loading}
+                            className="form-button"
+                        >
+                            {id
+                                ? t("common:buttons.update")
+                                : t("common:buttons.create")}
+                        </Button>
+                        <Button
+                            onClick={() => navigate("/stores")}
+                            className="form-button clear-button"
+                        >
+                            {t("stores:buttons.cancel")}
+                        </Button>
+                    </Space>
+                </Form.Item>
+            </Form>
+        </Card>
     );
 };
 
