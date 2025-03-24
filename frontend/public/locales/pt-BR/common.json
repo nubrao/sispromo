@@ -22,7 +22,10 @@
         "add": "Adicionar",
         "remove": "Remover",
         "processing": "Processando...",
-        "clear_filters": "Limpar Filtros"
+        "clear_filters": "Limpar Filtros",
+        "create_promoter": "Criar Promotor",
+        "create_store": "Criar Loja",
+        "update": "Atualizar"
     },
     "validation": {
         "required": "Este campo é obrigatório",

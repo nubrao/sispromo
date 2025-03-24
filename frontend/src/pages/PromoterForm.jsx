@@ -77,60 +77,98 @@ const PromoterForm = () => {
     const handleSubmit = async (values) => {
         try {
             setLoading(true);
-            const cpfClean = values.cpf.replace(/\D/g, "");
-            const data = {
+            const promoterData = {
                 ...values,
-                cpf: cpfClean,
+                cpf: values.cpf.replace(/\D/g, ""),
                 phone: values.phone.replace(/\D/g, ""),
-                role: 1,
-                username: cpfClean,
-                password: cpfClean.substring(0, 6),
-                password_confirm: cpfClean.substring(0, 6),
+                first_name: values.first_name?.toUpperCase() || "",
+                last_name: values.last_name?.toUpperCase() || "",
+                city: values.city?.toUpperCase() || "",
+                state: values.state?.toUpperCase() || "",
             };
 
-            let userId;
-
+            let promoterId = id;
             if (id) {
-                // Atualiza o promotor existente
-                await api.patch(`/api/users/${id}/`, data);
-                userId = id;
-            } else {
-                // Cria novo promotor
-                const response = await api.post("/api/users/register/", data);
-                userId = response.data.id;
-                setTempPassword(cpfClean.substring(0, 6));
-                setShowPasswordModal(true);
-            }
-
-            // Salva as marcas selecionadas
-            if (values.brands && values.brands.length > 0) {
-                const promises = values.brands.map((brandId) =>
-                    api.post("/api/promoter-brands/", {
-                        promoter_id: userId,
-                        brand_id: brandId,
-                    })
-                );
-
-                await Promise.all(promises);
-            }
-
-            if (id) {
+                await api.patch(`/api/users/${id}/`, promoterData);
                 toast.success(t("promoters:messages.success.update"));
-                navigate("/promoters");
+            } else {
+                const response = await api.post(
+                    "/api/users/register/",
+                    promoterData
+                );
+                toast.success(t("promoters:messages.success.create"));
+                promoterId = response.data.id;
             }
+
+            // Atualizar marcas do promotor
+            if (values.brands) {
+                try {
+                    // Busca as marcas atuais do promotor
+                    const currentBrandsResponse = await api.get(
+                        `/api/promoter-brands/?promoter_id=${promoterId}`
+                    );
+                    const currentBrands = currentBrandsResponse.data.map(
+                        (pb) => pb.brand.brand_id
+                    );
+
+                    // Identifica marcas a serem removidas e adicionadas
+                    const brandsToRemove = currentBrands.filter(
+                        (brandId) => !values.brands.includes(brandId)
+                    );
+                    const brandsToAdd = values.brands.filter(
+                        (brandId) => !currentBrands.includes(brandId)
+                    );
+
+                    // Remove as marcas que não estão mais selecionadas
+                    for (const brandId of brandsToRemove) {
+                        // Busca o ID da relação promoter-brand
+                        const relationResponse = await api.get(
+                            `/api/promoter-brands/?promoter_id=${promoterId}&brand_id=${brandId}`
+                        );
+                        if (relationResponse.data.length > 0) {
+                            const relationId = relationResponse.data[0].id;
+                            await api.delete(
+                                `/api/promoter-brands/${relationId}/`
+                            );
+                        }
+                    }
+
+                    // Adiciona as novas marcas
+                    for (const brandId of brandsToAdd) {
+                        await api.post("/api/promoter-brands/", {
+                            promoter_id: promoterId,
+                            brand_id: brandId,
+                        });
+                    }
+                } catch (error) {
+                    console.error("Erro ao atualizar marcas:", error);
+                    // Se houver erro ao atualizar marcas, mostra mensagem mas não impede o salvamento do promotor
+                    toast.error(t("promoters:messages.error.update_brands"));
+                }
+            }
+
+            navigate("/promoters");
         } catch (error) {
             console.error("Erro ao salvar:", error);
-            const errors = error.response?.data;
-            if (errors) {
-                Object.keys(errors).forEach((key) => {
-                    toast.error(`${key}: ${errors[key].join(" ")}`);
-                });
+
+            if (error.response?.data) {
+                // Se o erro vier do backend com detalhes
+                const errorData = error.response.data;
+                if (typeof errorData === "object") {
+                    // Se for um objeto com campos específicos
+                    Object.keys(errorData).forEach((key) => {
+                        const errorMessage = Array.isArray(errorData[key])
+                            ? errorData[key].join(", ")
+                            : errorData[key];
+                        toast.error(`${key}: ${errorMessage}`);
+                    });
+                } else {
+                    // Se for uma mensagem simples
+                    toast.error(errorData);
+                }
             } else {
-                toast.error(
-                    id
-                        ? t("promoters:messages.error.update")
-                        : t("promoters:messages.error.create")
-                );
+                // Se for um erro genérico
+                toast.error(t("promoters:messages.error.save"));
             }
         } finally {
             setLoading(false);
@@ -177,10 +215,7 @@ const PromoterForm = () => {
 
     return (
         <>
-            <Card
-                title={t("promoters:form.title.create")}
-                className="form-title"
-            >
+            <Card title={t("promoters:form.title.new")} className="form-title">
                 <Form
                     form={form}
                     layout="vertical"
@@ -342,8 +377,8 @@ const PromoterForm = () => {
                                 className="form-button"
                             >
                                 {id
-                                    ? t("promoters:buttons.update")
-                                    : t("promoters:buttons.create")}
+                                    ? t("common:buttons.update")
+                                    : t("common:buttons.create_promoter")}
                             </Button>
                             <Button
                                 onClick={() => navigate("/promoters")}

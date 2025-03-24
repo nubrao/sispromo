@@ -1,0 +1,29 @@
+{
+    "appName": "SisPromo",
+    "menu": {
+        "dashboard": "Dashboard",
+        "promoters": "Promotores",
+        "promoters_new": "Novo Promotor",
+        "promoters_list": "Lista de Promotores",
+        "stores": "Lojas",
+        "brands": "Marcas",
+        "visits": "Visitas",
+        "reports": "Relatórios"
+    },
+    "buttons": {
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "clear_filters": "Limpar Filtros",
+        "search": "Buscar",
+        "add": "Adicionar"
+    },
+    "messages": {
+        "loading": "Carregando...",
+        "error": "Erro",
+        "success": "Sucesso",
+        "confirm": "Confirmar",
+        "cancel": "Cancelar"
+    }
+}

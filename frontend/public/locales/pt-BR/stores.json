@@ -11,6 +11,11 @@
                 "placeholder": "Digite o nome da loja",
                 "required": "Por favor, insira o nome da loja"
             },
+            "number": {
+                "label": "Número",
+                "placeholder": "Digite o número da loja",
+                "required": "Por favor, insira o número da loja"
+            },
             "cnpj": {
                 "label": "CNPJ",
                 "placeholder": "Digite o CNPJ da loja",
@@ -50,6 +55,13 @@
             }
         }
     },
+    "search": {
+        "name": "Buscar por nome",
+        "number": "Buscar por número",
+        "cnpj": "Buscar por CNPJ",
+        "city": "Buscar por cidade",
+        "state": "Buscar por estado"
+    },
     "list": {
         "title": "Lista de Lojas",
         "empty": "Nenhuma loja encontrada",
@@ -64,6 +76,9 @@
             "city": "Cidade",
             "state": "Estado",
             "actions": "Ações"
+        },
+        "search": {
+            "placeholder": "Pesquisar"
         }
     },
     "buttons": {

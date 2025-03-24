@@ -70,32 +70,19 @@ const Navbar = () => {
                 key: "promoters",
                 label: t("common:menu.promoters"),
                 icon: <TeamOutlined />,
-                children: [
-                    {
-                        key: "promoters-new",
-                        label: t("common:menu.promoters_new"),
-                        icon: <UserAddOutlined />,
-                        onClick: () => handleMenuClick("/promoters/new"),
-                    },
-                    {
-                        key: "promoters-list",
-                        label: t("common:menu.promoters_list"),
-                        icon: <UnorderedListOutlined />,
-                        onClick: () => handleMenuClick("/promoters"),
-                    },
-                ],
-            },
-            {
-                key: "brands",
-                label: t("common:menu.brands"),
-                icon: <TagsOutlined />,
-                onClick: () => handleMenuClick("/brands"),
+                onClick: () => handleMenuClick("/promoters"),
             },
             {
                 key: "stores",
                 label: t("common:menu.stores"),
                 icon: <ShopOutlined />,
                 onClick: () => handleMenuClick("/stores"),
+            },
+            {
+                key: "brands",
+                label: t("common:menu.brands"),
+                icon: <TagsOutlined />,
+                onClick: () => handleMenuClick("/brands"),
             },
             {
                 key: "visits",

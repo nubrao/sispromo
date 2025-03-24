@@ -3,8 +3,7 @@
     "form": {
         "title": {
             "new": "Novo Promotor",
-            "edit": "Editar Promotor",
-            "create": "Criar Promotor"
+            "edit": "Editar Promotor"
         },
         "fields": {
             "first_name": {

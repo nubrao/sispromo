@@ -4,6 +4,7 @@ import { Root } from "./Root";
 import LoginForm from "./pages/LoginForm";
 import Dashboard from "./pages/Dashboard";
 import BrandForm from "./pages/BrandForm";
+import StoreList from "./pages/StoreList";
 import StoreForm from "./pages/StoreForm";
 import PromoterForm from "./pages/PromoterForm";
 import PromoterList from "./pages/PromoterList";
@@ -37,6 +38,14 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "/stores",
+                        element: <StoreList />,
+                    },
+                    {
+                        path: "/stores/new",
+                        element: <StoreForm />,
+                    },
+                    {
+                        path: "/stores/:id/edit",
                         element: <StoreForm />,
                     },
                     {
@@ -48,7 +57,7 @@ const router = createBrowserRouter([
                         element: <PromoterForm />,
                     },
                     {
-                        path: "/promoters/:id",
+                        path: "/promoters/:id/edit",
                         element: <PromoterForm />,
                     },
                     {

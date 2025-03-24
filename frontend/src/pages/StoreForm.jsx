@@ -4,7 +4,7 @@ import { Form, Input, Button, Card, Space, Table } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { formatCNPJ } from "../utils/formatters";
-import api from "../services/api";
+import storeRepository from "../repositories/storeRepository";
 
 const StoreForm = () => {
     const { t } = useTranslation(["stores", "common"]);
@@ -17,31 +17,18 @@ const StoreForm = () => {
     const [filterCNPJ, setFilterCNPJ] = useState("");
 
     useEffect(() => {
-        loadStores();
         if (id) {
             loadStore();
         }
     }, [id]);
 
-    const loadStores = async () => {
-        try {
-            setLoading(true);
-            const response = await api.get("/api/stores/");
-            setStores(response.data);
-        } catch (error) {
-            toast.error(t("stores:messages.error.load"));
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const loadStore = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`/api/stores/${id}/`);
+            const response = await storeRepository.getStore(id);
             form.setFieldsValue({
-                ...response.data,
-                cnpj: formatCNPJ(response.data.cnpj),
+                ...response,
+                cnpj: formatCNPJ(response.cnpj),
             });
         } catch (error) {
             toast.error(t("stores:messages.error.load"));
@@ -59,10 +46,10 @@ const StoreForm = () => {
             };
 
             if (id) {
-                await api.patch(`/api/stores/${id}/`, data);
+                await storeRepository.updateStore(id, data);
                 toast.success(t("stores:messages.success.update"));
             } else {
-                await api.post("/api/stores/", data);
+                await storeRepository.createStore(data);
                 toast.success(t("stores:messages.success.create"));
             }
             navigate("/stores");
@@ -80,7 +67,7 @@ const StoreForm = () => {
 
     const handleDelete = async (storeId) => {
         try {
-            await api.delete(`/api/stores/${storeId}/`);
+            await storeRepository.deleteStore(storeId);
             toast.success(t("stores:messages.success.delete"));
             loadStores();
         } catch (error) {
@@ -89,10 +76,12 @@ const StoreForm = () => {
     };
 
     const handleCNPJChange = (e) => {
-        const { value } = e.target;
-        form.setFieldsValue({
-            cnpj: formatCNPJ(value),
-        });
+        const value = e.target.value.replace(/\D/g, "");
+        if (value.length <= 14) {
+            form.setFieldsValue({
+                cnpj: formatCNPJ(value),
+            });
+        }
     };
 
     const filteredStores = stores.filter((store) => {
@@ -149,19 +138,20 @@ const StoreForm = () => {
     ];
 
     return (
-        <div>
+        <>
             <Card
                 title={
                     id
                         ? t("stores:form.title.edit")
                         : t("stores:form.title.create")
                 }
+                className="form-title"
             >
                 <Form
                     form={form}
                     layout="vertical"
                     onFinish={handleSubmit}
-                    style={{ maxWidth: 600 }}
+                    className="form"
                 >
                     <Form.Item
                         name="name"
@@ -172,10 +162,31 @@ const StoreForm = () => {
                                 message: t("stores:form.fields.name.required"),
                             },
                         ]}
+                        className="form-input"
                     >
                         <Input
                             placeholder={t(
                                 "stores:form.fields.name.placeholder"
+                            )}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="number"
+                        label={t("stores:form.fields.number.label")}
+                        rules={[
+                            {
+                                required: true,
+                                message: t(
+                                    "stores:form.fields.number.required"
+                                ),
+                            },
+                        ]}
+                        className="form-input"
+                    >
+                        <Input
+                            placeholder={t(
+                                "stores:form.fields.number.placeholder"
                             )}
                         />
                     </Form.Item>
@@ -193,6 +204,7 @@ const StoreForm = () => {
                                 message: t("stores:form.fields.cnpj.invalid"),
                             },
                         ]}
+                        className="form-input"
                     >
                         <Input
                             placeholder={t(
@@ -200,25 +212,6 @@ const StoreForm = () => {
                             )}
                             onChange={handleCNPJChange}
                             maxLength={18}
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="address"
-                        label={t("stores:form.fields.address.label")}
-                        rules={[
-                            {
-                                required: true,
-                                message: t(
-                                    "stores:form.fields.address.required"
-                                ),
-                            },
-                        ]}
-                    >
-                        <Input
-                            placeholder={t(
-                                "stores:form.fields.address.placeholder"
-                            )}
                         />
                     </Form.Item>
 
@@ -231,6 +224,7 @@ const StoreForm = () => {
                                 message: t("stores:form.fields.city.required"),
                             },
                         ]}
+                        className="form-input"
                     >
                         <Input
                             placeholder={t(
@@ -248,6 +242,7 @@ const StoreForm = () => {
                                 message: t("stores:form.fields.state.required"),
                             },
                         ]}
+                        className="form-input"
                     >
                         <Input
                             placeholder={t(
@@ -256,53 +251,29 @@ const StoreForm = () => {
                         />
                     </Form.Item>
 
-                    <Form.Item>
+                    <Form.Item className="form-actions">
                         <Space>
                             <Button
                                 type="primary"
                                 htmlType="submit"
                                 loading={loading}
+                                className="form-button"
                             >
-                                {loading
-                                    ? t("stores:buttons.processing")
-                                    : t("stores:buttons.save")}
+                                {id
+                                    ? t("common:buttons.update")
+                                    : t("common:buttons.create_store")}
                             </Button>
-                            <Button onClick={() => navigate("/stores")}>
-                                {t("stores:buttons.cancel")}
+                            <Button
+                                onClick={() => navigate("/stores")}
+                                className="form-button clear-button"
+                            >
+                                {t("common:buttons.cancel")}
                             </Button>
                         </Space>
                     </Form.Item>
                 </Form>
             </Card>
-
-            {!id && (
-                <Card title={t("stores:list.title")} style={{ marginTop: 24 }}>
-                    <Space style={{ marginBottom: 16 }}>
-                        <Input
-                            placeholder={t("stores:list.filters.name")}
-                            value={filterName}
-                            onChange={(e) => setFilterName(e.target.value)}
-                        />
-                        <Input
-                            placeholder={t("stores:list.filters.cnpj")}
-                            value={filterCNPJ}
-                            onChange={(e) =>
-                                setFilterCNPJ(formatCNPJ(e.target.value))
-                            }
-                            maxLength={18}
-                        />
-                    </Space>
-
-                    <Table
-                        dataSource={filteredStores}
-                        columns={columns}
-                        rowKey="id"
-                        loading={loading}
-                        locale={{ emptyText: t("stores:list.empty") }}
-                    />
-                </Card>
-            )}
-        </div>
+        </>
     );
 };
 

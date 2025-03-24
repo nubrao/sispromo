@@ -17,6 +17,7 @@
     justify-content: space-evenly;
     gap: 20px;
     flex-wrap: wrap;
+    margin-bottom: -24px;
 }
 
 .form-title {
@@ -26,7 +27,7 @@
     color: var(--text-dark);
 }
 
-.form-row {
+.search-row {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -132,6 +133,7 @@
 .ant-select-selector {
     display: flex !important;
     align-items: center !important;
+    min-height: 40px !important;
 }
 
 .ant-select-selection-wrap {
@@ -562,7 +564,7 @@
 
 .form-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     margin-top: 24px;
     width: 100%;
 }
