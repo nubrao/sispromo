@@ -1,5 +1,5 @@
 import api from '../services/api';
-import { Toast } from '../components/Toast';
+import { message } from 'antd';
 
 class PromoterBrandRepository {
     constructor() {
@@ -9,11 +9,13 @@ class PromoterBrandRepository {
     // Busca todas as marcas dos promotores
     async getAllPromoterBrands() {
         try {
-            const response = await api.get(this.baseURL);
+            const response = await api.get(this.baseURL, {
+                timeout: 30000
+            });
             return response.data;
         } catch (error) {
             console.error("Erro ao buscar marcas dos promotores:", error);
-            Toast.showToast("Erro ao carregar marcas dos promotores", "error");
+            message.error("Erro ao carregar marcas dos promotores");
             throw error;
         }
     }
@@ -22,12 +24,12 @@ class PromoterBrandRepository {
     async getPromoterBrandsByPromoterId(promoterId) {
         try {
             const response = await api.get(
-                `${this.baseURL}?promoter=${promoterId}`
+                `${this.baseURL}?promoter_id=${promoterId}`
             );
             return response.data;
         } catch (error) {
             console.error(`Erro ao buscar marcas do promotor ${promoterId}:`, error);
-            Toast.showToast("Erro ao carregar marcas do promotor", "error");
+            message.error("Erro ao carregar marcas do promotor");
             throw error;
         }
     }
@@ -37,13 +39,18 @@ class PromoterBrandRepository {
         try {
             const response = await api.post(
                 this.baseURL,
-                { promoter: promoterId, brand: brandId }
+                {
+                    promoter_id: promoterId,
+                    brand_id: brandId
+                },
+                {
+                    timeout: 30000
+                }
             );
-            Toast.showToast("Marca associada ao promotor com sucesso!", "success");
             return response.data;
         } catch (error) {
             console.error("Erro ao associar marca ao promotor:", error);
-            Toast.showToast("Erro ao associar marca ao promotor", "error");
+            message.error("Erro ao associar marca ao promotor");
             throw error;
         }
     }
@@ -51,11 +58,12 @@ class PromoterBrandRepository {
     // Remove uma associação entre promotor e marca
     async deletePromoterBrand(id) {
         try {
-            await api.delete(`${this.baseURL}${id}/`);
-            Toast.showToast("Marca removida do promotor com sucesso!", "success");
+            await api.delete(`${this.baseURL}${id}/`, {
+                timeout: 30000
+            });
         } catch (error) {
-            console.error(`Erro ao remover marca do promotor:`, error);
-            Toast.showToast("Erro ao remover marca do promotor", "error");
+            console.error("Erro ao remover marca do promotor:", error);
+            message.error("Erro ao remover marca do promotor");
             throw error;
         }
     }

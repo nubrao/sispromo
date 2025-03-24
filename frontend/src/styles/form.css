@@ -448,8 +448,8 @@
 
 .ant-btn-ok {
     height: 40px;
-    background-color: #89b789;
-    color: white;
+    background-color: #89b789 !important;
+    color: white !important;
     font-size: 1em;
     font-weight: bold;
     border: none !important;

@@ -15,14 +15,13 @@ import {
 } from "antd";
 import {
     EditOutlined,
-    DeleteOutlined,
     SaveOutlined,
     CloseOutlined,
     SearchOutlined,
     ClearOutlined,
     UserAddOutlined,
 } from "@ant-design/icons";
-import { formatCPF, formatPhone } from "../utils/formatters";
+import { formatPhone } from "../utils/formatters";
 import { useNavigate } from "react-router-dom";
 import "../styles/promoterForm.css";
 import promoterBrandRepository from "../repositories/promoterBrandRepository";
@@ -33,7 +32,8 @@ const PromoterList = () => {
     const { t } = useTranslation(["promoters", "common"]);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [promoters, setPromoters] = useState([]);
+    const [allPromoters, setAllPromoters] = useState([]);
+    const [filteredPromoters, setFilteredPromoters] = useState([]);
     const [promoterBrands, setPromoterBrands] = useState({});
     const [availableBrands, setAvailableBrands] = useState([]);
     const [editingKey, setEditingKey] = useState("");
@@ -48,7 +48,15 @@ const PromoterList = () => {
     const loadBrands = async () => {
         try {
             const response = await brandRepository.getAllBrands();
-            setAvailableBrands(response);
+            // Filtra marcas únicas baseado no brand_id
+            const uniqueBrands = Array.from(
+                new Set(response.map((brand) => brand.brand_id))
+            ).map((brandId) => ({
+                id: brandId,
+                brand_name: response.find((b) => b.brand_id === brandId)
+                    .brand_name,
+            }));
+            setAvailableBrands(uniqueBrands);
         } catch (error) {
             console.error("Erro ao carregar marcas:", error);
         }
@@ -77,22 +85,10 @@ const PromoterList = () => {
             }, {});
 
             setPromoterBrands(brandsByPromoter);
-            setPromoters(promotersList);
+            setAllPromoters(promotersList);
+            setFilteredPromoters(promotersList);
         } catch (error) {
             message.error(t("promoters:messages.error.load"));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDelete = async (id) => {
-        try {
-            setLoading(true);
-            await userRepository.deleteUser(id);
-            message.success(t("promoters:messages.success.delete"));
-            loadPromoters();
-        } catch (error) {
-            message.error(t("promoters:messages.error.delete"));
         } finally {
             setLoading(false);
         }
@@ -102,7 +98,8 @@ const PromoterList = () => {
 
     const edit = (record) => {
         const brands =
-            promoterBrands[record.id]?.map((pb) => pb.brand.id) || [];
+            promoterBrands[record.id]?.map((pb) => pb.brand.brand_id) || [];
+
         form.setFieldsValue({
             ...record,
             brands: brands,
@@ -119,75 +116,130 @@ const PromoterList = () => {
     const save = async (id) => {
         try {
             const row = await form.validateFields();
-            const [firstName, lastName] = row.full_name.split(" ");
 
-            // Atualizar dados do promotor
-            await userRepository.updateUser(id, {
-                first_name: firstName,
-                last_name: lastName || "",
-                email: row.email,
-                cpf: row.cpf.replace(/\D/g, ""),
-                phone: row.phone.replace(/\D/g, ""),
-            });
+            // Encontra o promotor atual para comparar as alterações
+            const currentPromoter = allPromoters.find((p) => p.id === id);
+
+            // Cria objeto apenas com os campos que foram alterados
+            const updatedFields = {};
+
+            // Trata o nome apenas se foi alterado
+            if (row.full_name) {
+                const nameParts = row.full_name.split(" ");
+                const firstName = nameParts[0];
+                const lastName = nameParts.slice(1).join(" ");
+
+                if (firstName !== currentPromoter.first_name) {
+                    updatedFields.first_name = firstName;
+                }
+                if (lastName !== currentPromoter.last_name) {
+                    updatedFields.last_name = lastName || "";
+                }
+            }
+
+            if (row.email !== currentPromoter.email) {
+                updatedFields.email = row.email;
+            }
+
+            if (row.phone) {
+                const newPhone = row.phone.replace(/\D/g, "");
+                if (newPhone !== currentPromoter.phone) {
+                    updatedFields.phone = newPhone;
+                }
+            }
+
+            // Só faz o PATCH se houver campos alterados
+            if (Object.keys(updatedFields).length > 0) {
+                await userRepository.updateUser(id, updatedFields);
+            }
 
             // Atualizar marcas do promotor
             const currentBrands =
-                promoterBrands[id]?.map((pb) => pb.brand.id) || [];
-            const newBrands = row.brands || [];
+                promoterBrands[id]?.map((pb) => pb.brand.brand_id) || [];
+            const selectedBrands = row.brands || [];
+
+            // Processa todas as alterações de marcas
+            const promises = [];
 
             // Remover marcas que não estão mais selecionadas
             const brandsToRemove = currentBrands.filter(
-                (b) => !newBrands.includes(b)
+                (brandId) => !selectedBrands.includes(brandId)
             );
+
+            // Identificar apenas as novas marcas que não existem atualmente
+            const brandsToAdd = selectedBrands.filter(
+                (brandId) => !currentBrands.includes(brandId)
+            );
+
+            // Remove as marcas não selecionadas
             for (const brandId of brandsToRemove) {
                 const promoterBrand = promoterBrands[id].find(
-                    (pb) => pb.brand.id === brandId
+                    (pb) => pb.brand.brand_id === brandId
                 );
                 if (promoterBrand) {
-                    await promoterBrandRepository.deletePromoterBrand(
-                        promoterBrand.id
+                    promises.push(
+                        promoterBrandRepository.deletePromoterBrand(
+                            promoterBrand.id
+                        )
                     );
                 }
             }
 
-            // Adicionar novas marcas
-            const brandsToAdd = newBrands.filter(
-                (b) => !currentBrands.includes(b)
-            );
+            // Adiciona apenas as novas marcas
             for (const brandId of brandsToAdd) {
-                await promoterBrandRepository.createPromoterBrand(id, brandId);
+                promises.push(
+                    promoterBrandRepository.createPromoterBrand(id, brandId)
+                );
             }
 
-            message.success(t("promoters:messages.success.update"));
+            // Aguarda todas as operações de marca terminarem
+            if (promises.length > 0) {
+                await Promise.all(promises);
+            }
+
+            // Só mostra mensagem de sucesso se houve alguma alteração
+            if (Object.keys(updatedFields).length > 0 || promises.length > 0) {
+                message.success(t("promoters:messages.success.update"));
+            }
+
             setEditingKey("");
             loadPromoters();
         } catch (error) {
+            console.error("Erro ao salvar:", error);
             message.error(t("promoters:messages.error.update"));
         }
     };
 
     const handleSearch = () => {
         const values = searchForm.getFieldsValue();
-        const filteredData = promoters.filter((item) => {
-            const nameMatch = values.name
-                ? `${item.first_name} ${item.last_name}`
-                      .toLowerCase()
-                      .includes(values.name.toLowerCase())
-                : true;
-            const cpfMatch = values.cpf
-                ? formatCPF(item.cpf).includes(values.cpf)
-                : true;
-            const phoneMatch = values.phone
-                ? formatPhone(item.phone).includes(values.phone)
-                : true;
-            return nameMatch && cpfMatch && phoneMatch;
+        const filteredData = allPromoters.filter((item) => {
+            const fullName =
+                `${item.first_name} ${item.last_name}`.toLowerCase();
+            const searchName = values.name?.toLowerCase().trim() || "";
+            const searchPhone = values.phone?.trim() || "";
+
+            const nameMatch =
+                searchName === "" || fullName.includes(searchName);
+            const phoneMatch =
+                searchPhone === "" ||
+                formatPhone(item.phone).includes(searchPhone);
+
+            // Verifica se o promotor tem pelo menos uma das marcas selecionadas
+            const brandMatch =
+                !values.brand?.length ||
+                promoterBrands[item.id]?.some((pb) =>
+                    values.brand.includes(pb.brand.brand_id)
+                );
+
+            return nameMatch && phoneMatch && brandMatch;
         });
-        setPromoters(filteredData);
+
+        setFilteredPromoters(filteredData);
     };
 
     const clearFilters = () => {
         searchForm.resetFields();
-        loadPromoters();
+        setFilteredPromoters(allPromoters);
     };
 
     const EditableCell = ({
@@ -200,14 +252,16 @@ const PromoterList = () => {
     }) => {
         let inputNode;
 
-        if (dataIndex === "brands") {
-            // Filtra marcas duplicadas baseado no brand_name
-            const uniqueBrands = Array.from(
-                new Set(availableBrands.map((brand) => brand.brand_name))
-            ).map((name) =>
-                availableBrands.find((brand) => brand.brand_name === name)
+        if (dataIndex === "full_name") {
+            inputNode = (
+                <Input
+                    placeholder={title}
+                    defaultValue={
+                        record ? `${record.first_name} ${record.last_name}` : ""
+                    }
+                />
             );
-
+        } else if (dataIndex === "brands") {
             inputNode = (
                 <Select
                     mode="multiple"
@@ -215,7 +269,7 @@ const PromoterList = () => {
                     placeholder="Selecione as marcas"
                     className="transparent-select"
                     popupClassName="transparent-select-dropdown"
-                    options={uniqueBrands.map((brand) => ({
+                    options={availableBrands.map((brand) => ({
                         value: brand.id,
                         label: brand.brand_name.toUpperCase(),
                     }))}
@@ -224,8 +278,6 @@ const PromoterList = () => {
                     }}
                 />
             );
-        } else if (dataIndex === "first_name" || dataIndex === "last_name") {
-            inputNode = <Input placeholder={title} />;
         } else if (dataIndex === "phone") {
             inputNode = (
                 <Input
@@ -234,7 +286,6 @@ const PromoterList = () => {
                     value={formatPhone(form.getFieldValue("phone") || "")}
                     onChange={(e) => {
                         const value = e.target.value.replace(/\D/g, "");
-                        const formattedValue = formatPhone(value);
                         form.setFieldsValue({ phone: value });
                     }}
                 />
@@ -267,14 +318,14 @@ const PromoterList = () => {
 
     const columns = [
         {
-            title: "Nome",
+            title: t("promoters:table.name"),
             dataIndex: "first_name",
             editable: true,
             width: "20%",
             render: (_, record) => `${record.first_name} ${record.last_name}`,
         },
         {
-            title: "Sobrenome",
+            title: t("promoters:table.last_name"),
             dataIndex: "last_name",
             editable: true,
             width: "15%",
@@ -282,49 +333,54 @@ const PromoterList = () => {
             shouldShow: (record) => isEditing(record),
         },
         {
-            title: "Email",
+            title: t("promoters:table.email"),
             dataIndex: "email",
             editable: true,
             width: "25%",
         },
         {
-            title: "Telefone",
+            title: t("promoters:table.phone"),
             dataIndex: "phone",
+            key: "phone",
             editable: true,
+            render: (phone) => formatPhone(phone),
             width: "15%",
-            render: (text) => formatPhone(text),
         },
         {
-            title: "Marcas",
+            title: t("promoters:table.brands"),
             dataIndex: "brands",
+            key: "brands",
             editable: true,
-            width: "15%",
             render: (_, record) => (
-                <>
+                <Space size={[0, 8]} wrap>
                     {promoterBrands[record.id]?.map((pb) => (
-                        <Tag key={pb.brand.id} color="blue">
-                            {pb.brand.brand_name}
+                        <Tag
+                            key={`${record.id}-${pb.brand.brand_id}`}
+                            color="blue"
+                        >
+                            {pb.brand.brand_name.toUpperCase()}
                         </Tag>
-                    ))}
-                </>
+                    )) || []}
+                </Space>
             ),
+            width: "30%",
         },
         {
-            title: "Ações",
-            dataIndex: "operation",
+            title: t("promoters:table.actions"),
+            key: "actions",
             render: (_, record) => {
                 const editable = isEditing(record);
                 return editable ? (
                     <Space>
                         <Button
                             type="primary"
-                            icon={<SaveOutlined />}
                             onClick={() => save(record.id)}
+                            icon={<SaveOutlined />}
                         >
-                            Salvar
+                            {t("promoters:buttons.save")}
                         </Button>
-                        <Button icon={<CloseOutlined />} onClick={cancel}>
-                            Cancelar
+                        <Button onClick={cancel} icon={<CloseOutlined />}>
+                            {t("promoters:buttons.cancel")}
                         </Button>
                     </Space>
                 ) : (
@@ -337,18 +393,10 @@ const PromoterList = () => {
                         >
                             {t("promoters:buttons.edit")}
                         </Button>
-                        <Button
-                            danger
-                            icon={<DeleteOutlined />}
-                            onClick={() => handleDelete(record.id)}
-                            disabled={editingKey !== ""}
-                            className="form-button delete-button"
-                        >
-                            {t("promoters:buttons.delete")}
-                        </Button>
                     </Space>
                 );
             },
+            width: "20%",
         },
     ];
 
@@ -388,18 +436,14 @@ const PromoterList = () => {
                                 <Input
                                     prefix={<SearchOutlined />}
                                     placeholder={t("promoters:search.name")}
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                            <Form.Item
-                                name="cpf"
-                                label={t("promoters:search.cpf")}
-                                className="form-input"
-                            >
-                                <Input
-                                    prefix={<SearchOutlined />}
-                                    placeholder={t("promoters:search.cpf")}
+                                    allowClear
+                                    onChange={(e) => {
+                                        searchForm.setFieldValue(
+                                            "name",
+                                            e.target.value
+                                        );
+                                        handleSearch();
+                                    }}
                                 />
                             </Form.Item>
                         </Col>
@@ -412,19 +456,47 @@ const PromoterList = () => {
                                 <Input
                                     prefix={<SearchOutlined />}
                                     placeholder={t("promoters:search.phone")}
+                                    allowClear
+                                    onChange={(e) => {
+                                        searchForm.setFieldValue(
+                                            "phone",
+                                            e.target.value
+                                        );
+                                        handleSearch();
+                                    }}
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={8}>
+                            <Form.Item
+                                name="brand"
+                                label={t("promoters:filters.brand")}
+                                className="form-input"
+                            >
+                                <Select
+                                    mode="multiple"
+                                    allowClear
+                                    placeholder={t(
+                                        "promoters:filters.placeholders.brand"
+                                    )}
+                                    options={availableBrands.map((brand) => ({
+                                        value: brand.id,
+                                        label: brand.brand_name.toUpperCase(),
+                                    }))}
+                                    onChange={(value) => {
+                                        searchForm.setFieldValue(
+                                            "brand",
+                                            value
+                                        );
+                                        handleSearch();
+                                    }}
+                                    maxTagCount={2}
+                                    maxTagTextLength={10}
                                 />
                             </Form.Item>
                         </Col>
                     </Row>
                     <div className="search-buttons">
-                        <Button
-                            type="primary"
-                            icon={<SearchOutlined />}
-                            onClick={handleSearch}
-                            className="form-button"
-                        >
-                            {t("common:buttons.search")}
-                        </Button>
                         <Button
                             type="default"
                             icon={<ClearOutlined />}
@@ -455,7 +527,7 @@ const PromoterList = () => {
                         },
                     }}
                     bordered
-                    dataSource={promoters}
+                    dataSource={filteredPromoters}
                     columns={mergedColumns}
                     rowClassName="editable-row"
                     loading={loading}

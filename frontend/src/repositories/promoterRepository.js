@@ -7,9 +7,15 @@ class PromoterRepository {
 
     // Configura o header de autorização
     getHeaders() {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('@SisPromo:token');
+        if (!token) {
+            throw new Error('Token não encontrado');
+        }
         return {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
         };
     }
 

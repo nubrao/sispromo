@@ -14,7 +14,7 @@ class VisitModel(models.Model):
 
     promoter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='promoter_visits',
         limit_choices_to={'role': 1}  # Apenas promotores
     )
@@ -37,8 +37,9 @@ class VisitModel(models.Model):
     )
 
     def __str__(self):
+        promoter_name = self.promoter.get_full_name()
         return (
-            f"{self.promoter.get_full_name()} - "
+            f"{promoter_name} - "
             f"{self.store.name} - "
             f"{self.brand.name} ({self.visit_date})"
         )

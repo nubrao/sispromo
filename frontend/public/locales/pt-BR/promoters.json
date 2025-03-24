@@ -85,26 +85,35 @@
             "create": "Erro ao criar promotor",
             "update": "Erro ao atualizar promotor",
             "delete": "Erro ao excluir promotor",
-            "duplicate_cpf": "Já existe um promotor com este CPF",
+            "delete_title": "Não é possível excluir o promotor",
+            "has_visits": "Este promotor possui visitas registradas e não pode ser excluído.",
+            "delete_check": "Erro ao verificar se o promotor pode ser excluído",
             "duplicate_email": "Já existe um promotor com este e-mail",
             "load_brands": "Erro ao carregar marcas",
             "password_copy_failed": "Erro ao copiar senha do promotor"
         },
         "confirm": {
-            "delete": "Tem certeza que deseja excluir este promotor?"
+            "delete_title": "Confirmar exclusão",
+            "delete_confirm": "Tem certeza que deseja excluir este promotor? Esta ação não poderá ser desfeita."
         }
     },
     "table": {
         "name": "Nome",
+        "last_name": "Sobrenome",
         "email": "E-mail",
-        "cpf": "CPF",
         "phone": "Telefone",
-        "actions": "Ações"
+        "actions": "Ações",
+        "brands": "Marcas"
     },
     "filters": {
         "name": "Filtrar por nome",
-        "cpf": "Filtrar por CPF",
-        "phone": "Filtrar por telefone"
+        "phone": "Filtrar por telefone",
+        "brand": "Filtrar por marca",
+        "placeholders": {
+            "name": "Digite o nome do promotor",
+            "phone": "Digite o telefone do promotor",
+            "brand": "Selecione a marca do promotor"
+        }
     },
     "modal": {
         "password": {

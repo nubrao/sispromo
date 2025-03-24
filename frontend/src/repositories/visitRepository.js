@@ -8,12 +8,15 @@ class VisitRepository {
         this.baseURL = `${API_URL}/api/visits/`;
     }
 
-    getHeaders(token = null) {
-        const authToken = token || localStorage.getItem('token');
+    getHeaders() {
+        const token = localStorage.getItem('@SisPromo:token');
+        if (!token) {
+            throw new Error('Token não encontrado');
+        }
         return {
             headers: {
-                Authorization: `Bearer ${authToken}`,
-                "Content-Type": "application/json"
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
         };
     }
@@ -30,6 +33,19 @@ class VisitRepository {
         } catch (error) {
             console.error("Erro ao buscar visitas:", error);
             Toast.showToast("Erro ao carregar visitas", "error");
+            throw error;
+        }
+    }
+
+    async getVisitsByPromoter(promoterId) {
+        try {
+            const response = await axios.get(
+                `${this.baseURL}?promoter_id=${promoterId}`,
+                this.getHeaders()
+            );
+            return response.data;
+        } catch (error) {
+            console.error("Erro ao buscar visitas do promotor:", error);
             throw error;
         }
     }

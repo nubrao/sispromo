@@ -39,6 +39,7 @@
     flex-direction: row;
     gap: 8px;
     width: 20%;
+    justify-content: center;
 }
 
 .form-input-break {
@@ -66,6 +67,35 @@
 .form-input {
     width: 100%;
     max-width: 600px;
+}
+
+.form-input-text {
+    display: flex;
+    flex-direction: column;
+    height: 40px;
+    width: 100%;
+    max-width: 400px;
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.ant-btn-ok {
+    height: 40px;
+    background-color: #89b789 !important;
+    color: white !important;
+    font-size: 1em;
+    font-weight: bold;
+    border: none !important;
+}
+
+.ant-btn-ok:hover {
+    background-color: #b3d0b3 !important;
+    color: white !important;
+    border: none !important;
 }
 
 .ant-form-item {
@@ -274,7 +304,8 @@
     margin: 5px 0px 5px 0px;
     border: none;
     height: 40px;
-    width: 150px;
+    width: fit-content;
+    min-width: 75px;
     display: flex;
     align-items: center;
     justify-content: center;

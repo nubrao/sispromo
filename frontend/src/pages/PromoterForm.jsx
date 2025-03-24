@@ -54,14 +54,20 @@ const PromoterForm = () => {
     const loadPromoter = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`/api/users/${id}/`);
+            const [userResponse, brandsResponse] = await Promise.all([
+                api.get(`/api/users/${id}/`),
+                api.get(`/api/promoter-brands/?promoter_id=${id}`),
+            ]);
+
+            // Formata os dados do usuário
             form.setFieldsValue({
-                ...response.data,
-                cpf: formatCPF(response.data.cpf),
-                phone: formatPhone(response.data.phone),
-                brands: response.data.brands.map((brand) => brand.brand_id),
+                ...userResponse.data,
+                cpf: formatCPF(userResponse.data.cpf),
+                phone: formatPhone(userResponse.data.phone),
+                brands: brandsResponse.data.map((pb) => pb.brand.brand_id),
             });
-        } catch {
+        } catch (error) {
+            console.error("Erro ao carregar promotor:", error);
             toast.error(t("promoters:messages.error.load"));
         } finally {
             setLoading(false);
@@ -82,16 +88,38 @@ const PromoterForm = () => {
                 password_confirm: cpfClean.substring(0, 6),
             };
 
+            let userId;
+
             if (id) {
+                // Atualiza o promotor existente
                 await api.patch(`/api/users/${id}/`, data);
-                toast.success(t("promoters:messages.success.update"));
-                navigate("/promoters");
+                userId = id;
             } else {
+                // Cria novo promotor
                 const response = await api.post("/api/users/register/", data);
+                userId = response.data.id;
                 setTempPassword(cpfClean.substring(0, 6));
                 setShowPasswordModal(true);
             }
+
+            // Salva as marcas selecionadas
+            if (values.brands && values.brands.length > 0) {
+                const promises = values.brands.map((brandId) =>
+                    api.post("/api/promoter-brands/", {
+                        promoter_id: userId,
+                        brand_id: brandId,
+                    })
+                );
+
+                await Promise.all(promises);
+            }
+
+            if (id) {
+                toast.success(t("promoters:messages.success.update"));
+                navigate("/promoters");
+            }
         } catch (error) {
+            console.error("Erro ao salvar:", error);
             const errors = error.response?.data;
             if (errors) {
                 Object.keys(errors).forEach((key) => {
