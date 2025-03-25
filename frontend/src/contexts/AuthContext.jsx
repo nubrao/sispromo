@@ -8,6 +8,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "../services/api";
+import axios from "axios";
 import { Toast } from "../components/Toast";
 import PropTypes from "prop-types";
 
@@ -21,18 +22,32 @@ export const AuthProvider = ({ children }) => {
 
     const loadStoredData = useCallback(async () => {
         const storedToken = localStorage.getItem("@SisPromo:token");
+        const storedRefresh = localStorage.getItem("@SisPromo:refresh");
 
-        if (storedToken) {
+        if (storedToken && storedRefresh) {
             api.defaults.headers.authorization = `Bearer ${storedToken}`;
             try {
                 const response = await api.get("/api/users/me/");
                 setUser(response.data);
             } catch (error) {
                 console.error("Erro ao carregar usuário:", error);
-                localStorage.removeItem("@SisPromo:token");
-                localStorage.removeItem("@SisPromo:refresh");
-                api.defaults.headers.authorization = "";
-                setUser(null);
+                // Se o erro for 401, tenta renovar o token
+                if (error.response?.status === 401) {
+                    try {
+                        const newToken = await refreshToken();
+                        if (newToken) {
+                            const userResponse = await api.get(
+                                "/api/users/me/"
+                            );
+                            setUser(userResponse.data);
+                        }
+                    } catch (refreshError) {
+                        console.error("Erro ao renovar token:", refreshError);
+                        handleLogout();
+                    }
+                } else {
+                    handleLogout();
+                }
             }
         } else {
             setUser(null);
@@ -40,15 +55,40 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
+    const handleLogout = useCallback(() => {
+        localStorage.removeItem("@SisPromo:token");
+        localStorage.removeItem("@SisPromo:refresh");
+        api.defaults.headers.authorization = "";
+        setUser(null);
+        setLoading(false);
+        navigate("/login");
+    }, [navigate]);
+
     useEffect(() => {
         loadStoredData();
     }, [loadStoredData]);
 
+    const logout = async () => {
+        setLoading(true);
+        try {
+            const refresh = localStorage.getItem("@SisPromo:refresh");
+            if (refresh) {
+                await api.post("/api/logout/", { refresh_token: refresh });
+            }
+        } catch (error) {
+            console.error("Erro ao fazer logout:", error);
+        } finally {
+            handleLogout();
+        }
+    };
+
     const login = async (username, password) => {
         setLoading(true);
         try {
-            // Obtém o token JWT
-            const tokenResponse = await api.post("/api/token/", {
+            const API_URL = import.meta.env.VITE_API_URL;
+
+            // Obtém o token JWT usando axios diretamente
+            const tokenResponse = await axios.post(`${API_URL}/api/token/`, {
                 username,
                 password,
             });
@@ -89,25 +129,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = async () => {
-        setLoading(true);
-        try {
-            const refresh = localStorage.getItem("@SisPromo:refresh");
-            if (refresh) {
-                await api.post("/api/logout/", { refresh_token: refresh });
-            }
-        } catch (error) {
-            console.error("Erro ao fazer logout:", error);
-        } finally {
-            localStorage.removeItem("@SisPromo:token");
-            localStorage.removeItem("@SisPromo:refresh");
-            api.defaults.headers.authorization = "";
-            setUser(null);
-            setLoading(false);
-            navigate("/login");
-        }
-    };
-
     const updateUser = (userData) => {
         setUser(userData);
     };
@@ -130,7 +151,7 @@ export const AuthProvider = ({ children }) => {
             return access;
         } catch (error) {
             console.error("Erro ao renovar token:", error);
-            logout();
+            handleLogout();
             return null;
         }
     };
