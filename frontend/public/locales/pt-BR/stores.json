@@ -2,7 +2,7 @@
     "title": "Lojas",
     "form": {
         "title": {
-            "create": "Nova Loja",
+            "new": "Nova Loja",
             "edit": "Editar Loja"
         },
         "fields": {

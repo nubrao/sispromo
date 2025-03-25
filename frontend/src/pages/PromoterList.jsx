@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Table,
@@ -21,72 +21,91 @@ import {
 import { formatPhone } from "../utils/formatters";
 import { useNavigate } from "react-router-dom";
 import "../styles/promoter.css";
-import promoterBrandRepository from "../repositories/promoterBrandRepository";
-import userRepository from "../repositories/userRepository";
-import brandRepository from "../repositories/brandRepository";
-import { toast } from "react-toastify";
+import { useCache } from "../hooks/useCache";
+import { Toast } from "../components/Toast";
+import Loader from "../components/Loader";
 
 const PromoterList = () => {
     const { t } = useTranslation(["promoters", "common"]);
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-    const [allPromoters, setAllPromoters] = useState([]);
     const [filteredPromoters, setFilteredPromoters] = useState([]);
-    const [promoterBrands, setPromoterBrands] = useState({});
-    const [availableBrands, setAvailableBrands] = useState([]);
     const [searchForm] = Form.useForm();
 
-    useEffect(() => {
-        loadPromoters();
-        loadBrands();
-    }, []);
-
-    const loadBrands = async () => {
-        try {
-            const response = await brandRepository.getAllBrands();
-            const uniqueBrands = Array.from(
-                new Set(response.map((brand) => brand.brand_id))
-            ).map((brandId) => ({
-                id: brandId,
-                brand_name: response.find((b) => b.brand_id === brandId)
-                    .brand_name,
-            }));
-            setAvailableBrands(uniqueBrands);
-        } catch (error) {
-            console.error("Erro ao carregar marcas:", error);
+    // Usando o hook useCache para carregar os dados
+    const {
+        data: users,
+        loading: loadingUsers,
+        error: usersError,
+    } = useCache(
+        "/api/users/",
+        {},
+        {
+            ttl: 5 * 60 * 1000, // 5 minutos
+            onError: () => Toast.error(t("promoters:messages.error.load")),
         }
-    };
+    );
 
-    const loadPromoters = async () => {
-        try {
-            setLoading(true);
-            const [usersResponse, brandsResponse] = await Promise.all([
-                userRepository.getAllUsers(),
-                promoterBrandRepository.getAllPromoterBrands(),
-            ]);
+    const {
+        data: promoterBrandsData,
+        loading: loadingBrands,
+        error: brandsError,
+    } = useCache(
+        "/api/promoter-brands/",
+        {},
+        {
+            ttl: 5 * 60 * 1000, // 5 minutos
+            timeout: 60000, // 60 segundos
+            onError: () =>
+                Toast.error(t("promoters:messages.error.load_brands")),
+        }
+    );
 
-            const promotersList = usersResponse.filter(
-                (user) => user.role === 1
-            );
+    const { data: brandsData, loading: loadingAvailableBrands } = useCache(
+        "/api/brands/",
+        {},
+        {
+            ttl: 30 * 60 * 1000, // 30 minutos
+        }
+    );
 
-            const brandsByPromoter = brandsResponse.reduce((acc, brand) => {
+    // Processando os dados usando useMemo para evitar recálculos desnecessários
+    const allPromoters = useMemo(
+        () => users?.filter((user) => user.role === 1) || [],
+        [users]
+    );
+
+    const promoterBrands = useMemo(
+        () =>
+            promoterBrandsData?.reduce((acc, brand) => {
                 if (!acc[brand.promoter.id]) {
                     acc[brand.promoter.id] = [];
                 }
                 acc[brand.promoter.id].push(brand);
                 return acc;
-            }, {});
+            }, {}) || {},
+        [promoterBrandsData]
+    );
 
-            setPromoterBrands(brandsByPromoter);
-            setAllPromoters(promotersList);
-            setFilteredPromoters(promotersList);
-        } catch (error) {
-            toast.error(t("promoters:messages.error.load"));
-            console.error("Erro ao carregar promotores:", error);
-        } finally {
-            setLoading(false);
+    const availableBrands = useMemo(
+        () =>
+            brandsData
+                ? Array.from(
+                      new Set(brandsData.map((brand) => brand.brand_id))
+                  ).map((brandId) => ({
+                      id: brandId,
+                      brand_name: brandsData.find((b) => b.brand_id === brandId)
+                          .brand_name,
+                  }))
+                : [],
+        [brandsData]
+    );
+
+    // Inicializa os promotores filtrados apenas uma vez quando os dados são carregados
+    useEffect(() => {
+        if (allPromoters.length > 0 && filteredPromoters.length === 0) {
+            setFilteredPromoters(allPromoters);
         }
-    };
+    }, [allPromoters]);
 
     const handleEdit = (record) => {
         navigate(`/promoters/${record.id}/edit`);
@@ -180,6 +199,16 @@ const PromoterList = () => {
         },
     ];
 
+    // Se houver erro em alguma das requisições principais
+    if (usersError || brandsError) {
+        return <div>Erro ao carregar dados. Por favor, tente novamente.</div>;
+    }
+
+    // Se estiver carregando os dados principais
+    if (loadingUsers || loadingBrands) {
+        return <Loader />;
+    }
+
     return (
         <>
             <Card title={t("promoters:title")} className="form-title">
@@ -260,6 +289,7 @@ const PromoterList = () => {
                                     }}
                                     maxTagCount={2}
                                     maxTagTextLength={10}
+                                    loading={loadingAvailableBrands}
                                 />
                             </Form.Item>
                         </Col>
@@ -278,8 +308,9 @@ const PromoterList = () => {
                     bordered
                     dataSource={filteredPromoters}
                     columns={columns}
-                    loading={loading}
+                    loading={loadingUsers || loadingBrands}
                     tableLayout="fixed"
+                    rowKey="id"
                 />
             </Card>
         </>

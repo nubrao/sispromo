@@ -215,7 +215,7 @@ const StoreForm = () => {
                         >
                             {id
                                 ? t("common:buttons.update")
-                                : t("common:buttons.create")}
+                                : t("common:buttons.create_brand")}
                         </Button>
                         <Button
                             onClick={() => navigate("/stores")}
