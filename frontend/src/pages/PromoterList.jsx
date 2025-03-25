@@ -7,7 +7,6 @@ import {
     Button,
     Card,
     Form,
-    message,
     Row,
     Col,
     Tag,
@@ -17,11 +16,11 @@ import {
     EditOutlined,
     SearchOutlined,
     ClearOutlined,
-    UserAddOutlined,
+    PlusOutlined,
 } from "@ant-design/icons";
 import { formatPhone } from "../utils/formatters";
 import { useNavigate } from "react-router-dom";
-import "../styles/promoterForm.css";
+import "../styles/promoter.css";
 import promoterBrandRepository from "../repositories/promoterBrandRepository";
 import userRepository from "../repositories/userRepository";
 import brandRepository from "../repositories/brandRepository";
@@ -166,6 +165,7 @@ const PromoterList = () => {
             title: t("promoters:table.actions"),
             key: "actions",
             width: 120,
+            className: "ant-table-cell-actions",
             render: (_, record) => (
                 <Space>
                     <Button
@@ -186,7 +186,7 @@ const PromoterList = () => {
                 <Space>
                     <Button
                         type="primary"
-                        icon={<UserAddOutlined />}
+                        icon={<PlusOutlined />}
                         onClick={() => navigate("/promoters/new")}
                         className="form-button"
                     >

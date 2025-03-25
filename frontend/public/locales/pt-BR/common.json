@@ -59,7 +59,8 @@
             "view": "Visualizar",
             "confirm": "Confirmar",
             "cancel": "Cancelar"
-        }
+        },
+        "total": "Total de registros: {{total}}"
     },
     "filters": {
         "title": "Filtros",

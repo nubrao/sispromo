@@ -20,7 +20,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { formatCNPJ } from "../utils/formatters";
-import "../styles/storeForm.css";
+import "../styles/store.css";
 import storeRepository from "../repositories/storeRepository";
 
 const StoreList = () => {
@@ -141,10 +141,9 @@ const StoreList = () => {
             render: (text) => String(text || "").toUpperCase(),
         },
         {
-            title: "Ações",
+            title: t("stores:form.fields.actions.label"),
             key: "actions",
             width: 200,
-            fixed: "right",
             className: "ant-table-cell-actions",
             render: (_, record) => (
                 <Space>

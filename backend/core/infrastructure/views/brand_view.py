@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from core.infrastructure.models.brand_model import BrandModel, BrandStore
 from core.infrastructure.models.store_model import StoreModel
 from core.infrastructure.serializers.brand_serializer import BrandSerializer
+from core.infrastructure.repositories.brand_repository import BrandRepository
 from drf_spectacular.utils import extend_schema, extend_schema_view
 import logging
 from core.infrastructure.permissions import IsManagerOrAnalyst
@@ -96,8 +97,7 @@ class BrandViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         """ Lista todas as marcas com suas lojas e periodicidade """
         try:
-            brands = BrandModel.objects.prefetch_related(
-                'brandstore_set__store').all()
+            brands = BrandRepository.get_all_brands()
             results = []
 
             for brand in brands:
@@ -133,7 +133,7 @@ class BrandViewSet(viewsets.ModelViewSet):
 
         if serializer.is_valid():
             try:
-                brand = serializer.save()
+                brand = BrandRepository.create_brand(serializer.validated_data)
                 response_data = self.get_serializer(brand).data
                 return Response(response_data, status=status.HTTP_201_CREATED)
             except Exception as e:
@@ -161,9 +161,15 @@ class BrandViewSet(viewsets.ModelViewSet):
         data = request.data.copy()
 
         try:
+            brand_data = {}
             # Atualiza nome da marca
             if "brand_name" in data:
-                instance.name = data["brand_name"]
+                brand_data["name"] = data["brand_name"]
+
+            # Atualiza a marca
+            if brand_data:
+                instance = BrandRepository.update_brand(
+                    instance.id, brand_data)
 
             # Atualiza a associação da marca com a loja (se fornecido)
             if "store_id" in data:
@@ -184,7 +190,6 @@ class BrandViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
-            instance.save()  # Salva as alterações no banco
             serializer = self.get_serializer(instance)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -208,7 +213,7 @@ class BrandViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
 
         try:
-            instance.delete()
+            BrandRepository.delete_brand(instance.id)
             return Response(
                 {"message": "Marca excluída com sucesso."},
                 status=status.HTTP_204_NO_CONTENT

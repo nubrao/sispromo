@@ -36,6 +36,9 @@
                 "label": "Estado",
                 "placeholder": "Digite o estado da loja",
                 "required": "Por favor, insira o estado da loja"
+            },
+            "actions": {
+                "label": "Ações"
             }
         },
         "buttons": {

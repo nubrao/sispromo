@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { formatCNPJ } from "../utils/formatters";
 import api from "../services/api";
-import "../styles/storeForm.css";
+import "../styles/store.css";
 
 const StoreForm = () => {
     const { t } = useTranslation(["stores", "common"]);

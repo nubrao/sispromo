@@ -191,7 +191,6 @@
     }
 
     .ant-select-selection-item {
-        background-color: var(--button-bg-dark) !important;
         border-color: var(--input-border-dark) !important;
     }
 

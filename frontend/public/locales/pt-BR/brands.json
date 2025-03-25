@@ -6,10 +6,20 @@
             "edit": "Editar Marca"
         },
         "fields": {
-            "name": {
-                "label": "Nome",
+            "brand_name": {
+                "label": "Nome da Marca",
                 "placeholder": "Digite o nome da marca",
-                "required": "Digite o nome da marca"
+                "required": "O nome da marca é obrigatório"
+            },
+            "store": {
+                "label": "Loja",
+                "placeholder": "Selecione uma loja",
+                "required": "A loja é obrigatória"
+            },
+            "visit_frequency": {
+                "label": "Frequência de Visitas",
+                "placeholder": "Digite o número de visitas por mês",
+                "required": "A frequência de visitas é obrigatória"
             }
         },
         "buttons": {
@@ -19,37 +29,46 @@
         }
     },
     "list": {
-        "columns": {
-            "name": "Nome",
-            "promoters": "Promotores",
-            "stores": "Lojas"
+        "title": "Gestão de Marcas",
+        "search": {
+            "brand_name": "Filtrar por Marca",
+            "brand_placeholder": "Digite o nome da marca",
+            "store_name": "Filtrar por Loja",
+            "store_placeholder": "Digite o nome da loja"
         },
-        "empty": "Nenhuma marca encontrada"
-    },
-    "search": {
-        "placeholder": "Buscar por nome"
+        "columns": {
+            "name": "Marca",
+            "store": "Loja",
+            "visit_frequency": "Frequência",
+            "actions": "Ações"
+        },
+        "empty": "Nenhum registro encontrado",
+        "visit_frequency": "{{frequency}}x por mês"
     },
     "buttons": {
-        "new": "Nova Marca"
+        "add": "Adicionar Marca",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "save": "Salvar",
+        "cancel": "Cancelar"
     },
     "messages": {
         "success": {
-            "create": "Marca criada com sucesso",
-            "update": "Marca atualizada com sucesso",
-            "delete": "Marca excluída com sucesso"
+            "create": "Marca cadastrada com sucesso!",
+            "update": "Marca atualizada com sucesso!",
+            "delete": "Marca excluída com sucesso!"
         },
         "error": {
-            "load": "Erro ao carregar marcas",
-            "create": "Erro ao criar marca",
+            "load": "Erro ao carregar os registros",
+            "load_stores": "Erro ao carregar as lojas",
+            "create": "Erro ao cadastrar marca",
             "update": "Erro ao atualizar marca",
             "delete": "Erro ao excluir marca",
-            "duplicate": "Já existe uma marca com este nome"
+            "save": "Erro ao processar a operação"
         }
     },
-    "confirm": {
-        "delete": {
-            "title": "Excluir Marca",
-            "content": "Tem certeza que deseja excluir esta marca?"
-        }
+    "delete": {
+        "title": "Excluir Marca",
+        "confirm": "Tem certeza que deseja excluir esta marca?"
     }
 }

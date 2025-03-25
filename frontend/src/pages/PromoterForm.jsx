@@ -15,7 +15,7 @@ import { toast } from "react-toastify";
 import { formatCPF, formatPhone } from "../utils/formatters";
 import api from "../services/api";
 import { CopyOutlined } from "@ant-design/icons";
-import "../styles/promoterForm.css";
+import "../styles/promoter.css";
 
 const { Title, Text } = Typography;
 
