@@ -18,7 +18,7 @@
             },
             "visit_frequency": {
                 "label": "Frequência de Visitas",
-                "placeholder": "Digite o número de visitas por mês",
+                "placeholder": "Digite o número de visitas por semana",
                 "required": "A frequência de visitas é obrigatória"
             }
         },
@@ -43,7 +43,7 @@
             "actions": "Ações"
         },
         "empty": "Nenhum registro encontrado",
-        "visit_frequency": "{{frequency}}x por mês"
+        "visit_frequency": "{{frequency}}x por semana"
     },
     "buttons": {
         "add": "Adicionar Marca",

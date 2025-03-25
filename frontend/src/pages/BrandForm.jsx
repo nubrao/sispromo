@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Form, Input, Button, Card, Space, Select, InputNumber } from "antd";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import brandRepository from "../repositories/brandRepository";
 import storeRepository from "../repositories/storeRepository";
@@ -10,22 +10,24 @@ import "../styles/brand.css";
 const BrandForm = () => {
     const { t } = useTranslation(["brands", "common"]);
     const navigate = useNavigate();
+    const location = useLocation();
     const { id } = useParams();
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [stores, setStores] = useState([]);
+    const selectedStoreId = location.state?.storeId;
 
     useEffect(() => {
         loadStores();
-        if (id) {
+        if (id && selectedStoreId) {
             loadBrand();
         }
-    }, [id]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, selectedStoreId]);
 
     const loadStores = async () => {
         try {
             const data = await storeRepository.getAllStores();
-            console.log("Lojas carregadas:", data); // Para debug
             setStores(data);
         } catch (error) {
             console.error("Erro ao carregar lojas:", error);
@@ -36,16 +38,37 @@ const BrandForm = () => {
     const loadBrand = async () => {
         try {
             setLoading(true);
-            const brandData = await brandRepository.getBrandById(id);
-            console.log("Dados recebidos:", brandData);
-            if (brandData) {
-                // Se há lojas associadas, pega a primeira para edição
-                const storeData = brandData.stores?.[0];
-                form.setFieldsValue({
-                    brand_name: brandData.brand_name,
-                    store_id: storeData?.store_id,
-                    visit_frequency: storeData?.visit_frequency,
-                });
+            const data = await brandRepository.getBrandById(id);
+
+            // Se os dados vierem como array (GET /brands/)
+            if (Array.isArray(data)) {
+                const brandStore = data.find(
+                    (item) =>
+                        parseInt(item.store_id) === parseInt(selectedStoreId)
+                );
+
+                if (brandStore) {
+                    form.setFieldsValue({
+                        brand_name: brandStore.brand_name,
+                        store_id: parseInt(brandStore.store_id),
+                        visit_frequency: parseInt(brandStore.visit_frequency),
+                    });
+                }
+            }
+            // Se os dados vierem como objeto com array stores (GET /brands/{id})
+            else if (data && data.stores) {
+                const storeData = data.stores.find(
+                    (store) =>
+                        parseInt(store.store_id) === parseInt(selectedStoreId)
+                );
+
+                if (storeData) {
+                    form.setFieldsValue({
+                        brand_name: data.brand_name,
+                        store_id: parseInt(storeData.store_id),
+                        visit_frequency: parseInt(storeData.visit_frequency),
+                    });
+                }
             }
         } catch (error) {
             console.error("Erro ao carregar marca:", error);
@@ -60,16 +83,12 @@ const BrandForm = () => {
             setLoading(true);
             const brandData = {
                 brand_name: String(values.brand_name || "").toUpperCase(),
-                stores: [
-                    {
-                        store_id: values.store_id,
-                        visit_frequency: values.visit_frequency,
-                    },
-                ],
+                store_id: parseInt(values.store_id),
+                visit_frequency: parseInt(values.visit_frequency),
             };
 
             if (id) {
-                await brandRepository.updateBrand(id, brandData);
+                await brandRepository.updateBrand(parseInt(id), brandData);
                 toast.success(t("brands:messages.success.update"));
             } else {
                 await brandRepository.createBrand(brandData);
@@ -80,18 +99,16 @@ const BrandForm = () => {
         } catch (error) {
             console.error("Erro ao salvar:", error);
 
-            if (error.response?.data) {
-                const errorData = error.response.data;
-                if (typeof errorData === "object") {
-                    Object.keys(errorData).forEach((key) => {
-                        const errorMessage = Array.isArray(errorData[key])
-                            ? errorData[key].join(", ")
-                            : errorData[key];
-                        toast.error(`${key}: ${errorMessage}`);
-                    });
-                } else {
-                    toast.error(errorData);
-                }
+            if (error.response?.data?.error) {
+                const errorData = error.response.data.error;
+                Object.keys(errorData).forEach((key) => {
+                    const errorMessage = Array.isArray(errorData[key])
+                        ? errorData[key].join(", ")
+                        : errorData[key];
+                    toast.error(`${key}: ${errorMessage}`);
+                });
+            } else if (error.response?.data) {
+                toast.error(error.response.data);
             } else {
                 toast.error(t("brands:messages.error.save"));
             }
@@ -154,8 +171,11 @@ const BrandForm = () => {
                         allowClear
                     >
                         {stores.map((store) => (
-                            <Select.Option key={store.id} value={store.id}>
-                                {store.name}
+                            <Select.Option
+                                key={store.id}
+                                value={parseInt(store.id)}
+                            >
+                                {String(store.name || "").toUpperCase()}
                             </Select.Option>
                         ))}
                     </Select>
@@ -176,6 +196,8 @@ const BrandForm = () => {
                 >
                     <InputNumber
                         min={1}
+                        type="number"
+                        className="input-number"
                         placeholder={t(
                             "brands:form.fields.visit_frequency.placeholder"
                         )}
@@ -192,8 +214,6 @@ const BrandForm = () => {
                         >
                             {loading
                                 ? t("brands:form.buttons.processing")
-                                : id
-                                ? t("brands:form.buttons.save")
                                 : t("brands:form.buttons.save")}
                         </Button>
                         <Button

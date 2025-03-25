@@ -49,8 +49,8 @@ const BrandList = () => {
         }
     };
 
-    const handleEdit = (brandId) => {
-        navigate(`/brands/${brandId}/edit`);
+    const handleEdit = (brandId, storeId) => {
+        navigate(`/brands/${brandId}/edit`, { state: { storeId } });
     };
 
     const handleDelete = async (brandId) => {
@@ -127,8 +127,10 @@ const BrandList = () => {
                 <Space>
                     <Button
                         icon={<EditOutlined />}
-                        onClick={() => handleEdit(record.brand_id)}
-                        className="form-button edit-button"
+                        onClick={() =>
+                            handleEdit(record.brand_id, record.store_id)
+                        }
+                        className="action-button"
                     >
                         {t("brands:buttons.edit")}
                     </Button>
@@ -210,7 +212,9 @@ const BrandList = () => {
                     <Table
                         columns={columns}
                         dataSource={filteredBrands}
-                        rowKey={(record) => `${record.brand_id}-${record.store_id}`}
+                        rowKey={(record) =>
+                            `${record.brand_id}-${record.store_id}`
+                        }
                         loading={loading}
                         bordered
                         tableLayout="fixed"

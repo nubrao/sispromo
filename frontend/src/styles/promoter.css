@@ -17,7 +17,6 @@
     justify-content: space-evenly;
     gap: 20px;
     flex-wrap: wrap;
-    margin-bottom: -24px;
 }
 
 .form-title {
@@ -33,6 +32,7 @@
     align-items: center;
     justify-content: space-evenly;
     width: 70%;
+    margin-bottom: -24px;
 }
 
 .search-buttons {
