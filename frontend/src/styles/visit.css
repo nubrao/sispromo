@@ -1,0 +1,139 @@
+.form-title {
+    margin-bottom: 24px;
+}
+
+.form {
+    margin-bottom: 24px;
+}
+
+.search-row {
+    margin-bottom: 16px;
+}
+
+.form-input {
+    margin-bottom: 16px;
+}
+
+.form-button {
+    margin-right: 8px;
+}
+
+.clear-button {
+    margin-bottom: 16px;
+}
+
+.edit-button {
+    background-color: #1890ff;
+    border-color: #1890ff;
+}
+
+.edit-button:hover {
+    background-color: #40a9ff;
+    border-color: #40a9ff;
+}
+
+.delete-button {
+    background-color: #ff4d4f;
+    border-color: #ff4d4f;
+}
+
+.delete-button:hover {
+    background-color: #ff7875;
+    border-color: #ff7875;
+}
+
+.ant-table-cell {
+    padding: 12px 8px;
+    background-color: #fff;
+}
+
+.ant-table-row:hover .ant-table-cell {
+    background-color: #f5f5f5;
+}
+
+.ant-table-cell-actions {
+    text-align: right;
+}
+
+.ant-tag {
+    min-width: 80px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .search-row {
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        margin-bottom: 8px;
+    }
+
+    .form-button {
+        margin-bottom: 8px;
+    }
+
+    .ant-table-cell {
+        padding: 8px 4px;
+    }
+}
+
+/* Table styles */
+.ant-table-wrapper {
+    margin-top: 16px;
+}
+
+.search-input {
+    width: 100%;
+}
+
+.search-input .ant-input {
+    background-color: var(--input-bg-dark);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.search-input .ant-input:hover {
+    border-color: var(--primary-color);
+}
+
+.search-input .ant-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.search-input .ant-input::placeholder {
+    color: var(--text-color-secondary);
+}
+
+.search-column {
+    margin-bottom: 16px;
+}
+
+/* List specific styles */
+.ant-table-cell {
+    padding: 8px !important;
+    background-color: var(--input-bg-dark) !important;
+}
+
+/* Actions column styles */
+.ant-table-cell.ant-table-cell-actions {
+    text-align: flex-start !important;
+}
+
+.ant-table-cell-actions .ant-space {
+    align-items: center;
+    justify-content: space-evenly;
+    width: 100%;
+    margin-bottom: 8px;
+    margin-top: 8px;
+}
+
+.ant-table-cell-actions .ant-space-item {
+    display: flex;
+    align-items: center;
+}
+
+.ant-table-cell-actions {
+    width: 100%;
+}

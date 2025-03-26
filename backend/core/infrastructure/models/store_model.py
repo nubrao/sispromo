@@ -1,7 +1,7 @@
 from django.db import models
-from core.infrastructure.models.state_model import StateChoices
 from django.core.exceptions import ValidationError
 from validate_docbr import CNPJ
+from .state_model import StateChoices
 
 
 def validate_cnpj(value):
@@ -21,8 +21,13 @@ class StoreModel(models.Model):
         choices=StateChoices.choices,
         default=StateChoices.SP
     )
-    cnpj = models.CharField(max_length=20, unique=True, null=True, blank=True,
-                            validators=[validate_cnpj])
+    cnpj = models.CharField(
+        max_length=20,
+        unique=True,
+        null=True,
+        blank=True,
+        validators=[validate_cnpj]
+    )
 
     def __str__(self):
         store_number = f" - {self.number}" if self.number else ""

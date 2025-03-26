@@ -1,16 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth import get_user_model
 from core.infrastructure.models.store_model import StoreModel
 from core.infrastructure.models.brand_model import BrandModel
 from core.infrastructure.models.visit_model import VisitModel
 from core.infrastructure.models.promoter_brand_model import PromoterBrand
-
-User = get_user_model()
-
-# Se o User já estiver registrado, remove antes de registrar novamente
-if User in admin.site._registry:
-    admin.site.unregister(User)
+from .infrastructure.models.user_model import User
 
 
 class CustomUserAdmin(UserAdmin):

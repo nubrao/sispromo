@@ -3,6 +3,21 @@ import { useTranslation } from "react-i18next";
 import { Form, Button, Select, DatePicker, Space } from "antd";
 import "../../styles/form.css";
 import { Navigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useCache } from "../../hooks/useCache";
+import { Toast } from "../Toast";
+import Loader from "../Loader";
+import api from "../../services/api";
+
+const { Option } = Select;
+
+const VISIT_STATUS = {
+    PENDING: "pending",
+    IN_PROGRESS: "in_progress",
+    COMPLETED: "completed",
+    CANCELLED: "cancelled",
+};
 
 const VisitForm = ({
     promoterId,
@@ -22,6 +37,77 @@ const VisitForm = ({
     loading,
 }) => {
     const { t } = useTranslation(["visits", "common"]);
+    const navigate = useNavigate();
+    const { id } = useParams();
+    const [form] = Form.useForm();
+
+    // Usando o hook useCache para carregar os dados
+    const {
+        data: promotersData,
+        loading: loadingPromoters,
+        error: promotersError,
+    } = useCache(
+        "/api/promoters/",
+        {},
+        {
+            ttl: 5 * 60 * 1000, // 5 minutos
+            onError: () =>
+                Toast.error(t("visits:messages.error.load_promoters")),
+        }
+    );
+
+    const {
+        data: storesData,
+        loading: loadingStores,
+        error: storesError,
+    } = useCache(
+        "/api/stores/",
+        {},
+        {
+            ttl: 5 * 60 * 1000, // 5 minutos
+            onError: () => Toast.error(t("visits:messages.error.load_stores")),
+        }
+    );
+
+    const {
+        data: brandsData,
+        loading: loadingBrands,
+        error: brandsError,
+    } = useCache(
+        "/api/brands/",
+        {},
+        {
+            ttl: 30 * 60 * 1000, // 30 minutos
+            onError: () => Toast.error(t("visits:messages.error.load_brands")),
+        }
+    );
+
+    // Processando os dados usando useMemo para evitar recálculos desnecessários
+    const allPromoters = useMemo(() => promotersData || [], [promotersData]);
+    const allStores = useMemo(() => storesData || [], [storesData]);
+    const allBrands = useMemo(() => brandsData || [], [brandsData]);
+
+    useEffect(() => {
+        if (id) {
+            loadVisit();
+        }
+    }, [id]);
+
+    const loadVisit = async () => {
+        try {
+            setLoading(true);
+            const response = await api.get(`/api/visits/${id}/`);
+            form.setFieldsValue({
+                ...response.data,
+                date: response.data.visit_date,
+            });
+        } catch (error) {
+            Toast.error(t("visits:messages.error.load"));
+            navigate("/visits");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleBrandChange = (value) => {
         const selectedBrand = brands.find((b) => b.brand_id === value);
@@ -31,10 +117,57 @@ const VisitForm = ({
         });
     };
 
+    const handleSubmitForm = async (values) => {
+        try {
+            setLoading(true);
+            const data = {
+                ...values,
+                visit_date: values.date.format("YYYY-MM-DD"),
+            };
+
+            if (id) {
+                await api.put(`/api/visits/${id}/`, data);
+                Toast.success(t("visits:messages.success.update"));
+            } else {
+                await api.post("/api/visits/", data);
+                Toast.success(t("visits:messages.success.create"));
+            }
+            navigate("/visits");
+        } catch (error) {
+            if (error.response?.status === 400) {
+                const errors = error.response.data;
+                Object.keys(errors).forEach((key) => {
+                    form.setFields([
+                        {
+                            name: key,
+                            errors: [errors[key]],
+                        },
+                    ]);
+                });
+                Toast.error(t("visits:messages.error.validation"));
+            } else {
+                Toast.error(t("visits:messages.error.save"));
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Se houver erro em alguma das requisições principais
+    if (promotersError || storesError || brandsError) {
+        return <div>Erro ao carregar dados. Por favor, tente novamente.</div>;
+    }
+
+    // Se estiver carregando os dados principais
+    if (loadingPromoters || loadingStores || loadingBrands) {
+        return <Loader />;
+    }
+
     return (
         <Form
-            onFinish={handleSubmit}
+            form={form}
             layout="vertical"
+            onFinish={handleSubmitForm}
             initialValues={{
                 promoter_id: promoterId,
                 brand_id: brand.id,
@@ -58,7 +191,7 @@ const VisitForm = ({
                             "visits:form.fields.promoter.placeholder"
                         )}
                         onChange={(value) => setPromoterId(value)}
-                        options={promoters.map((promoter) => ({
+                        options={allPromoters.map((promoter) => ({
                             value: promoter.id,
                             label: promoter.name,
                         }))}
@@ -79,7 +212,7 @@ const VisitForm = ({
                 <Select
                     placeholder={t("visits:form.fields.brand.placeholder")}
                     onChange={handleBrandChange}
-                    options={brands.map((brand) => ({
+                    options={allBrands.map((brand) => ({
                         value: brand.brand_id,
                         label: brand.brand_name,
                     }))}
@@ -100,7 +233,7 @@ const VisitForm = ({
                     placeholder={t("visits:form.fields.store.placeholder")}
                     onChange={(value) => setStoreId(value)}
                     disabled={!brand.id}
-                    options={filteredStores.map((store) => ({
+                    options={allStores.map((store) => ({
                         value: store.id,
                         label: `${store.name} - ${store.number}`,
                     }))}
@@ -122,6 +255,27 @@ const VisitForm = ({
                     onChange={(date) => setVisitDate(date)}
                     format="YYYY-MM-DD"
                 />
+            </Form.Item>
+
+            <Form.Item
+                name="status"
+                label={t("visits:form.fields.status.label")}
+                rules={[
+                    {
+                        required: true,
+                        message: t("visits:form.fields.status.required"),
+                    },
+                ]}
+            >
+                <Select
+                    placeholder={t("visits:form.fields.status.placeholder")}
+                >
+                    {Object.entries(VISIT_STATUS).map(([key, value]) => (
+                        <Option key={value} value={value}>
+                            {t(`visits:status.${value}`)}
+                        </Option>
+                    ))}
+                </Select>
             </Form.Item>
 
             <Form.Item>

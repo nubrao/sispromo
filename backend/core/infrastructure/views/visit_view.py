@@ -150,32 +150,26 @@ class VisitViewSet(viewsets.ModelViewSet):
     queryset = VisitModel.objects.all()
     lookup_field = 'pk'
     lookup_url_kwarg = 'id'
-
-    def get_permissions(self):
-        return [IsAuthenticated()]
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path(
-                '<int:id>/',
-                self.as_view(
-                    {'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}),
-                name=f'{self.basename}-detail'
-            ),
-        ]
-        return custom_urls + urls
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """
-        Retorna o queryset de visitas filtrado com base no papel do usuário.
-        Se o usuário for um promotor, retorna apenas suas visitas.
-        Se for analista ou gerente, retorna todas as visitas.
+        Filtra as visitas com base no papel do usuário:
+        - Promotores veem apenas suas próprias visitas
+        - Gerentes veem visitas de suas marcas
+        - Administradores veem todas as visitas
         """
         user = self.request.user
+        queryset = VisitModel.objects.all()
+
         if user.role == 1:  # Promotor
-            return self.visit_repository.get_visits_by_filters(user_id=user.id)
-        return self.visit_repository.list_all()
+            return queryset.filter(promoter=user)
+        elif user.role == 2:  # Gerente
+            return queryset.filter(brand__manager=user)
+        elif user.role == 3:  # Administrador
+            return queryset
+
+        return queryset.none()
 
     def retrieve(self, request, *args, **kwargs):
         """Busca uma visita específica"""
@@ -775,37 +769,14 @@ class VisitViewSet(viewsets.ModelViewSet):
     #             status=status.HTTP_500_INTERNAL_SERVER_ERROR
     #         )
     def perform_create(self, serializer):
-        """Executa a criação de uma visita"""
-        # Se o usuário for promotor, associa o promotor atual à visita
-        if self.request.user.role == 1:  # Promotor
-            try:
-                promoter = User.get_promoter_by_user(
-                    self.request.user
-                )
-                if not promoter:
-                    raise serializers.ValidationError(
-                        "Usuário não possui um promotor associado."
-                    )
-                serializer.save(promoter=promoter)
-            except User.DoesNotExist:
-                raise serializers.ValidationError(
-                    "Usuário não possui um promotor associado."
-                )
+        """
+        Ao criar uma visita, define o promotor como o usuário atual
+        se ele for um promotor
+        """
+        if self.request.user.role == 1:
+            serializer.save(promoter=self.request.user)
         else:
-            # Se for gestor ou analista, usa o promotor selecionado
-            promoter_id = self.request.data.get('promoter')
-            if not promoter_id:
-                raise serializers.ValidationError(
-                    "ID do promotor não fornecido."
-                )
-
-            try:
-                promoter = User.objects.get(id=promoter_id)
-                serializer.save(promoter=promoter)
-            except User.DoesNotExist:
-                raise serializers.ValidationError(
-                    "Promotor não encontrado."
-                )
+            serializer.save()
 
     def get_visits_by_filters(
         self,

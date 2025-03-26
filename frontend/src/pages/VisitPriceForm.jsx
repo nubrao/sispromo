@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Form, Input, Button, Select, Card, Space } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
@@ -6,118 +6,140 @@ import { toast } from "react-toastify";
 import api from "../services/api";
 import PropTypes from "prop-types";
 import "../styles/form.css";
+import { useCache } from "../hooks/useCache";
+import { Toast } from "../components/Toast";
+import Loader from "../components/Loader";
 
-const VisitPriceForm = ({
-    loading,
-    setLoading,
-}) => {
+const { Option } = Select;
+
+const VisitPriceForm = ({ loading, setLoading }) => {
     const { t } = useTranslation(["visits", "common"]);
     const navigate = useNavigate();
     const { id } = useParams();
     const [form] = Form.useForm();
-    const [stores, setStores] = useState([]);
-    const [brands, setBrands] = useState([]);
-    const [selectedBrand, setSelectedBrand] = useState(null);
-    const [filteredStores, setFilteredStores] = useState([]);
+
+    // Usando o hook useCache para carregar os dados
+    const {
+        data: brands,
+        loading: loadingBrands,
+        error: brandsError,
+    } = useCache(
+        "/api/brands/",
+        {},
+        {
+            ttl: 30 * 60 * 1000, // 30 minutos
+            onError: () => Toast.error(t("visits:messages.error.load_brands")),
+        }
+    );
+
+    const {
+        data: stores,
+        loading: loadingStores,
+        error: storesError,
+    } = useCache(
+        "/api/stores/",
+        {},
+        {
+            ttl: 5 * 60 * 1000, // 5 minutos
+            onError: () => Toast.error(t("visits:messages.error.load_stores")),
+        }
+    );
+
+    // Processando os dados usando useMemo para evitar recálculos desnecessários
+    const allBrands = useMemo(() => brands || [], [brands]);
+    const allStores = useMemo(() => stores || [], [stores]);
 
     useEffect(() => {
-        loadData();
         if (id) {
             loadVisitPrice();
         }
     }, [id]);
 
-    useEffect(() => {
-        if (selectedBrand) {
-            // Filtra as lojas que estão vinculadas à marca selecionada
-            const storesForBrand = brands
-                .filter((b) => b.brand_id === parseInt(selectedBrand, 10))
-                .map((b) => b.store_id);
-
-            const filtered = stores.filter((store) =>
-                storesForBrand.includes(store.id)
-            );
-            setFilteredStores(filtered);
-        } else {
-            setFilteredStores([]);
-        }
-    }, [selectedBrand, brands, stores]);
-
-    const loadData = async () => {
-        try {
-            setLoading(true);
-            const [brandsResponse, storesResponse] = await Promise.all([
-                api.get("/api/brands/"),
-                api.get("/api/stores/"),
-            ]);
-
-            setBrands(brandsResponse.data);
-            setStores(storesResponse.data);
-        } catch (error) {
-            console.error("Erro ao carregar dados:", error);
-            toast.error(t("visits:messages.error.load"));
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const loadVisitPrice = async () => {
         try {
             setLoading(true);
             const response = await api.get(`/api/visit-prices/${id}/`);
-            form.setFieldsValue({
-                brand_id: response.data.brand_id,
-                store_id: response.data.store_id,
-                price: response.data.price,
-            });
-            handleBrandChange(response.data.brand_id);
+            form.setFieldsValue(response.data);
         } catch (error) {
-            console.error("Erro ao carregar preço da visita:", error);
-            toast.error(t("visits:messages.error.load_price"));
+            Toast.error(t("visits:messages.error.load_price"));
+            navigate("/visit-prices");
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleBrandChange = (brandId) => {
-        const selectedBrand = brands.find((b) => b.brand_id === brandId);
-        if (selectedBrand) {
-            const brandStores = stores.filter((store) =>
-                brands.some(
-                    (b) => b.brand_id === brandId && b.store_id === store.id
-                )
-            );
-            setFilteredStores(brandStores);
-        } else {
-            setFilteredStores([]);
         }
     };
 
     const handleSubmit = async (values) => {
         try {
             setLoading(true);
-            const data = {
-                brand_id: values.brand_id,
-                store_id: values.store_id,
-                price: parseFloat(values.price),
-            };
-
             if (id) {
-                await api.put(`/api/visit-prices/${id}/`, data);
+                await api.put(`/api/visit-prices/${id}/`, values);
                 toast.success(t("visits:messages.success.update_price"));
             } else {
-                await api.post("/api/visit-prices/", data);
+                await api.post("/api/visit-prices/", values);
                 toast.success(t("visits:messages.success.create_price"));
             }
-
             navigate("/visit-prices");
         } catch (error) {
-            console.error("Erro ao salvar preço da visita:", error);
-            toast.error(t("visits:messages.error.save_price"));
+            if (error.response?.status === 400) {
+                const errors = error.response.data;
+                Object.keys(errors).forEach((key) => {
+                    form.setFields([
+                        {
+                            name: key,
+                            errors: [errors[key]],
+                        },
+                    ]);
+                });
+                toast.error(t("visits:messages.error.validation"));
+            } else {
+                toast.error(t("visits:messages.error.save_price"));
+            }
         } finally {
             setLoading(false);
         }
     };
+
+    const validatePrice = async (_, value) => {
+        if (!value) {
+            return Promise.reject(t("visits:validation.price_required"));
+        }
+
+        const price = parseFloat(value);
+        if (isNaN(price) || price <= 0) {
+            return Promise.reject(t("visits:validation.price_invalid"));
+        }
+
+        // Verifica se já existe um preço para a mesma combinação de loja e marca
+        const values = form.getFieldsValue();
+        if (!id) {
+            try {
+                const response = await api.get("/api/visit-prices/", {
+                    params: {
+                        store: values.store_id,
+                        brand: values.brand_id,
+                    },
+                });
+                if (response.data.length > 0) {
+                    return Promise.reject(t("visits:validation.price_exists"));
+                }
+            } catch (error) {
+                console.error("Erro ao verificar preço existente:", error);
+            }
+        }
+
+        return Promise.resolve();
+    };
+
+    // Se houver erro em alguma das requisições principais
+    if (brandsError || storesError) {
+        return <div>Erro ao carregar dados. Por favor, tente novamente.</div>;
+    }
+
+    // Se estiver carregando os dados principais
+    if (loadingBrands || loadingStores) {
+        return <Loader />;
+    }
+
     return (
         <Card
             title={
@@ -139,8 +161,10 @@ const VisitPriceForm = ({
                 >
                     <Select
                         placeholder={t("visits:form.fields.brand.placeholder")}
-                        onChange={handleBrandChange}
-                        options={brands.map((brand) => ({
+                        onChange={(value) => {
+                            form.setFieldValue("brand_id", value);
+                        }}
+                        options={allBrands.map((brand) => ({
                             value: brand.brand_id,
                             label: brand.brand_name,
                         }))}
@@ -160,7 +184,7 @@ const VisitPriceForm = ({
                     <Select
                         placeholder={t("visits:form.fields.store.placeholder")}
                         disabled={!form.getFieldValue("brand_id")}
-                        options={filteredStores.map((store) => ({
+                        options={allStores.map((store) => ({
                             value: store.id,
                             label: `${store.name} - ${store.number}`,
                         }))}
@@ -179,6 +203,9 @@ const VisitPriceForm = ({
                             type: "number",
                             min: 0,
                             message: t("visits:price.fields.price.min"),
+                        },
+                        {
+                            validator: validatePrice,
                         },
                     ]}
                 >
