@@ -229,7 +229,7 @@ const VisitsList = () => {
 
     return (
         <>
-            <Card title={t("visits:list.title")} className="form-title">
+            <Card title={t("visits:form.title.new")} className="form-title">
                 <Space>
                     <Button
                         type="primary"
