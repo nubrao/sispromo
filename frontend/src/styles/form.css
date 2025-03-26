@@ -21,7 +21,7 @@
     margin-bottom: 10px;
 }
 
-.form-input {
+/* .form-input {
     display: flex;
     flex-direction: column;
     width: 400px;
@@ -30,7 +30,7 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     box-sizing: border-box;
-}
+} */
 
 .report-filters {
     display: flex;
@@ -165,14 +165,14 @@
     font-size: 1em;
 }
 
-.form-actions {
+/* .form-actions {
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100%;
     min-width: 40px;
     gap: 10px;
-}
+} */
 
 .cancel-button,
 .save-button {
@@ -180,7 +180,7 @@
     margin-left: 4px;
 }
 
-.edit-button,
+/* .edit-button,
 .delete-button,
 .password-button {
     height: 32px;
@@ -193,7 +193,7 @@
     cursor: pointer;
     font-size: 16px;
     transition: background 0.3s;
-}
+} */
 
 .export-buttons {
     display: flex;
@@ -355,43 +355,56 @@
 
 .filter-container {
     display: flex;
-    flex-direction: row;
-    gap: 10px;
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f8f9fa;
     flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    max-width: 1200px;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: #f5f5f5;
+    border-radius: 4px;
 }
 
-.filter-container input,
-.filter-container select {
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     flex: 1;
     min-width: 200px;
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
 }
 
-.filter-container .clear-button {
-    background-color: #dc3545;
+.filter-group label {
+    font-weight: 500;
+    color: #333;
+}
+
+.form-input-text {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    width: 100%;
+    transition: border-color 0.2s;
+}
+
+.form-input-text:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.clear-button {
+    padding: 0.5rem 1rem;
+    background-color: #e74c3c;
     color: white;
     border: none;
-    padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 0.9rem;
     transition: background-color 0.2s;
-    font-weight: bold;
+    align-self: flex-end;
 }
 
-.filter-container .clear-button:hover {
-    background-color: #c82333;
+.clear-button:hover {
+    background-color: #c0392b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -555,25 +568,6 @@
     .date-input {
         width: 60%;
     }
-}
-
-.clear-button {
-    background-color: #ff6363;
-    color: white;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1em;
-}
-
-.clear-button:hover {
-    background-color: #ff4747;
 }
 
 .loading-container {

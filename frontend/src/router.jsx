@@ -9,8 +9,8 @@ import StoreList from "./pages/StoreList";
 import StoreForm from "./pages/StoreForm";
 import PromoterForm from "./pages/PromoterForm";
 import PromoterList from "./pages/PromoterList";
-import Visits from "./pages/Visits";
 import ResetPassword from "./pages/ResetPassword";
+import VisitsList from "./pages/VisitsList";
 
 const router = createBrowserRouter([
     {
@@ -71,7 +71,7 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "/visits",
-                        element: <Visits />,
+                        element: <VisitsList />,
                     },
                 ],
             },

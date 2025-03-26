@@ -177,7 +177,7 @@ const StoreList = () => {
                     onClick={() => navigate("/stores/new")}
                     className="form-button"
                 >
-                    {t("stores:form.title.create")}
+                    {t("stores:form.title.new")}
                 </Button>
             </Space>
             <Form form={searchForm} layout="vertical" className="form">
@@ -209,6 +209,17 @@ const StoreList = () => {
                                 }}
                             />
                         </Form.Item>
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => {
+                                setEditingVisit(null);
+                                setModalVisible(true);
+                            }}
+                            className="form-button"
+                        >
+                            {t("visits:buttons.new")}
+                        </Button>
                     </Col>
                     <Col xs={24} sm={8}>
                         <Form.Item
