@@ -8,7 +8,7 @@ import {
     Select,
     Space,
     Modal,
-    Typography,
+    Typography
 } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -39,7 +39,6 @@ const PromoterForm = () => {
     const loadBrands = async () => {
         try {
             const response = await api.get("/api/brands/");
-            // Filtra marcas duplicadas usando um Map para manter apenas uma ocorrência por brand_id
             const uniqueBrands = Array.from(
                 new Map(
                     response.data.map((brand) => [brand.brand_id, brand])
@@ -59,7 +58,6 @@ const PromoterForm = () => {
                 api.get(`/api/promoter-brands/?promoter_id=${id}`),
             ]);
 
-            // Formata os dados do usuário
             form.setFieldsValue({
                 ...userResponse.data,
                 cpf: formatCPF(userResponse.data.cpf),
@@ -77,9 +75,11 @@ const PromoterForm = () => {
     const handleSubmit = async (values) => {
         try {
             setLoading(true);
+            const cleanCPF = values.cpf.replace(/\D/g, "");
+
             const promoterData = {
                 ...values,
-                cpf: values.cpf.replace(/\D/g, ""),
+                cpf: cleanCPF,
                 phone: values.phone.replace(/\D/g, ""),
                 first_name: values.first_name?.toUpperCase() || "",
                 last_name: values.last_name?.toUpperCase() || "",
@@ -88,22 +88,26 @@ const PromoterForm = () => {
             };
 
             let promoterId = id;
+            if (!id) {
+                promoterData.username = cleanCPF;
+                promoterData.password = cleanCPF.substring(0, 6);
+                promoterData.password_confirm = cleanCPF.substring(0, 6);
+            }
+
             if (id) {
                 await api.patch(`/api/users/${id}/`, promoterData);
                 toast.success(t("promoters:messages.success.update"));
             } else {
-                const response = await api.post(
-                    "/api/users/register/",
-                    promoterData
-                );
+                const response = await api.post("/api/users/register/", promoterData);
                 toast.success(t("promoters:messages.success.create"));
                 promoterId = response.data.id;
+
+                setTempPassword(cleanCPF.substring(0, 6));
+                setShowPasswordModal(true);
             }
 
-            // Atualizar marcas do promotor
             if (values.brands) {
                 try {
-                    // Busca as marcas atuais do promotor
                     const currentBrandsResponse = await api.get(
                         `/api/promoter-brands/?promoter_id=${promoterId}`
                     );
@@ -111,7 +115,6 @@ const PromoterForm = () => {
                         (pb) => pb.brand.brand_id
                     );
 
-                    // Identifica marcas a serem removidas e adicionadas
                     const brandsToRemove = currentBrands.filter(
                         (brandId) => !values.brands.includes(brandId)
                     );
@@ -119,9 +122,7 @@ const PromoterForm = () => {
                         (brandId) => !currentBrands.includes(brandId)
                     );
 
-                    // Remove as marcas que não estão mais selecionadas
                     for (const brandId of brandsToRemove) {
-                        // Busca o ID da relação promoter-brand
                         const relationResponse = await api.get(
                             `/api/promoter-brands/?promoter_id=${promoterId}&brand_id=${brandId}`
                         );
@@ -133,7 +134,6 @@ const PromoterForm = () => {
                         }
                     }
 
-                    // Adiciona as novas marcas
                     for (const brandId of brandsToAdd) {
                         await api.post("/api/promoter-brands/", {
                             promoter_id: promoterId,
@@ -142,7 +142,6 @@ const PromoterForm = () => {
                     }
                 } catch (error) {
                     console.error("Erro ao atualizar marcas:", error);
-                    // Se houver erro ao atualizar marcas, mostra mensagem mas não impede o salvamento do promotor
                     toast.error(t("promoters:messages.error.update_brands"));
                 }
             }
@@ -152,10 +151,8 @@ const PromoterForm = () => {
             console.error("Erro ao salvar:", error);
 
             if (error.response?.data) {
-                // Se o erro vier do backend com detalhes
                 const errorData = error.response.data;
                 if (typeof errorData === "object") {
-                    // Se for um objeto com campos específicos
                     Object.keys(errorData).forEach((key) => {
                         const errorMessage = Array.isArray(errorData[key])
                             ? errorData[key].join(", ")
@@ -163,11 +160,9 @@ const PromoterForm = () => {
                         toast.error(`${key}: ${errorMessage}`);
                     });
                 } else {
-                    // Se for uma mensagem simples
                     toast.error(errorData);
                 }
             } else {
-                // Se for um erro genérico
                 toast.error(t("promoters:messages.error.save"));
             }
         } finally {

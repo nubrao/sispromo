@@ -27,8 +27,6 @@ const reportRepository = {
                 )
             );
 
-            console.log('Clean params before API call:', cleanParams);
-
             const response = await api.get('/api/visits/report/', {
                 params: cleanParams
             });

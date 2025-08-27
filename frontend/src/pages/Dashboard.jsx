@@ -37,7 +37,6 @@ const Dashboard = () => {
             console.error("Erro ao carregar dados do dashboard:", error);
 
             if (error.code === 'ECONNABORTED') {
-                console.log(`Tentativa ${retryCount + 1} de 3`);
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 return loadDashboardData(retryCount + 1);
             }

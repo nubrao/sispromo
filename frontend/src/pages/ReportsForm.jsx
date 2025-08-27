@@ -280,7 +280,6 @@ const Reports = () => {
                     promoter: visit.promoter,
                     visits: [],
                 };
-                // Inicializa a data atual para este promotor se ainda não existir
                 if (!promoterDates[promoterId]) {
                     setPromoterDates((prev) => ({
                         ...prev,
@@ -408,12 +407,9 @@ const Reports = () => {
     const handleSubmit = async (values) => {
         try {
             setLoading(true);
-            console.log('Form Values:', values);
 
-            // Declare formattedValues at the beginning of the function
             const formattedValues = {};
 
-            // Handle IDs - convert to numbers and check for valid values
             if (values.promoter_id && values.promoter_id !== '') {
                 formattedValues.promoter_id = Number(values.promoter_id);
             }
@@ -426,16 +422,12 @@ const Reports = () => {
                 formattedValues.store_id = Number(values.store_id);
             }
 
-            // Handle date range
             if (values.date_range?.length === 2) {
                 formattedValues.start_date = values.date_range[0].format('YYYY-MM-DD');
                 formattedValues.end_date = values.date_range[1].format('YYYY-MM-DD');
             }
 
-            console.log('Formatted Values:', formattedValues);
-
             const response = await reportRepository.getReport(formattedValues);
-            console.log('API Response:', response);
 
             if (!response || !response.visits) {
                 message.info('Nenhum dado encontrado para os filtros selecionados');
@@ -459,13 +451,10 @@ const Reports = () => {
     };
 
     const handlePromoterChange = (value) => {
-        console.log('Selected promoter:', value);
         form.setFieldsValue({ promoter_id: value });
     };
 
-    // Add a handler for brand selection
     const handleBrandChange = (value) => {
-        console.log('Selected brand:', value);
         form.setFieldsValue({ brand_id: value });
     };
 

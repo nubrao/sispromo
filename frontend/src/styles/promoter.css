@@ -207,18 +207,18 @@
         background-color: var(--modal-bg-dark);
     }
 
-    .ant-table-thead > tr > th {
+    .ant-table-thead>tr>th {
         background-color: var(--button-bg-dark) !important;
         color: var(--text-dark) !important;
     }
 
-    .ant-table-tbody > tr > td {
+    .ant-table-tbody>tr>td {
         background-color: var(--modal-bg-dark);
         color: var(--text-dark);
         border-color: var(--input-border-dark);
     }
 
-    .ant-table-tbody > tr:hover > td {
+    .ant-table-tbody>tr:hover>td {
         background-color: var(--background-dark) !important;
     }
 
@@ -226,7 +226,7 @@
         background-color: var(--background-dark) !important;
     }
 
-    .ant-table-row-selected > td {
+    .ant-table-row-selected>td {
         background-color: var(--button-bg-dark) !important;
     }
 }
@@ -354,7 +354,7 @@
     background-color: var(--background-light);
 }
 
-.ant-table-thead > tr > th {
+.ant-table-thead>tr>th {
     height: 35px !important;
     padding: 4px 16px !important;
     background: #f0f2f5;
@@ -362,7 +362,7 @@
     line-height: 35px !important;
 }
 
-.ant-table-tbody > tr > td {
+.ant-table-tbody>tr>td {
     padding: 4px 16px !important;
     line-height: 40px !important;
 }
@@ -488,12 +488,12 @@
     width: 100%;
 }
 
-.ant-table-thead > tr > th {
+.ant-table-thead>tr>th {
     background: #f0f2f5;
     font-weight: 600;
 }
 
-.ant-table-tbody > tr:hover > td {
+.ant-table-tbody>tr:hover>td {
     background: #f5f5f5;
 }
 
@@ -532,11 +532,11 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="dark"] .ant-table-thead > tr > th {
+[data-theme="dark"] .ant-table-thead>tr>th {
     background: #141414;
 }
 
-[data-theme="dark"] .ant-table-tbody > tr:hover > td {
+[data-theme="dark"] .ant-table-tbody>tr:hover>td {
     background: #262626;
 }
 
@@ -688,12 +688,12 @@
     gap: 4px;
 }
 
-.promoter-list .ant-table-thead > tr > th {
+.promoter-list .ant-table-thead>tr>th {
     background-color: #f5f5f5;
     font-weight: 600;
 }
 
-.promoter-list .ant-table-tbody > tr:hover > td {
+.promoter-list .ant-table-tbody>tr:hover>td {
     background-color: #f0f7ff;
 }
 
@@ -714,4 +714,14 @@
     .transparent-select-dropdown .ant-select-item-option-active {
         background-color: rgba(24, 144, 255, 0.15) !important;
     }
+}
+
+.ant-select-selection-item {
+    background-color: #4CAF50 !important;
+    color: white !important;
+    border: none !important;
+}
+
+.ant-select-selection-item-remove {
+    color: white !important;
 }
