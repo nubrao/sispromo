@@ -70,16 +70,22 @@ class VisitSerializer(serializers.ModelSerializer):
         serializers.DecimalField(max_digits=10, decimal_places=2)
     )
     def get_visit_price(self, obj):
-        """Retorna o preço da visita com base na relação Loja + Marca"""
+        """
+        Busca o preço da visita baseado na marca e loja.
+        Retorna 0 se não encontrar preço configurado.
+        """
         try:
-            visit_price = VisitPriceModel.objects.get(
-                store_id=obj.store_id,
-                brand_id=obj.brand_id
-            )
-            # Obtém o preço corretamente
-            return VisitPriceSerializer(visit_price).data["price"]
-        except VisitPriceModel.DoesNotExist:
-            return "0.00"  # Retorna um valor padrão caso não haja preço cadastrado
+            price = VisitPriceModel.objects.filter(
+                brand_id=obj.brand_id,
+                store_id=obj.store_id
+            ).first()
+            
+            if price:
+                return price.price
+            return 0
+        except Exception as e:
+            logger.error(f"Erro ao buscar preço da visita: {str(e)}")
+            return 0
 
     @extend_schema_field(
         serializers.DecimalField(max_digits=10, decimal_places=2)

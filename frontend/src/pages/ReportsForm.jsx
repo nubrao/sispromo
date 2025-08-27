@@ -1,18 +1,67 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
-import "../styles/form.css";
+import React, { useState, useEffect } from 'react';
+import {
+    Card,
+    Row,
+    Col,
+    Statistic,
+    Typography,
+    Empty,
+    Table,
+    Form,
+    DatePicker,
+    Select,
+    Button,
+    Space,
+    message
+} from 'antd';
+import {
+    TeamOutlined,
+    UserOutlined,
+    ShopOutlined,
+    TagOutlined
+} from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
 import Loader from "../components/Loader";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import storeRepository from "../repositories/storeRepository";
 import { Toast } from "../components/Toast";
-import { useTranslation } from "react-i18next";
-import { Form, Select, DatePicker, Button, Card, Table, Space } from "antd";
-import { toast } from "react-toastify";
+import reportRepository from "../repositories/reportRepository";
 import api from "../services/api";
-import dayjs from "dayjs";
 
 const { RangePicker } = DatePicker;
+
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error('Error in reports component:', error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{
+                    textAlign: 'center',
+                    padding: '48px 16px'
+                }}>
+                    <h2>Algo deu errado</h2>
+                    <p>Tente recarregar a página ou contate o suporte.</p>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
 
 const Reports = () => {
     const { t } = useTranslation(["reports", "common"]);
@@ -49,18 +98,16 @@ const Reports = () => {
 
     const fetchPromoters = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/promoters/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const promoterOptions = response.data.map((promoter) => ({
-                value: promoter.id,
-                label: `${promoter.name} (${promoter.email || "Sem email"})`,
-                name: promoter.name,
-                email: promoter.email,
+            const data = await reportRepository.getPromoters();
+            const promoterOptions = data.map((promoter) => ({
+                value: promoter.id.toString(),
+                label: promoter.full_name,
+                name: promoter.full_name
             }));
             setPromoters(promoterOptions);
         } catch (error) {
             console.error("Erro ao buscar promotores:", error);
+            toast.error(t("reports:messages.error.loadPromoters"));
         }
     };
 
@@ -76,170 +123,148 @@ const Reports = () => {
 
     const fetchBrands = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/brands/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setBrands(response.data);
+            const data = await reportRepository.getBrands();
+            setBrands(data);
         } catch (error) {
             console.error("Erro ao buscar marcas:", error);
-        }
-    };
-
-    const handleSubmit = async (values) => {
-        try {
-            setLoading(true);
-            const params = new URLSearchParams();
-
-            if (values.promoter_id) {
-                params.append("promoter_id", values.promoter_id);
-            }
-            if (values.brand_id) {
-                params.append("brand_id", values.brand_id);
-            }
-            if (values.store_id) {
-                params.append("store_id", values.store_id);
-            }
-            if (values.date_range) {
-                params.append(
-                    "start_date",
-                    values.date_range[0].format("YYYY-MM-DD")
-                );
-                params.append(
-                    "end_date",
-                    values.date_range[1].format("YYYY-MM-DD")
-                );
-            }
-
-            const response = await api.get(
-                `/api/visits/report/?${params.toString()}`
-            );
-            setReports(response.data);
-        } catch (error) {
-            console.error("Erro ao gerar relatório:", error);
-            toast.error(t("reports:messages.error.generate"));
-        } finally {
-            setLoading(false);
+            toast.error(t("reports:messages.error.loadBrands"));
         }
     };
 
     const columns = [
         {
             title: t("reports:list.columns.promoter"),
-            dataIndex: "promoter_name",
+            dataIndex: ['promoter', 'name'],
             key: "promoter_name",
         },
         {
             title: t("reports:list.columns.brand"),
-            dataIndex: "brand_name",
+            dataIndex: ['brand', 'name'],
             key: "brand_name",
         },
         {
             title: t("reports:list.columns.store"),
-            dataIndex: "store_name",
+            dataIndex: ['store', 'name'],
             key: "store_name",
             render: (text, record) =>
-                `${text} - ${record.store_number || "S/N"}`,
+                `${text} - ${record.store.number || "S/N"}`,
         },
         {
             title: t("reports:list.columns.date"),
-            dataIndex: "visit_date",
-            key: "visit_date",
+            dataIndex: "date",
+            key: "date",
             render: (date) => dayjs(date).format("DD/MM/YYYY"),
         },
         {
             title: t("reports:list.columns.price"),
-            dataIndex: "price",
-            key: "price",
-            render: (price) => `R$ ${parseFloat(price).toFixed(2)}`,
+            dataIndex: "value",
+            key: "value",
+            render: (value) => `R$ ${parseFloat(value).toFixed(2)}`,
         },
     ];
 
-    const groupVisitsByDate = (visits) => {
-        const groupedVisits = {};
-        visits.forEach((visit) => {
-            const date = visit.visit_date;
-            if (!groupedVisits[date]) {
-                groupedVisits[date] = {
-                    visits: [],
-                    totalValue: 0,
-                };
-            }
-            groupedVisits[date].visits.push(visit);
-            groupedVisits[date].totalValue += visit.visit_price;
-        });
-        return groupedVisits;
-    };
+    const renderSummary = () => {
+        if (!reports?.summary) return null;
 
-    const calculateMonthTotal = (visitsByDate, currentMonth, currentYear) => {
-        return Object.entries(visitsByDate).reduce((total, [date, data]) => {
-            const visitDate = new Date(date);
-            if (
-                visitDate.getMonth() === currentMonth &&
-                visitDate.getFullYear() === currentYear
-            ) {
-                return total + data.totalValue;
-            }
-            return total;
-        }, 0);
+        return (
+            <Card
+                title={t("reports:summary.title")}
+                className="summary-card"
+                style={{ marginBottom: 24 }}
+            >
+                <Row gutter={[24, 16]}>
+                    <Col span={24}>
+                        <Typography.Text type="secondary">
+                            {t("reports:summary.period")}:{' '}
+                        </Typography.Text>
+                        <Typography.Text>
+                            {dayjs(reports.period.start_date).format("DD/MM/YYYY")} - {dayjs(reports.period.end_date).format("DD/MM/YYYY")}
+                        </Typography.Text>
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <Statistic
+                            title={t("reports:summary.totalVisits")}
+                            value={reports.summary.total_visits}
+                            prefix={<TeamOutlined />}
+                        />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <Statistic
+                            title={t("reports:summary.totalValue")}
+                            value={reports.summary.total_value}
+                            precision={2}
+                            prefix="R$"
+                        />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <Statistic
+                            title={t("reports:summary.uniquePromoters")}
+                            value={reports.summary.unique_promoters}
+                            prefix={<UserOutlined />}
+                        />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <Statistic
+                            title={t("reports:summary.uniqueStores")}
+                            value={reports.summary.unique_stores}
+                            prefix={<ShopOutlined />}
+                        />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <Statistic
+                            title={t("reports:summary.uniqueBrands")}
+                            value={reports.summary.unique_brands}
+                            prefix={<TagOutlined />}
+                        />
+                    </Col>
+                </Row>
+            </Card>
+        );
     };
 
     const renderTableView = () => {
-        if (!reports.length) return <p>Nenhum dado encontrado.</p>;
-
-        // Ordenar por promotor e data
-        const sortedReports = [...reports].sort((a, b) => {
-            // Primeiro ordena por promotor
-            const promoterCompare = a.promoter.name
-                .toUpperCase()
-                .localeCompare(b.promoter.name.toUpperCase());
-            if (promoterCompare !== 0) return promoterCompare;
-            // Depois por data
-            return new Date(a.visit_date) - new Date(b.visit_date);
-        });
-
-        // Agrupar por promotor
-        const groupedByPromoter = {};
-        sortedReports.forEach((visit) => {
-            const promoterName = visit.promoter.name.toUpperCase();
-            if (!groupedByPromoter[promoterName]) {
-                groupedByPromoter[promoterName] = {
-                    visits: [],
-                    total: 0,
-                };
-            }
-            groupedByPromoter[promoterName].visits.push(visit);
-            groupedByPromoter[promoterName].total += visit.visit_price;
-        });
+        if (!reports?.visits?.length) {
+            return (
+                <div style={{ textAlign: 'center', padding: '24px' }}>
+                    <Empty
+                        description={t("reports:noData")}
+                    />
+                </div>
+            );
+        }
 
         return (
-            <Table
-                columns={columns}
-                dataSource={sortedReports}
-                loading={loading}
-                rowKey="id"
-                pagination={{
-                    total: reports.length,
-                    pageSize: 10,
-                    showTotal: (total) =>
-                        t("common:table.pagination.total", { total }),
-                }}
-                summary={(pageData) => {
-                    const totalPrice = pageData.reduce(
-                        (sum, row) => sum + parseFloat(row.price),
-                        0
-                    );
-                    return (
-                        <Table.Summary.Row>
-                            <Table.Summary.Cell index={0} colSpan={4}>
-                                <strong>{t("reports:list.total")}</strong>
-                            </Table.Summary.Cell>
-                            <Table.Summary.Cell index={1}>
-                                <strong>R$ {totalPrice.toFixed(2)}</strong>
-                            </Table.Summary.Cell>
-                        </Table.Summary.Row>
-                    );
-                }}
-            />
+            <>
+                {renderSummary()}
+                <Table
+                    columns={columns}
+                    dataSource={reports.visits}
+                    loading={loading}
+                    rowKey="id"
+                    pagination={{
+                        total: reports.visits.length,
+                        pageSize: 10,
+                        showTotal: (total) =>
+                            t("common:table.pagination.total", { total }),
+                    }}
+                    summary={(pageData) => {
+                        const totalValue = pageData.reduce(
+                            (sum, row) => sum + parseFloat(row.value || 0),
+                            0
+                        );
+                        return (
+                            <Table.Summary.Row>
+                                <Table.Summary.Cell index={0} colSpan={4}>
+                                    <strong>{t("reports:list.total")}</strong>
+                                </Table.Summary.Cell>
+                                <Table.Summary.Cell index={1}>
+                                    <strong>R$ {totalValue.toFixed(2)}</strong>
+                                </Table.Summary.Cell>
+                            </Table.Summary.Row>
+                        );
+                    }}
+                />
+            </>
         );
     };
 
@@ -350,96 +375,197 @@ const Reports = () => {
         );
     };
 
+    const groupVisitsByDate = (visits) => {
+        const groupedVisits = {};
+        visits.forEach((visit) => {
+            const date = visit.visit_date;
+            if (!groupedVisits[date]) {
+                groupedVisits[date] = {
+                    visits: [],
+                    totalValue: 0,
+                };
+            }
+            groupedVisits[date].visits.push(visit);
+            groupedVisits[date].totalValue += visit.visit_price;
+        });
+        return groupedVisits;
+    };
+
+    const calculateMonthTotal = (visitsByDate, currentMonth, currentYear) => {
+        return Object.entries(visitsByDate).reduce((total, [date, data]) => {
+            const visitDate = new Date(date);
+            if (
+                visitDate.getMonth() === currentMonth &&
+                visitDate.getFullYear() === currentYear
+            ) {
+                return total + data.totalValue;
+            }
+            return total;
+        }, 0);
+    };
+
+    const handleSubmit = async (values) => {
+        try {
+            setLoading(true);
+            console.log('Form Values:', values);
+
+            // Declare formattedValues at the beginning of the function
+            const formattedValues = {};
+
+            // Handle IDs - convert to numbers and check for valid values
+            if (values.promoter_id && values.promoter_id !== '') {
+                formattedValues.promoter_id = Number(values.promoter_id);
+            }
+
+            if (values.brand_id && values.brand_id !== '') {
+                formattedValues.brand_id = Number(values.brand_id);
+            }
+
+            if (values.store_id && values.store_id !== '') {
+                formattedValues.store_id = Number(values.store_id);
+            }
+
+            // Handle date range
+            if (values.date_range?.length === 2) {
+                formattedValues.start_date = values.date_range[0].format('YYYY-MM-DD');
+                formattedValues.end_date = values.date_range[1].format('YYYY-MM-DD');
+            }
+
+            console.log('Formatted Values:', formattedValues);
+
+            const response = await reportRepository.getReport(formattedValues);
+            console.log('API Response:', response);
+
+            if (!response || !response.visits) {
+                message.info('Nenhum dado encontrado para os filtros selecionados');
+                setReports(null);
+                return;
+            }
+
+            setReports(response);
+            message.success('Relatório gerado com sucesso');
+
+        } catch (error) {
+            console.error("Error details:", {
+                error: error,
+                response: error.response,
+                data: error.response?.data
+            });
+            message.error('Erro ao gerar relatório. Tente novamente.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePromoterChange = (value) => {
+        console.log('Selected promoter:', value);
+        form.setFieldsValue({ promoter_id: value });
+    };
+
+    // Add a handler for brand selection
+    const handleBrandChange = (value) => {
+        console.log('Selected brand:', value);
+        form.setFieldsValue({ brand_id: value });
+    };
+
     return (
-        <Card title={t("reports:title")}>
-            <Form form={form} onFinish={handleSubmit} layout="vertical">
-                <Form.Item
-                    name="promoter_id"
-                    label={t("reports:form.fields.promoter.label")}
-                >
-                    <Select
-                        allowClear
-                        placeholder={t(
-                            "reports:form.fields.promoter.placeholder"
-                        )}
-                        options={promoters.map((promoter) => ({
-                            value: promoter.id,
-                            label: promoter.name,
-                        }))}
-                    />
-                </Form.Item>
-
-                <Form.Item
-                    name="brand_id"
-                    label={t("reports:form.fields.brand.label")}
-                >
-                    <Select
-                        allowClear
-                        placeholder={t("reports:form.fields.brand.placeholder")}
-                        options={brands.map((brand) => ({
-                            value: brand.brand_id,
-                            label: brand.brand_name,
-                        }))}
-                    />
-                </Form.Item>
-
-                <Form.Item
-                    name="store_id"
-                    label={t("reports:form.fields.store.label")}
-                >
-                    <Select
-                        allowClear
-                        placeholder={t("reports:form.fields.store.placeholder")}
-                        options={stores.map((store) => ({
-                            value: store.id,
-                            label: `${store.name} - ${store.number}`,
-                        }))}
-                    />
-                </Form.Item>
-
-                <Form.Item
-                    name="date_range"
-                    label={t("reports:form.fields.date_range.label")}
-                >
-                    <RangePicker
-                        format="DD/MM/YYYY"
-                        placeholder={[
-                            t("reports:form.fields.date_range.start"),
-                            t("reports:form.fields.date_range.end"),
-                        ]}
-                    />
-                </Form.Item>
-
-                <Form.Item>
-                    <Space>
-                        <Button
-                            type="primary"
-                            htmlType="submit"
-                            loading={loading}
+        <ErrorBoundary>
+            <div className="reports-container">
+                <Card title={t("reports:title")}>
+                    <Form form={form} onFinish={handleSubmit} layout="vertical">
+                        <Form.Item
+                            name="promoter_id"
+                            label={t("reports:form.promoter")}
                         >
-                            {loading
-                                ? t("reports:form.buttons.processing")
-                                : t("reports:form.buttons.generate")}
-                        </Button>
-                        <Button onClick={() => form.resetFields()}>
-                            {t("reports:form.buttons.clear")}
-                        </Button>
-                    </Space>
-                </Form.Item>
-            </Form>
+                            <Select
+                                showSearch
+                                placeholder={t("reports:form.selectPromoter")}
+                                optionFilterProp="children"
+                                filterOption={(input, option) =>
+                                    option?.label?.toLowerCase().includes(input.toLowerCase())
+                                }
+                                options={promoters}
+                                onChange={handlePromoterChange}
+                                allowClear
+                            />
+                        </Form.Item>
 
-            <div className={`table-container ${viewMode}`}>
-                {loading ? (
-                    <div className="loading-container">
-                        <Loader />
+                        <Form.Item
+                            name="brand_id"
+                            label={t("reports:form.brand")}
+                        >
+                            <Select
+                                showSearch
+                                placeholder={t("reports:form.selectBrand")}
+                                optionFilterProp="children"
+                                onChange={handleBrandChange}
+                                filterOption={(input, option) =>
+                                    option?.label?.toLowerCase().includes(input.toLowerCase())
+                                }
+                                options={brands}
+                                allowClear
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="store_id"
+                            label={t("reports:form.fields.store.label")}
+                        >
+                            <Select
+                                allowClear
+                                placeholder={t("reports:form.fields.store.placeholder")}
+                                options={stores.map((store) => ({
+                                    value: store.id,
+                                    label: `${store.name} - ${store.number}`,
+                                }))}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="date_range"
+                            label={t("reports:form.fields.date_range.label")}
+                        >
+                            <RangePicker
+                                format="DD/MM/YYYY"
+                                placeholder={[
+                                    t("reports:form.fields.date_range.start"),
+                                    t("reports:form.fields.date_range.end"),
+                                ]}
+                            />
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Space>
+                                <Button
+                                    type="primary"
+                                    htmlType="submit"
+                                    loading={loading}
+                                >
+                                    {loading
+                                        ? t("reports:form.buttons.processing")
+                                        : t("reports:form.buttons.generate")}
+                                </Button>
+                                <Button onClick={() => form.resetFields()}>
+                                    {t("reports:form.buttons.clear")}
+                                </Button>
+                            </Space>
+                        </Form.Item>
+                    </Form>
+
+                    <div className={`table-container ${viewMode}`}>
+                        {loading ? (
+                            <div className="loading-container">
+                                <Loader />
+                            </div>
+                        ) : viewMode === "table" ? (
+                            renderTableView()
+                        ) : (
+                            renderCalendarView()
+                        )}
                     </div>
-                ) : viewMode === "table" ? (
-                    renderTableView()
-                ) : (
-                    renderCalendarView()
-                )}
+                </Card>
             </div>
-        </Card>
+        </ErrorBoundary>
     );
 };
 
