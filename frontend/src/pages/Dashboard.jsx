@@ -22,18 +22,39 @@ const Dashboard = () => {
     const { user } = useContext(AuthContext);
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         loadDashboardData();
     }, []);
 
-    const loadDashboardData = async () => {
+    const loadDashboardData = async (retryCount = 0) => {
+        if (retryCount >= 3) {
+            setError('Máximo de tentativas excedido');
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
+            setError(null);
             const response = await api.get("/api/dashboard/");
+            
+            if (!response?.data) {
+                throw new Error('Dados não recebidos');
+            }
+
             setDashboardData(response.data);
         } catch (error) {
             console.error("Erro ao carregar dados do dashboard:", error);
+            
+            if (error.code === 'ECONNABORTED') {
+                console.log(`Tentativa ${retryCount + 1} de 3`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                return loadDashboardData(retryCount + 1);
+            }
+            
+            setError(error.message || t("dashboard:messages.error.load"));
             toast.error(t("dashboard:messages.error.load"));
         } finally {
             setLoading(false);
@@ -109,7 +130,7 @@ const Dashboard = () => {
                             {
                                 title: t("dashboard:table.store"),
                                 render: (_, record) =>
-                                    `${record.store__name} - ${record.store__number}`,
+                                    `${record.store_name.toUpperCase()} - ${record.store_number}`,
                             },
                             {
                                 title: t("dashboard:table.brand"),
@@ -129,7 +150,7 @@ const Dashboard = () => {
         );
     };
 
-    const renderManagerDashboard = () => {
+    const renderAnalystManagerDashboard = () => {
         if (!dashboardData) return null;
 
         const {
@@ -149,7 +170,7 @@ const Dashboard = () => {
         }));
 
         return (
-            <div className="manager-dashboard">
+            <div className="analyst-manager-dashboard">
                 <Row gutter={[16, 16]}>
                     <Col span={8}>
                         <Card>
@@ -239,7 +260,7 @@ const Dashboard = () => {
                                     {
                                         title: t("dashboard:table.store"),
                                         render: (_, record) =>
-                                            `${record.store_name} - ${record.store_number}`,
+                                            `${record.store_name.toUpperCase()} - ${record.store_number}`,
                                     },
                                     {
                                         title: t("dashboard:table.progress"),
@@ -266,6 +287,18 @@ const Dashboard = () => {
         );
     };
 
+    const renderDashboardByRole = () => {
+        switch (user.role) {
+            case 1: // Promoter
+                return renderPromoterDashboard();
+            case 2: // Analyst
+            case 3: // Manager
+                return renderAnalystManagerDashboard();
+            default:
+                return null;
+        }
+    };
+
     if (loading) {
         return <Loader />;
     }
@@ -273,9 +306,7 @@ const Dashboard = () => {
     return (
         <div className="dashboard">
             <h1>{t("dashboard:title")}</h1>
-            {user.role === 1
-                ? renderPromoterDashboard()
-                : renderManagerDashboard()}
+            {renderDashboardByRole()}
         </div>
     );
 };

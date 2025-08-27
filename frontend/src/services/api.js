@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
     baseURL: API_URL,
-    timeout: 10000,
+    timeout: 30000, // Aumentando o timeout para 30 segundos
     headers: {
         'Content-Type': 'application/json',
     },
@@ -98,10 +98,13 @@ api.interceptors.response.use(
                 window.location.href = '/login';
                 Toast.showToast('Sua sessão expirou. Por favor, faça login novamente.', 'warning');
             }
+        } else if (error.code === 'ECONNABORTED') {
+            console.error('Requisição excedeu o tempo limite. Tentando novamente...');
+            return api.request(originalRequest);
         }
 
         return Promise.reject(error);
     }
 );
 
-export default api; 
+export default api;

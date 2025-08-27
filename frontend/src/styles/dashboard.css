@@ -350,8 +350,102 @@
     font-size: 1.1em;
 }
 
+/* Base dashboard styles */
+.dashboard {
+    padding: 16px;
+    width: 100%;
+    max-width: 1400px;
+    /* Limit maximum width */
+    margin: 0 auto;
+    /* Center content */
+    box-sizing: border-box;
+}
+
+/* Stats cards section */
+.stats-row .ant-card {
+    height: auto;
+    min-height: 100px;
+    /* Reduced from 120px */
+}
+
+.stats-row .ant-statistic {
+    text-align: center;
+}
+
+.stats-row .ant-statistic-title {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stats-row .ant-statistic-content {
+    font-size: 24px;
+    /* Smaller font size */
+}
+
+/* Progress section */
+.brand-progress-item {
+    margin-bottom: 12px;
+    padding: 8px;
+}
+
+.brand-progress-item h4 {
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+/* Table adjustments */
+.ant-table-wrapper {
+    overflow-x: auto;
+}
+
+/* Responsive layouts */
+@media (max-width: 1200px) {
+    .stats-row .ant-statistic-content {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    .stats-row .ant-col {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 16px;
+    }
+
+    .mt-4 .ant-col {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard {
+        padding: 8px;
+    }
+
+    .stats-row {
+        margin-bottom: 8px;
+    }
+
+    .stats-row .ant-card {
+        margin-bottom: 8px;
+    }
+
+    .ant-statistic-title {
+        font-size: 12px;
+    }
+
+    .ant-statistic-content {
+        font-size: 18px;
+    }
+}
+
 /* Tema escuro */
 @media (prefers-color-scheme: dark) {
+
     .dashboard-title,
     .chart-card h3,
     .brand-card h3,
@@ -434,66 +528,113 @@
 }
 
 .dashboard {
-    padding: 24px;
+    padding: 16px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.dashboard h1 {
-    margin-bottom: 24px;
-    color: #1f1f1f;
+.promoter-dashboard,
+.analyst-manager-dashboard {
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.mt-4 {
-    margin-top: 24px;
+/* Ajuste para os cards de estatísticas */
+.ant-card {
+    width: 100%;
+    height: 100%;
+    min-height: 120px;
 }
 
-.brand-progress-item {
-    margin-bottom: 16px;
-}
+/* Ajuste do layout responsivo */
+@media (max-width: 992px) {
+    .dashboard Row>.ant-col {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
 
-.brand-progress-item h4 {
-    margin-bottom: 8px;
-    color: #1f1f1f;
-}
-
-.manager-dashboard .ant-card,
-.promoter-dashboard .ant-card {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.manager-dashboard .ant-progress-text,
-.promoter-dashboard .ant-progress-text {
-    font-size: 12px;
-}
-
-.manager-dashboard .ant-table-thead > tr > th,
-.promoter-dashboard .ant-table-thead > tr > th {
-    background-color: #fafafa;
-    font-weight: 600;
-}
-
-.manager-dashboard .ant-statistic-title,
-.promoter-dashboard .ant-statistic-title {
-    font-size: 14px;
-    color: #595959;
-}
-
-.manager-dashboard .ant-statistic-content,
-.promoter-dashboard .ant-statistic-content {
-    font-size: 24px;
-    font-weight: 600;
-}
-
-.manager-dashboard .recharts-wrapper {
-    margin: 0 auto;
+    .mt-4 .ant-col {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 16px;
+    }
 }
 
 @media (max-width: 768px) {
     .dashboard {
-        padding: 16px;
+        padding: 8px;
     }
 
-    .manager-dashboard .ant-col,
-    .promoter-dashboard .ant-col {
+    .ant-card {
         margin-bottom: 16px;
+    }
+
+    /* Ajuste para gráficos responsivos */
+    .recharts-wrapper {
+        width: 100% !important;
+        height: 300px !important;
+    }
+
+    .recharts-responsive-container {
+        width: 100% !important;
+        padding-right: 16px;
+    }
+
+    /* Ajuste para tabelas responsivas */
+    .ant-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+    }
+}
+
+/* Ajuste para cartões de progresso */
+.brand-progress-item {
+    margin-bottom: 16px;
+    width: 100%;
+}
+
+.ant-progress {
+    width: 100%;
+}
+
+/* Ajuste para o layout em grid */
+.ant-row {
+    margin-right: -8px !important;
+    margin-left: -8px !important;
+}
+
+.ant-col {
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+}
+
+/* Estilo específico para cards com tabelas */
+.table-card {
+    margin: 16px 0;
+    overflow: auto;
+}
+
+.table-card .ant-card-body {
+    padding: 12px;
+}
+
+/* Ajuste da tabela dentro do card */
+.table-card .ant-table-wrapper {
+    overflow-x: auto;
+}
+
+.table-card .ant-table {
+    min-width: 600px;
+    /* Define uma largura mínima para a tabela */
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .table-card {
+        margin: 8px 0;
+    }
+
+    .table-card .ant-card-body {
+        padding: 8px;
     }
 }

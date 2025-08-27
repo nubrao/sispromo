@@ -209,17 +209,6 @@ const StoreList = () => {
                                 }}
                             />
                         </Form.Item>
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => {
-                                setEditingVisit(null);
-                                setModalVisible(true);
-                            }}
-                            className="form-button"
-                        >
-                            {t("visits:buttons.new")}
-                        </Button>
                     </Col>
                     <Col xs={24} sm={8}>
                         <Form.Item
