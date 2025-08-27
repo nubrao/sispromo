@@ -21,17 +21,6 @@
     margin-bottom: 10px;
 }
 
-/* .form-input {
-    display: flex;
-    flex-direction: column;
-    width: 400px;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-} */
-
 .report-filters {
     display: flex;
     flex-direction: column;
@@ -165,35 +154,11 @@
     font-size: 1em;
 }
 
-/* .form-actions {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    min-width: 40px;
-    gap: 10px;
-} */
-
 .cancel-button,
 .save-button {
     background-color: transparent;
     margin-left: 4px;
 }
-
-/* .edit-button,
-.delete-button,
-.password-button {
-    height: 32px;
-    width: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background 0.3s;
-} */
 
 .export-buttons {
     display: flex;
@@ -335,6 +300,7 @@
     .city {
         width: 58%;
     }
+
     .state {
         width: 38%;
     }
@@ -348,6 +314,7 @@
     .storeName {
         width: 68%;
     }
+
     .number {
         width: 28%;
     }
@@ -847,15 +814,15 @@
     transition: 0.4s;
 }
 
-input:checked + .slider {
+input:checked+.slider {
     background-color: #646cff;
 }
 
-input:focus + .slider {
+input:focus+.slider {
     box-shadow: 0 0 1px #646cff;
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
     transform: translateX(26px);
 }
 
@@ -977,4 +944,16 @@ input:checked + .slider:before {
     .status-btn.inactive {
         background-color: #e57373;
     }
+}
+
+.reports-container {
+    padding: 24px;
+}
+
+.reports-container .ant-empty {
+    margin: 32px 0;
+}
+
+.reports-container .ant-card {
+    margin-bottom: 24px;
 }

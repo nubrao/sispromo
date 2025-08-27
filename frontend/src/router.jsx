@@ -11,6 +11,7 @@ import PromoterForm from "./pages/PromoterForm";
 import PromoterList from "./pages/PromoterList";
 import ResetPassword from "./pages/ResetPassword";
 import VisitsList from "./pages/VisitsList";
+import ReportsForm from "./pages/ReportsForm";
 
 const router = createBrowserRouter([
     {
@@ -75,7 +76,7 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "/reports",
-                        element: <Dashboard />,
+                        element: <ReportsForm />,
                     },
                 ],
             },

@@ -54,5 +54,15 @@
     "view": {
         "table": "Visualização em Tabela",
         "calendar": "Visualização em Calendário"
-    }
+    },
+    "summary": {
+        "title": "Resumo do Período",
+        "period": "Período",
+        "totalVisits": "Total de Visitas",
+        "totalValue": "Valor Total",
+        "uniquePromoters": "Promotores Únicos",
+        "uniqueStores": "Lojas Únicas",
+        "uniqueBrands": "Marcas Únicas"
+    },
+    "noData": "Nenhum dado encontrado para o período selecionado"
 }

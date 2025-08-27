@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, serializers
+from rest_framework import viewsets, status 
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.http import HttpResponse
@@ -11,6 +11,8 @@ from io import BytesIO
 from rest_framework.decorators import action
 from decimal import Decimal
 import pandas as pd
+from django.utils import timezone
+from datetime import datetime, timedelta
 import logging
 from core.infrastructure.models.user_model import User
 from drf_spectacular.utils import (
@@ -20,7 +22,6 @@ from drf_spectacular.utils import (
     OpenApiTypes
 )
 from typing import List, Optional
-from django.urls import path
 
 logger = logging.getLogger(__name__)
 
@@ -682,92 +683,6 @@ class VisitViewSet(viewsets.ModelViewSet):
             }
         }
     )
-    # @action(detail=False, methods=['get'])
-    # def dashboard(self, request):
-    #     """Retorna dados para o dashboard"""
-    #     try:
-    #         user = request.user
-    #         today = datetime.now()
-    #         # Encontra o início da semana (segunda-feira)
-    #         start_of_week = today - timedelta(days=today.weekday())
-    #         start_of_week = start_of_week.replace(
-    #             hour=0, minute=0, second=0, microsecond=0
-    #         )
-    #         # Encontra o fim da semana (domingo)
-    #         end_of_week = (
-    #             start_of_week +
-    #             timedelta(days=6, hours=23, minutes=59, seconds=59)
-    #         )
-    #         # Busca visitas usando o repositório
-    #         user_id = (
-    #             user.id if user.role == 1 else None
-    #         )
-    #         visits = self.visit_repository.get_visits_for_dashboard(
-    #             start_date=start_of_week,
-    #             end_date=end_of_week,
-    #             user_id=user_id
-    #         )
-    #         # Prepara os dados para o dashboard
-    #         dashboard_data = []
-    #         for brand in brands:
-    #             brand_data = {
-    #                 'brand_id': brand.brand_id,
-    #                 'brand_name': brand.name,
-    #                 'stores': []
-    #             }
-    #             for brand_store in brand.brandstore_set.all():
-    #                 store_visits = visits.filter(
-    #                     brand=brand,
-    #                     store=brand_store.store
-    #                 )
-    #                 # Calcula o número de visitas realizadas e esperadas
-    #                 visits_done = store_visits.count()
-    #                 expected_visits = brand_store.visit_frequency
-    #                 # Calcula o progresso
-    #                 progress = (
-    #                     min(100, (visits_done / expected_visits) * 100)
-    #                     if expected_visits > 0 else 0
-    #                 )
-    #                 store_data = {
-    #                     'store_id': brand_store.store.id,
-    #                     'store_name': brand_store.store.name,
-    #                     'store_number': brand_store.store.number,
-    #                     'visit_frequency': brand_store.visit_frequency,
-    #                     'visits_done': visits_done,
-    #                     'visits_remaining': (
-    #                         max(0, expected_visits - visits_done)
-    #                     ),
-    #                     'progress': progress,
-    #                     'last_visit': (
-    #                         store_visits.order_by('-visit_date')
-    #                         .first().visit_date if store_visits.exists()
-    #                         else None
-    #                     )
-    #                 }
-    #                 brand_data['stores'].append(store_data)
-    #             # Calcula totais para a marca
-    #             brand_data['total_stores'] = len(brand_data['stores'])
-    #             brand_data['total_visits_done'] = sum(
-    #                 store['visits_done'] for store in brand_data['stores']
-    #             )
-    #             brand_data['total_visits_expected'] = sum(
-    #                 store['visit_frequency']
-    #                 for store in brand_data['stores']
-    #             )
-    #             total_expected = brand_data['total_visits_expected']
-    #             total_done = brand_data['total_visits_done']
-    #             brand_data['total_progress'] = (
-    #                 (total_done / total_expected) * 100
-    #                 if total_expected > 0 else 0
-    #             )
-    #             dashboard_data.append(brand_data)
-    #         return Response(dashboard_data, status=status.HTTP_200_OK)
-    #     except Exception as e:
-    #         logger.error(f"Erro ao gerar dados do dashboard: {e}")
-    #         return Response(
-    #             {"error": "Erro ao gerar dados do dashboard."},
-    #             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-    #         )
     def perform_create(self, serializer):
         """
         Ao criar uma visita, define o promotor como o usuário atual
@@ -806,3 +721,123 @@ class VisitViewSet(viewsets.ModelViewSet):
             end_date=end_date,
             user_id=user_id
         )
+
+    @action(detail=False, methods=['get'])
+    def report(self, request):
+        """Generate report with optional filters."""
+        try:
+            logger.info(f"Report request params: {request.query_params}")
+            
+            # Initialize dates
+            today = timezone.now().date()
+            start_date = None
+            end_date = None
+            
+            # Get date parameters
+            start_date_param = request.query_params.get('start_date')
+            end_date_param = request.query_params.get('end_date')
+
+            try:
+                if start_date_param and end_date_param:
+                    start_date = datetime.strptime(start_date_param, '%Y-%m-%d').date()
+                    end_date = datetime.strptime(end_date_param, '%Y-%m-%d').date()
+                else:
+                    # Default to last 2 months
+                    start_date = today - timedelta(days=60)
+                    end_date = today
+            except ValueError as e:
+                logger.error(f"Date parsing error: {e}")
+                return Response(
+                    {"error": "Invalid date format. Use YYYY-MM-DD"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Build filters
+            filters = {
+                'visit_date__gte': start_date,
+                'visit_date__lte': end_date
+            }
+
+            # Add optional ID filters
+            for param_name in ['promoter_id', 'brand_id', 'store_id']:
+                param_value = request.query_params.get(param_name)
+                if param_value:
+                    try:
+                        filters[param_name] = int(param_value)
+                    except ValueError:
+                        return Response(
+                            {"error": f"Invalid {param_name}: must be a number"},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+            logger.info(f"Applying filters: {filters}")
+            queryset = self.get_queryset().filter(**filters)
+
+            # Generate report data
+            report_data = {
+                "period": {
+                    "start_date": start_date.strftime('%Y-%m-%d'),
+                    "end_date": end_date.strftime('%Y-%m-%d')
+                },
+                "summary": {
+                    "total_visits": 0,
+                    "total_value": 0.0,
+                    "unique_promoters": 0,
+                    "unique_stores": 0,
+                    "unique_brands": 0
+                },
+                "visits": []
+            }
+
+            # Process visits
+            unique_promoters = set()
+            unique_stores = set()
+            unique_brands = set()
+
+            for visit in queryset:
+                try:
+                    visit_price = float(self.get_serializer().get_visit_price(visit))
+                except (TypeError, ValueError):
+                    visit_price = 0.0
+
+                visit_data = {
+                    'id': visit.id,
+                    'date': visit.visit_date.strftime('%Y-%m-%d'),
+                    'promoter': {
+                        'id': visit.promoter.id,
+                        'name': visit.promoter.get_full_name()
+                    },
+                    'store': {
+                        'id': visit.store.id,
+                        'name': visit.store.name,
+                        'number': visit.store.number
+                    },
+                    'brand': {
+                        'id': visit.brand.id,
+                        'name': visit.brand.name
+                    },
+                    'value': visit_price,
+                    'status': visit.status
+                }
+                
+                report_data['visits'].append(visit_data)
+                report_data['summary']['total_visits'] += 1
+                report_data['summary']['total_value'] += visit_price
+                
+                unique_promoters.add(visit.promoter_id)
+                unique_stores.add(visit.store_id)
+                unique_brands.add(visit.brand_id)
+
+            # Update summary counts
+            report_data['summary']['unique_promoters'] = len(unique_promoters)
+            report_data['summary']['unique_stores'] = len(unique_stores)
+            report_data['summary']['unique_brands'] = len(unique_brands)
+
+            return Response(report_data)
+
+        except Exception as e:
+            logger.exception("Error generating report")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

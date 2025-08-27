@@ -1,0 +1,64 @@
+.reports-container {
+    padding: 24px;
+}
+
+.table-container {
+    margin-top: 24px;
+}
+
+/* Theme-aware table styling */
+.ant-table {
+    background: var(--ant-table-bg) !important;
+}
+
+.ant-table-thead>tr>th {
+    background: var(--ant-table-header-bg) !important;
+    color: var(--ant-table-header-color) !important;
+}
+
+.ant-table-tbody>tr>td {
+    background: var(--ant-table-bg) !important;
+    color: var(--ant-table-color) !important;
+}
+
+.ant-table-tbody>tr:hover>td {
+    background: var(--ant-table-row-hover-bg) !important;
+}
+
+.ant-table-row-expand-icon-cell {
+    background: var(--ant-table-bg) !important;
+}
+
+/* Summary row styling */
+.ant-table-summary {
+    background: var(--ant-table-header-bg) !important;
+}
+
+.ant-table-summary>tr>td {
+    background: var(--ant-table-header-bg) !important;
+    color: var(--ant-table-header-color) !important;
+}
+
+/* Form styling */
+.reports-container .ant-form-item {
+    margin-bottom: 16px;
+}
+
+.reports-container .ant-picker {
+    width: 100%;
+}
+
+.reports-container .ant-space {
+    margin: 16px 0;
+}
+
+/* Button container */
+.reports-container .button-container {
+    text-align: right;
+    margin-top: 16px;
+}
+
+/* Make sure the empty state follows the theme */
+.ant-empty {
+    color: var(--ant-text-color-secondary) !important;
+}
