@@ -18,17 +18,18 @@ import {
     TeamOutlined,
     UserOutlined,
     ShopOutlined,
-    TagOutlined
+    TagOutlined,
+    ClearOutlined
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import Loader from "../components/Loader";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import '../styles/reports.css';
 import storeRepository from "../repositories/storeRepository";
 import { Toast } from "../components/Toast";
 import reportRepository from "../repositories/reportRepository";
-import api from "../services/api";
 
 const { RangePicker } = DatePicker;
 
@@ -470,101 +471,120 @@ const Reports = () => {
 
     return (
         <ErrorBoundary>
-            <div className="reports-container">
-                <Card title={t("reports:title")}>
-                    <Form form={form} onFinish={handleSubmit} layout="vertical">
-                        <Form.Item
-                            name="promoter_id"
-                            label={t("reports:form.promoter")}
-                        >
-                            <Select
-                                showSearch
-                                placeholder={t("reports:form.selectPromoter")}
-                                optionFilterProp="children"
-                                filterOption={(input, option) =>
-                                    option?.label?.toLowerCase().includes(input.toLowerCase())
-                                }
-                                options={promoters}
-                                onChange={handlePromoterChange}
-                                allowClear
-                            />
-                        </Form.Item>
+            <Card title={t("reports:title")}>
+                <Form form={form} onFinish={handleSubmit} layout="vertical">
+                    <Row gutter={16}>
+                        <Col xs={24} sm={12} md={6}>
+                            <Form.Item
+                                name="promoter_id"
+                                label={t("reports:form.fields.promoter.label")}
+                            >
+                                <Select
+                                    showSearch
+                                    placeholder={t("reports:form.fields.promoter.placeholder")}
+                                    optionFilterProp="children"
+                                    filterOption={(input, option) =>
+                                        option?.label?.toLowerCase().includes(input.toLowerCase())
+                                    }
+                                    options={promoters}
+                                    onChange={handlePromoterChange}
+                                    allowClear
+                                />
+                            </Form.Item>
+                        </Col>
 
-                        <Form.Item
-                            name="brand_id"
-                            label={t("reports:form.brand")}
-                        >
-                            <Select
-                                showSearch
-                                placeholder={t("reports:form.selectBrand")}
-                                optionFilterProp="children"
-                                onChange={handleBrandChange}
-                                filterOption={(input, option) =>
-                                    option?.label?.toLowerCase().includes(input.toLowerCase())
-                                }
-                                options={brands}
-                                allowClear
-                            />
-                        </Form.Item>
+                        <Col xs={24} sm={12} md={6}>
+                            <Form.Item
+                                name="brand_id"
+                                label={t("reports:form.fields.brand.label")}
+                            >
+                                <Select
+                                    showSearch
+                                    placeholder={t("reports:form.fields.brand.placeholder")}
+                                    optionFilterProp="children"
+                                    onChange={handleBrandChange}
+                                    filterOption={(input, option) =>
+                                        option?.label?.toLowerCase().includes(input.toLowerCase())
+                                    }
+                                    options={brands}
+                                    allowClear
+                                />
+                            </Form.Item>
+                        </Col>
 
-                        <Form.Item
-                            name="store_id"
-                            label={t("reports:form.fields.store.label")}
-                        >
-                            <Select
-                                allowClear
-                                placeholder={t("reports:form.fields.store.placeholder")}
-                                options={stores.map((store) => ({
-                                    value: store.id,
-                                    label: `${store.name} - ${store.number}`,
-                                }))}
-                            />
-                        </Form.Item>
+                        <Col xs={24} sm={12} md={6}>
+                            <Form.Item
+                                name="store_id"
+                                label={t("reports:form.fields.store.label")}
+                            >
+                                <Select
+                                    allowClear
+                                    placeholder={t("reports:form.fields.store.placeholder")}
+                                    options={stores.map((store) => ({
+                                        value: store.id,
+                                        label: `${store.name} - ${store.number}`,
+                                    }))}
+                                />
+                            </Form.Item>
+                        </Col>
 
-                        <Form.Item
-                            name="date_range"
-                            label={t("reports:form.fields.date_range.label")}
-                        >
-                            <RangePicker
-                                format="DD/MM/YYYY"
-                                placeholder={[
-                                    t("reports:form.fields.date_range.start"),
-                                    t("reports:form.fields.date_range.end"),
-                                ]}
-                            />
-                        </Form.Item>
+                        <Col xs={24} sm={12} md={6}>
+                            <Form.Item
+                                name="date_range"
+                                label={t("reports:form.fields.date_range.label")}
+                            >
+                                <RangePicker
+                                    format="DD/MM/YYYY"
+                                    placeholder={[
+                                        t("reports:form.fields.date_range.start"),
+                                        t("reports:form.fields.date_range.end"),
+                                    ]}
+                                />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                        <Form.Item>
-                            <Space>
+                    <Row justify="end">
+                        <Col>
+                            <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                 <Button
                                     type="primary"
                                     htmlType="submit"
                                     loading={loading}
+                                    className="form-button"
                                 >
                                     {loading
                                         ? t("reports:form.buttons.processing")
                                         : t("reports:form.buttons.generate")}
                                 </Button>
-                                <Button onClick={() => form.resetFields()}>
+                                <Button
+                                    type="default"
+                                    icon={<ClearOutlined />}
+                                    onClick={() => {
+                                        form.resetFields();
+                                        setReports(null);
+                                    }}
+                                    className="form-button clear-button"
+                                >
                                     {t("reports:form.buttons.clear")}
                                 </Button>
                             </Space>
-                        </Form.Item>
-                    </Form>
+                        </Col>
+                    </Row>
+                </Form>
 
-                    <div className={`table-container ${viewMode}`}>
-                        {loading ? (
-                            <div className="loading-container">
-                                <Loader />
-                            </div>
-                        ) : viewMode === "table" ? (
-                            renderTableView()
-                        ) : (
-                            renderCalendarView()
-                        )}
-                    </div>
-                </Card>
-            </div>
+                <div className={`table-container ${viewMode}`}>
+                    {loading ? (
+                        <div className="loading-container">
+                            <Loader />
+                        </div>
+                    ) : viewMode === "table" ? (
+                        renderTableView()
+                    ) : (
+                        renderCalendarView()
+                    )}
+                </div>
+            </Card>
         </ErrorBoundary>
     );
 };
