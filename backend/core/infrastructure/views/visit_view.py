@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, 
+from rest_framework import viewsets, status 
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.http import HttpResponse
@@ -13,7 +13,6 @@ from decimal import Decimal
 import pandas as pd
 from django.utils import timezone
 from datetime import datetime, timedelta
-from django.db.models import Q
 import logging
 from core.infrastructure.models.user_model import User
 from drf_spectacular.utils import (
@@ -23,7 +22,6 @@ from drf_spectacular.utils import (
     OpenApiTypes
 )
 from typing import List, Optional
-from django.urls import path
 
 logger = logging.getLogger(__name__)
 
