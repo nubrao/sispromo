@@ -1,36 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, Table, Button, Space, Popconfirm, Input, Tag } from "antd";
 import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { toast } from "react-toastify";
-import api from "../services/api";
+import { useCancelableAxios } from "../hooks/useCancelableAxios";
 
 const { Search } = Input;
 
 const Users = () => {
+    const { data: users = [], loading, error } = useCancelableAxios({ method: 'get', url: '/api/users/' });
     const { t } = useTranslation(["users", "common"]);
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-    const [users, setUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-
-    useEffect(() => {
-        loadUsers();
-    }, []);
-
-    const loadUsers = async () => {
-        try {
-            setLoading(true);
-            const response = await api.get("/api/users/");
-            setUsers(response.data);
-        } catch (error) {
-            console.error("Erro ao carregar usuários:", error);
-            toast.error(t("users:messages.error.load"));
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleDelete = async (id) => {
         try {
@@ -46,9 +28,7 @@ const Users = () => {
         }
     };
 
-    const handleSearch = (value) => {
-        setSearchTerm(value);
-    };
+    const handleSearch = (value) => setSearchTerm(value);
 
     const filteredUsers = users.filter((user) => {
         const searchLower = searchTerm.toLowerCase();
