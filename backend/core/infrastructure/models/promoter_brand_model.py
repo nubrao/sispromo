@@ -1,26 +1,29 @@
 from django.db import models
-from .promoter_model import PromoterModel
-from .brand_model import BrandModel
+from django.contrib.auth import get_user_model
+from core.infrastructure.models.brand_model import BrandModel
+from core.infrastructure.models.base_model import BaseModel
+
+User = get_user_model()
 
 
-class PromoterBrandModel(models.Model):
+class PromoterBrand(BaseModel):
     promoter = models.ForeignKey(
-        PromoterModel,
+        User,
         on_delete=models.CASCADE,
-        related_name='brand_assignments'
+        related_name='promoter_brands'
     )
     brand = models.ForeignKey(
         BrandModel,
         on_delete=models.CASCADE,
-        related_name='promoter_assignments'
+        related_name='promoter_brands'
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'core_promoter_brand'
         unique_together = ('promoter', 'brand')
-        ordering = ['promoter', 'brand']
+        verbose_name = 'Vínculo Promotor-Marca'
+        verbose_name_plural = 'Vínculos Promotor-Marca'
+        ordering = ['created_at']
 
     def __str__(self):
-        return f"{self.promoter.name} - {self.brand.brand_name}"
+        return f"{self.promoter.get_full_name()} - {self.brand.brand_name}"

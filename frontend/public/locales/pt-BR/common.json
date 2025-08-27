@@ -1,0 +1,123 @@
+{
+    "loading": "Carregando...",
+    "error": {
+        "generic": "Ocorreu um erro. Por favor, tente novamente.",
+        "network": "Erro de conexão. Por favor, verifique sua internet.",
+        "unauthorized": "Você não está autorizado a acessar este recurso.",
+        "forbidden": "Você não tem permissão para acessar este recurso.",
+        "not_found": "O recurso solicitado não foi encontrado.",
+        "validation": "Por favor, verifique os dados informados."
+    },
+    "buttons": {
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "confirm": "Confirmar",
+        "back": "Voltar",
+        "close": "Fechar",
+        "search": "Buscar",
+        "filter": "Filtrar",
+        "clear": "Limpar",
+        "add": "Adicionar",
+        "remove": "Remover",
+        "processing": "Processando...",
+        "clear_filters": "Limpar Filtros",
+        "create_promoter": "Criar Promotor",
+        "create_store": "Criar Loja",
+        "create_brand": "Criar Marca",
+        "update": "Atualizar"
+    },
+    "validation": {
+        "required": "Este campo é obrigatório",
+        "email": "Por favor, insira um e-mail válido",
+        "min_length": "Este campo deve ter no mínimo {{min}} caracteres",
+        "max_length": "Este campo deve ter no máximo {{max}} caracteres",
+        "password_match": "As senhas não conferem",
+        "invalid_format": "Formato inválido"
+    },
+    "confirmation": {
+        "delete": {
+            "title": "Confirmar exclusão",
+            "message": "Tem certeza que deseja excluir este item?",
+            "yes": "Sim, excluir",
+            "no": "Não, cancelar"
+        }
+    },
+    "table": {
+        "empty": "Nenhum registro encontrado",
+        "loading": "Carregando registros...",
+        "search": "Buscar...",
+        "pagination": {
+            "total": "Total de {{total}} registros",
+            "page": "Página {{current}} de {{total}}",
+            "go_to": "Ir para página:",
+            "items_per_page": "/ página"
+        },
+        "actions": {
+            "edit": "Editar",
+            "delete": "Excluir",
+            "view": "Visualizar",
+            "confirm": "Confirmar",
+            "cancel": "Cancelar"
+        },
+        "total": "Total de registros: {{total}}"
+    },
+    "filters": {
+        "title": "Filtros",
+        "apply": "Aplicar filtros",
+        "clear": "Limpar filtros",
+        "date": {
+            "start": "Data inicial",
+            "end": "Data final",
+            "range": "Período"
+        }
+    },
+    "messages": {
+        "success": {
+            "create": "Registro criado com sucesso",
+            "update": "Registro atualizado com sucesso",
+            "delete": "Registro excluído com sucesso",
+            "temp_password": "Senha temporária copiada para a área de transferência"
+        },
+        "error": {
+            "load": "Erro ao carregar dados",
+            "create": "Erro ao criar registro",
+            "update": "Erro ao atualizar registro",
+            "delete": "Erro ao excluir registro",
+            "unexpected": "Ocorreu um erro inesperado"
+        },
+        "confirm": {
+            "delete": "Tem certeza que deseja excluir este registro?"
+        }
+    },
+    "appName": "SisPromo",
+    "menu": {
+        "dashboard": "Dashboard",
+        "brands": "Marcas",
+        "stores": "Lojas",
+        "promoters": "Promotores",
+        "promoters_list": "Lista de Promotores",
+        "promoters_new": "Novo Promotor",
+        "visits": "Visitas",
+        "reports": "Relatórios",
+        "users": "Usuários"
+    },
+    "form": {
+        "required": "Campo obrigatório",
+        "invalid": "Valor inválido",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "processing": "Processando...",
+        "search": "Buscar"
+    },
+    "modal": {
+        "temp_password": {
+            "title": "Senha temporária",
+            "message": "A senha temporária para o promotor {{name}} é: {{password}}",
+            "copy": "Copiar senha",
+            "close": "Fechar",
+            "ok": "OK"
+        }
+    }
+}

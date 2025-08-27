@@ -1,0 +1,125 @@
+{
+    "title": "Promotores",
+    "form": {
+        "title": {
+            "new": "Novo Promotor",
+            "edit": "Editar Promotor"
+        },
+        "fields": {
+            "first_name": {
+                "label": "Nome",
+                "placeholder": "Digite o nome do promotor",
+                "required": "Digite o nome do promotor"
+            },
+            "last_name": {
+                "label": "Sobrenome",
+                "placeholder": "Digite o sobrenome do promotor",
+                "required": "Digite o sobrenome do promotor"
+            },
+            "cpf": {
+                "label": "CPF",
+                "placeholder": "Digite o CPF do promotor",
+                "required": "Digite o CPF do promotor",
+                "invalid": "CPF inválido"
+            },
+            "phone": {
+                "label": "Telefone",
+                "placeholder": "Digite o telefone do promotor",
+                "required": "Digite o telefone do promotor",
+                "invalid": "Telefone inválido"
+            },
+            "email": {
+                "label": "E-mail",
+                "placeholder": "Digite o e-mail do promotor",
+                "required": "Digite o e-mail do promotor",
+                "invalid": "E-mail inválido"
+            },
+            "brands": {
+                "label": "Vincular marcas",
+                "placeholder": "Selecione as marcas do promotor",
+                "required": "Selecione as marcas do promotor"
+            }
+        }
+    },
+    "list": {
+        "columns": {
+            "name": "Nome",
+            "cpf": "CPF",
+            "phone": "Telefone",
+            "email": "E-mail",
+            "brands": "Marcas"
+        },
+        "empty": "Nenhum promotor encontrado",
+        "title": "Lista de Promotores"
+    },
+    "search": {
+        "placeholder": "Buscar por nome, CPF ou e-mail",
+        "name": "Buscar por nome",
+        "cpf": "Buscar por CPF",
+        "phone": "Buscar por telefone"
+    },
+    "buttons": {
+        "new": "Novo Promotor",
+        "clear_filters": "Limpar Filtros",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "search": "Buscar",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "processing": "Processando...",
+        "create": "Criar Promotor",
+        "update": "Atualizar Promotor",
+        "copy": "Copiar",
+        "ok": "OK"
+    },
+    "messages": {
+        "success": {
+            "create": "Promotor criado com sucesso!",
+            "update": "Promotor atualizado com sucesso!",
+            "delete": "Promotor excluído com sucesso!",
+            "password_copied": "Senha do promotor copiada para a área de transferência"
+        },
+        "error": {
+            "load": "Erro ao carregar promotores",
+            "create": "Erro ao criar promotor",
+            "update": "Erro ao atualizar promotor",
+            "delete": "Erro ao excluir promotor",
+            "delete_title": "Não é possível excluir o promotor",
+            "has_visits": "Este promotor possui visitas registradas e não pode ser excluído.",
+            "delete_check": "Erro ao verificar se o promotor pode ser excluído",
+            "duplicate_email": "Já existe um promotor com este e-mail",
+            "load_brands": "Erro ao carregar marcas",
+            "password_copy_failed": "Erro ao copiar senha do promotor"
+        },
+        "confirm": {
+            "delete_title": "Confirmar exclusão",
+            "delete_confirm": "Tem certeza que deseja excluir este promotor? Esta ação não poderá ser desfeita."
+        }
+    },
+    "table": {
+        "name": "Nome",
+        "last_name": "Sobrenome",
+        "email": "E-mail",
+        "phone": "Telefone",
+        "actions": "Ações",
+        "brands": "Marcas"
+    },
+    "filters": {
+        "name": "Filtrar por nome",
+        "phone": "Filtrar por telefone",
+        "brand": "Filtrar por marca",
+        "placeholders": {
+            "name": "Digite o nome do promotor",
+            "phone": "Digite o telefone do promotor",
+            "brand": "Selecione a marca do promotor"
+        }
+    },
+    "modal": {
+        "password": {
+            "title": "Senha do Promotor",
+            "description": "A senha do promotor é:",
+            "copy": "Copiar senha",
+            "ok": "OK"
+        }
+    }
+}

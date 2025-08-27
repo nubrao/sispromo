@@ -1,6 +1,11 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from ..models.visit_model import VisitModel
+from ..models.visit_price_model import VisitPriceModel
+from .visit_price_serializer import VisitPriceSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class VisitSerializer(serializers.ModelSerializer):
@@ -14,74 +19,102 @@ class VisitSerializer(serializers.ModelSerializer):
         model = VisitModel
         fields = [
             "id", "promoter", "store", "brand", "visit_date",
-            "visit_price", "total_price"
+            "visit_price", "total_price", "status"
         ]
 
     @extend_schema_field(serializers.CharField())
     def get_promoter(self, obj):
-        """Retorna os dados do promotor"""
-        promoter_data = {
-            "id": obj.promoter.id,
-            "name": obj.promoter.name,
-            "email": (
-                obj.promoter.user_profile.user.email
-                if obj.promoter.user_profile and obj.promoter.user_profile.user
-                else None
-            )
-        }
-        return promoter_data
+        """Retorna os dados do promoter"""
+        try:
+            promoter = User.objects.get(id=obj.promoter_id)
+            return {
+                "id": promoter.id,
+                "name": promoter.get_full_name(),
+                "email": promoter.email,
+                "role": promoter.role,
+                "role_display": promoter.get_role_display()
+            }
+        except User.DoesNotExist:
+            return None
 
     @extend_schema_field(serializers.CharField())
     def get_store(self, obj):
         """Retorna os dados da loja"""
-        store_data = {
-            "id": obj.store.id,
-            "name": obj.store.name,
-            "number": obj.store.number,
-            "address": obj.store.address,
-            "city": obj.store.city,
-            "state": obj.store.state
-        }
-        return store_data
+        from ..models.store_model import StoreModel
+        try:
+            store = StoreModel.objects.get(id=obj.store_id)
+            return {
+                "id": store.id,
+                "name": store.name,
+                "number": store.number,
+                "city": store.city,
+                "state": store.state
+            }
+        except StoreModel.DoesNotExist:
+            return None
 
     @extend_schema_field(serializers.CharField())
     def get_brand(self, obj):
         """Retorna os dados da marca"""
-        brand_data = {
-            "id": obj.brand.id,
-            "name": obj.brand.brand_name,
-            "store_id": obj.brand.store.id,
-            "store_name": obj.brand.store.name,
-            "store_number": obj.brand.store.number
-        }
-        return brand_data
+        from ..models.brand_model import BrandModel
+        try:
+            brand = BrandModel.objects.get(id=obj.brand_id)
+            return {
+                "brand_id": brand.id,
+                "brand_name": brand.name
+            }
+        except BrandModel.DoesNotExist:
+            return None
 
-    @extend_schema_field(serializers.DecimalField(max_digits=10, decimal_places=2))
+    @extend_schema_field(
+        serializers.DecimalField(max_digits=10, decimal_places=2)
+    )
     def get_visit_price(self, obj):
-        """Retorna o preço da visita"""
-        if obj.price:
-            return str(obj.price)
-        return "0.00"
+        """Retorna o preço da visita com base na relação Loja + Marca"""
+        try:
+            visit_price = VisitPriceModel.objects.get(
+                store_id=obj.store_id,
+                brand_id=obj.brand_id
+            )
+            # Obtém o preço corretamente
+            return VisitPriceSerializer(visit_price).data["price"]
+        except VisitPriceModel.DoesNotExist:
+            return "0.00"  # Retorna um valor padrão caso não haja preço cadastrado
 
-    @extend_schema_field(serializers.DecimalField(max_digits=10, decimal_places=2))
+    @extend_schema_field(
+        serializers.DecimalField(max_digits=10, decimal_places=2)
+    )
     def get_total_price(self, obj):
         """Calcula o preço total da visita"""
-        if obj.price:
-            return str(obj.price)
-        return "0.00"
+        visit_price = self.get_visit_price(obj)
+        return visit_price if visit_price else "0.00"
 
     def to_internal_value(self, data):
         """
         Converte os dados recebidos para o formato interno do Django.
         """
         internal_data = {}
+
+        # Converte store_id
         if "store" in data:
-            internal_data["store_id"] = data["store"]
+            try:
+                internal_data["store_id"] = int(data["store"])
+            except (ValueError, TypeError):
+                raise serializers.ValidationError(
+                    {"store": "ID da loja inválido"}
+                )
+
+        # Converte brand_id
         if "brand" in data:
-            internal_data["brand_id"] = data["brand"]
+            try:
+                internal_data["brand_id"] = int(data["brand"])
+            except (ValueError, TypeError):
+                raise serializers.ValidationError(
+                    {"brand": "ID da marca inválido"}
+                )
 
         # Se o usuário for promotor, usa a data atual
-        if self.context['request'].user.userprofile.role == 'promoter':
+        if self.context['request'].user.role == 1:  # Promotor
             from datetime import date
             internal_data["visit_date"] = date.today()
         elif "visit_date" in data:
@@ -90,13 +123,17 @@ class VisitSerializer(serializers.ModelSerializer):
         return internal_data
 
     def validate(self, data):
-        """
-        Validação adicional para garantir que promotores não possam criar visitas retroativas
-        """
-        if self.context['request'].user.userprofile.role == 'promoter':
-            from datetime import date
-            if data.get('visit_date') != date.today():
+        """Valida os dados da visita"""
+        user = self.context['request'].user
+
+        # Se o usuário for promotor, força o uso do próprio usuário
+        if user.role == 1:  # Promotor
+            data['promoter'] = user
+        else:
+            # Se for gestor ou analista, valida o promotor informado
+            if 'promoter' not in data:
                 raise serializers.ValidationError(
-                    "Promotores não podem criar visitas retroativas."
+                    "O campo promoter é obrigatório."
                 )
+
         return data

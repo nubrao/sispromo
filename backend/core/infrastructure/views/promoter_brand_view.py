@@ -1,106 +1,46 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from core.infrastructure.models.promoter_brand_model import PromoterBrand
+from core.infrastructure.serializers.promoter_brand_serializer import PromoterBrandSerializer
+from core.infrastructure.repositories.promoter_brand_repository import PromoterBrandRepository
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
-from drf_spectacular.utils import extend_schema, extend_schema_view
-import logging
-from ..models.promoter_brand_model import PromoterBrandModel
-from ..serializers.promoter_brand_serializer import PromoterBrandSerializer
-from ..permissions import IsManagerOrAnalyst
-
-logger = logging.getLogger(__name__)
 
 
-@extend_schema_view(
-    list=extend_schema(
-        description="Lista todas as atribuições de marcas a promotores",
-        responses={200: PromoterBrandSerializer(many=True)}
-    ),
-    create=extend_schema(
-        description="Cria uma nova atribuição de marca a promotor",
-        request=PromoterBrandSerializer,
-        responses={201: PromoterBrandSerializer}
-    ),
-    destroy=extend_schema(
-        description="Remove uma atribuição de marca a promotor",
-        responses={204: None}
-    )
-)
 class PromoterBrandViewSet(viewsets.ModelViewSet):
-    """ViewSet para gerenciar atribuições de marcas a promotores"""
-    queryset = PromoterBrandModel.objects.all()
     serializer_class = PromoterBrandSerializer
-    permission_classes = [IsAuthenticated, IsManagerOrAnalyst]
+    permission_classes = [IsAuthenticated]
+    repository = PromoterBrandRepository()
 
     def get_queryset(self):
-        """Retorna o queryset de todas as atribuições."""
-        return self.queryset.select_related('promoter', 'brand', 'brand__store')
+        promoter_id = self.request.query_params.get('promoter_id', None)
+
+        if promoter_id:
+            return self.repository.get_promoter_brands_by_promoter(promoter_id)
+        return self.repository.get_all_promoter_brands()
 
     def create(self, request, *args, **kwargs):
-        """Cria uma nova atribuição verificando duplicatas."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Verifica se já existe uma atribuição igual
-        if PromoterBrandModel.objects.filter(
-            promoter=serializer.validated_data['promoter'],
-            brand=serializer.validated_data['brand']
-        ).exists():
-            return Response(
-                {"error": "Esta marca já está atribuída a este promotor."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        promoter_brand = self.repository.create_promoter_brand(
+            promoter_id=serializer.validated_data['promoter_id'],
+            brand_id=serializer.validated_data['brand_id']
+        )
 
-        self.perform_create(serializer)
+        serializer = self.get_serializer(promoter_brand)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def update(self, request, *args, **kwargs):
-        """Atualiza uma atribuição existente"""
-        try:
-            instance = self.get_object()
-            serializer = self.get_serializer(
-                instance,
-                data=request.data,
-                partial=True
-            )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except Exception as e:
-            logger.error(f"Erro ao atualizar atribuição: {str(e)}")
-            return Response(
-                {"error": "Erro ao atualizar atribuição"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
     def destroy(self, request, *args, **kwargs):
-        """Remove uma atribuição"""
         try:
-            instance = self.get_object()
-            instance.delete()
+            self.repository.delete_promoter_brand(kwargs['pk'])
             return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            logger.error(f"Erro ao remover atribuição: {str(e)}")
-            return Response(
-                {"error": "Erro ao remover atribuição"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        except PromoterBrand.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=False, methods=['get'])
-    def my_brands(self, request):
-        """Retorna as marcas atribuídas ao promotor"""
-        try:
-            promoter = request.user.userprofile.promoter
-            assignments = PromoterBrandModel.objects.filter(promoter=promoter)
-            serializer = self.get_serializer(assignments, many=True)
-            return Response(serializer.data)
-        except Exception as e:
-            logger.error(f"Erro ao buscar marcas do promotor: {str(e)}")
-            return Response(
-                {"error": "Erro ao buscar marcas do promotor"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+    def update_promoter_brands(self, request, promoter_id):
+        """
+        Atualiza todas as marcas de um promotor de uma vez.
+        """
+        brand_ids = request.data.get('brand_ids', [])
+        self.repository.update_promoter_brands(promoter_id, brand_ids)
+        return Response(status=status.HTTP_200_OK)

@@ -1,11 +1,10 @@
 from django.db import models
-from core.infrastructure.models.store_model import StoreModel
 
 
 class BrandModel(models.Model):
     name = models.CharField(max_length=255)
     stores = models.ManyToManyField(
-        StoreModel, through="BrandStore", related_name="brands")
+        'core.StoreModel', through="BrandStore", related_name="brands")
 
     def __str__(self):
         return self.name
@@ -13,7 +12,7 @@ class BrandModel(models.Model):
 
 class BrandStore(models.Model):
     brand = models.ForeignKey(BrandModel, on_delete=models.CASCADE)
-    store = models.ForeignKey(StoreModel, on_delete=models.CASCADE)
+    store = models.ForeignKey('core.StoreModel', on_delete=models.CASCADE)
     visit_frequency = models.IntegerField(
         default=1)
 

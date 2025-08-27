@@ -1,0 +1,61 @@
+{
+    "title": "Atribuição de Marcas",
+    "form": {
+        "title": {
+            "new": "Nova Atribuição",
+            "edit": "Editar Atribuição"
+        },
+        "fields": {
+            "promoter": {
+                "label": "Promotor",
+                "placeholder": "Selecione o promotor",
+                "required": "Selecione o promotor"
+            },
+            "brands": {
+                "label": "Marcas",
+                "placeholder": "Selecione as marcas",
+                "required": "Selecione pelo menos uma marca"
+            }
+        },
+        "buttons": {
+            "save": "Salvar",
+            "cancel": "Cancelar",
+            "processing": "Processando..."
+        }
+    },
+    "list": {
+        "columns": {
+            "promoter": "Promotor",
+            "brands": "Marcas"
+        },
+        "empty": "Nenhuma atribuição encontrada"
+    },
+    "search": {
+        "placeholder": "Buscar por promotor"
+    },
+    "buttons": {
+        "new": "Nova Atribuição",
+        "assign": "Atribuir Marcas",
+        "unassign": "Remover Atribuição"
+    },
+    "messages": {
+        "success": {
+            "create": "Atribuição realizada com sucesso",
+            "update": "Atribuição atualizada com sucesso",
+            "delete": "Atribuição removida com sucesso"
+        },
+        "error": {
+            "load": "Erro ao carregar atribuições",
+            "create": "Erro ao realizar atribuição",
+            "update": "Erro ao atualizar atribuição",
+            "delete": "Erro ao remover atribuição",
+            "duplicate": "O promotor já está atribuído a esta marca"
+        }
+    },
+    "confirm": {
+        "unassign": {
+            "title": "Remover Atribuição",
+            "content": "Tem certeza que deseja remover esta atribuição?"
+        }
+    }
+}

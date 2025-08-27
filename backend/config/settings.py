@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
-import dj_database_url
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "core",
 ]
 
+# Auth settings
+AUTH_USER_MODEL = 'core.User'
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -83,10 +85,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASE_URL = "postgresql://postgres.sldgrokpwutlohbbmviu:B7THw5TcXCibp%23Y@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
-
 DATABASES = {
-    "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres.sldgrokpwutlohbbmviu',
+        'PASSWORD': 'B7THw5TcXCibp#Y',
+        'HOST': 'aws-0-us-west-1.pooler.supabase.com',
+        'PORT': '6543',
+    }
 }
 
 # Password validation
@@ -111,9 +118,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "pt-br"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "America/Sao_Paulo"
 
 USE_I18N = True
 
@@ -124,6 +131,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -146,10 +157,39 @@ REST_FRAMEWORK = {
 
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "SisPromo API",
-    "DESCRIPTION": "Documentação da API do SisPromo",
-    "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": True,
+    'TITLE': 'SisPromo API',
+    'DESCRIPTION': 'API para gerenciamento de promotores e visitas',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '/api',
+    'COMPONENT_SPLIT_REQUEST': True,
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    'ENUM_NAME_OVERRIDES': {
+        'UserStatusEnum': 'core.models.User.STATUS_CHOICES',
+        'UserRoleEnum': 'core.models.User.ROLE_CHOICES',
+        'VisitStatusEnum': 'core.infrastructure.models.visit_model.VisitModel.STATUS_CHOICES'
+    },
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'filter': True
+    },
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
+    'SERVE_AUTHENTICATION': None,
+    'SERVE_PUBLIC': True,
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'CAMELIZE_NAMES': True,
+    'COMPONENT_SPLIT_PATCH': True,
+    'COMPONENT_SPLIT_RESPONSE': True,
+    'SORT_OPERATIONS': True,
+    'EXAMPLES_PATTERN': None,
+    'ENUM_ADD_EXPLICIT_BLANK_NULL_CHOICE': False,
+    'DISABLE_ERRORS_AND_WARNINGS': True,
+    'POSTPROCESSING_HOOKS': [],
+    'PREPROCESSING_HOOKS': []
 }
 
 SIMPLE_JWT = {
@@ -179,6 +219,29 @@ CSRF_TRUSTED_ORIGINS = [
     "http://192.168.1.200:5173",
     "https://sispromo.vercel.app",
     "https://sispromo.onrender.com",
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
 
 LOGGING = {

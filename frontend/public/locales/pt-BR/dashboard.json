@@ -1,0 +1,31 @@
+{
+    "title": "Dashboard",
+    "stats": {
+        "totalVisits": "Total de Visitas",
+        "completedVisits": "Visitas Concluídas",
+        "pendingVisits": "Visitas Pendentes",
+        "promoters": "Total de Promotores",
+        "stores": "Total de Lojas",
+        "brands": "Total de Marcas"
+    },
+    "brandProgress": "Progresso por Marca",
+    "promoterProgress": "Progresso dos Promotores",
+    "storeProgress": "Progresso das Lojas",
+    "chart": {
+        "completed": "Concluídas",
+        "pending": "Pendentes"
+    },
+    "table": {
+        "promoter": "Promotor",
+        "store": "Loja",
+        "brand": "Marca",
+        "date": "Data",
+        "progress": "Progresso"
+    },
+    "messages": {
+        "error": {
+            "load": "Erro ao carregar dados do dashboard"
+        },
+        "empty": "Nenhum dado disponível"
+    }
+}

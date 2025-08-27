@@ -21,7 +21,7 @@
     margin-bottom: 10px;
 }
 
-.form-input {
+/* .form-input {
     display: flex;
     flex-direction: column;
     width: 400px;
@@ -30,7 +30,7 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     box-sizing: border-box;
-}
+} */
 
 .report-filters {
     display: flex;
@@ -84,6 +84,28 @@
     gap: 10px;
     justify-content: space-between;
     align-items: center;
+}
+
+.form-input-break {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+
+    .name-input {
+        width: 40%;
+    }
+
+    .surname-input {
+        width: 60%;
+    }
+
+    .cpf-input {
+        width: 50%;
+    }
+
+    .phone-input {
+        width: 50%;
+    }
 }
 
 .form-input-text {
@@ -140,16 +162,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 1em;
 }
 
-.form-actions {
+/* .form-actions {
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100%;
     min-width: 40px;
     gap: 10px;
-}
+} */
 
 .cancel-button,
 .save-button {
@@ -157,7 +180,7 @@
     margin-left: 4px;
 }
 
-.edit-button,
+/* .edit-button,
 .delete-button,
 .password-button {
     height: 32px;
@@ -170,10 +193,13 @@
     cursor: pointer;
     font-size: 16px;
     transition: background 0.3s;
-}
+} */
 
 .export-buttons {
     display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    justify-content: center;
     align-items: center;
     justify-content: space-evenly;
     min-width: 40px;
@@ -329,38 +355,138 @@
 
 .filter-container {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f8f9fa;
     flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: #f5f5f5;
+    border-radius: 4px;
 }
 
-.filter-container input,
-.filter-container select {
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     flex: 1;
     min-width: 200px;
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
 }
 
-.filter-container .clear-button {
-    background-color: #dc3545;
+.filter-group label {
+    font-weight: 500;
+    color: #333;
+}
+
+.form-input-text {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    width: 100%;
+    transition: border-color 0.2s;
+}
+
+.form-input-text:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.clear-button {
+    padding: 0.5rem 1rem;
+    background-color: #e74c3c;
     color: white;
     border: none;
-    padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 0.9rem;
     transition: background-color 0.2s;
-    font-weight: bold;
+    align-self: flex-end;
 }
 
-.filter-container .clear-button:hover {
-    background-color: #c82333;
+.clear-button:hover {
+    background-color: #c0392b;
+}
+
+@media (prefers-color-scheme: dark) {
+    .ant-modal-content {
+        background-color: var(--modal-bg-dark) !important;
+        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    .ant-modal-title {
+        color: white !important;
+        background-color: var(--modal-bg-dark) !important;
+    }
+
+    .ant-modal-confirm-title {
+        color: white !important;
+    }
+
+    .ant-modal-confirm-content {
+        color: white !important;
+    }
+
+    .ant-modal-header {
+        background-color: var(--modal-bg-dark) !important;
+    }
+
+    .ant-modal-body {
+        background-color: var(--modal-bg-dark) !important;
+        color: white !important;
+    }
+
+    .ant-input {
+        background-color: var(--modal-input-dark) !important;
+        color: white !important;
+    }
+}
+
+.ant-modal-content {
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.5);
+}
+
+.ant-modal-header {
+    font-size: 1.2em !important;
+    margin-bottom: 16px !important;
+}
+
+.ant-modal-title {
+    font-weight: bold;
+    font-size: 1.2em !important;
+}
+
+.ant-modal-confirm-title {
+    font-size: 1.2em !important;
+}
+
+.ant-btn-ok {
+    height: 40px;
+    background-color: #89b789 !important;
+    color: white !important;
+    font-size: 1em;
+    font-weight: bold;
+    border: none !important;
+}
+
+.ant-btn-ok:hover {
+    background-color: #b3d0b3 !important;
+    color: white !important;
+    border: none !important;
+}
+
+.ant-btn-cancel {
+    height: 40px;
+    background-color: #f44336;
+    color: white;
+    font-size: 1em;
+    font-weight: bold;
+    border: none !important;
+}
+
+.ant-btn-cancel:hover {
+    background-color: #c82333 !important;
+    color: white !important;
+    border: none !important;
 }
 
 /* Tema escuro */
@@ -390,6 +516,7 @@
     .filter-container {
         flex-direction: column;
         gap: 10px;
+        max-width: 400px;
     }
 
     .filter-container input,
@@ -441,24 +568,6 @@
     .date-input {
         width: 60%;
     }
-}
-
-.clear-button {
-    background-color: #ff6363;
-    color: white;
-    padding: 8px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-}
-
-.clear-button:hover {
-    background-color: #ff4747;
 }
 
 .loading-container {
@@ -816,6 +925,56 @@ input:checked + .slider:before {
 }
 
 .delete-button:disabled {
-    background-color: #444444;
+    opacity: 0.5;
     cursor: not-allowed;
+}
+
+.disabled-action {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    position: relative;
+}
+
+@media (prefers-color-scheme: dark) {
+    .disabled-action:hover::after {
+        background: rgba(255, 255, 255, 0.8);
+        color: black;
+    }
+}
+
+.status-btn {
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.status-btn.active {
+    background-color: #4caf50;
+}
+
+.status-btn.inactive {
+    background-color: #f44336;
+}
+
+.status-btn.disabled-action {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.status-btn:not(.disabled-action):hover {
+    opacity: 0.8;
+}
+
+@media (prefers-color-scheme: dark) {
+    .status-btn.active {
+        background-color: #67bb6a;
+    }
+
+    .status-btn.inactive {
+        background-color: #e57373;
+    }
 }

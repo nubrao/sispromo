@@ -1,31 +1,25 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import "../styles/modal.css";
+import { Form, Input, Modal } from "antd";
 
-const EditUserModal = ({ open, user, onClose, onSave }) => {
-    const [formData, setFormData] = useState({
-        first_name: "",
-        last_name: "",
-        email: "",
-        username: "",
-        cpf: "",
-        phone: "",
-    });
+const EditUserModal = ({ open, setOpen, user, onSave }) => {
     const [loading, setLoading] = useState(false);
-    const [errors, setErrors] = useState({});
+    const [form] = Form.useForm();
 
     useEffect(() => {
-        if (user) {
-            setFormData({
+        if (open && user) {
+            const formattedData = {
                 first_name: user.first_name || "",
                 last_name: user.last_name || "",
                 email: user.email || "",
                 username: user.username || "",
-                cpf: formatCPF(user.profile.cpf) || "",
-                phone: formatPhone(user.profile.phone) || "",
-            });
+                cpf: formatCPF(user.profile?.cpf) || "",
+                phone: formatPhone(user.profile?.phone) || "",
+            };
+            form.setFieldsValue(formattedData);
         }
-    }, [user]);
+    }, [open, user, form]);
 
     const formatCPF = (cpf) => {
         if (!cpf) return "";
@@ -75,66 +69,40 @@ const EditUserModal = ({ open, user, onClose, onSave }) => {
         return true;
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        let formattedValue = value;
-        setErrors((prev) => ({ ...prev, [name]: "" }));
-
-        if (name === "cpf") {
-            formattedValue = value.replace(/\D/g, "");
-            if (formattedValue.length <= 11) {
-                formattedValue = formattedValue.replace(
-                    /^(\d{3})(\d{3})(\d{3})(\d{2})$/,
-                    "$1.$2.$3-$4"
-                );
-            }
-        } else if (name === "phone") {
-            formattedValue = value.replace(/\D/g, "");
-            if (formattedValue.length <= 11) {
-                formattedValue = formattedValue.replace(
-                    /^(\d{2})(\d{5})(\d{4})$/,
-                    "($1) $2-$3"
-                );
-            }
-        }
-
-        setFormData((prev) => ({
-            ...prev,
-            [name]: formattedValue,
-        }));
-    };
-
-    const validateForm = () => {
-        const newErrors = {};
-        const cpfNumbers = formData.cpf.replace(/\D/g, "");
-        const phoneNumbers = formData.phone.replace(/\D/g, "");
+    const handleSubmit = async (values) => {
+        const cpfNumbers = values.cpf.replace(/\D/g, "");
+        const phoneNumbers = values.phone.replace(/\D/g, "");
 
         if (!validateCPF(cpfNumbers)) {
-            newErrors.cpf = "CPF inválido";
+            form.setFields([
+                {
+                    name: "cpf",
+                    errors: ["CPF inválido"],
+                },
+            ]);
+            return;
         }
 
         if (phoneNumbers.length !== 11) {
-            newErrors.phone = "Telefone deve ter 11 dígitos";
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (!validateForm()) {
+            form.setFields([
+                {
+                    name: "phone",
+                    errors: ["Telefone deve ter 11 dígitos"],
+                },
+            ]);
             return;
         }
 
         setLoading(true);
         try {
-            // Remove as máscaras antes de enviar
             const dataToSend = {
-                ...formData,
-                cpf: formData.cpf.replace(/\D/g, ""),
-                phone: formData.phone.replace(/\D/g, ""),
+                first_name: values.first_name,
+                last_name: values.last_name,
+                email: values.email,
+                profile: {
+                    cpf: cpfNumbers,
+                    phone: phoneNumbers,
+                },
             };
             await onSave(dataToSend);
         } catch (error) {
@@ -144,117 +112,93 @@ const EditUserModal = ({ open, user, onClose, onSave }) => {
         }
     };
 
-    if (!open) return null;
+    const handleCancel = () => {
+        form.resetFields();
+        setOpen(false);
+    };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content edit-user-modal">
-                <h3>Editar Usuário</h3>
-                <form onSubmit={handleSubmit} className="edit-user-form">
-                    <div className="form-group">
-                        <label htmlFor="username">Usuário:</label>
-                        <input
-                            type="text"
-                            id="username"
-                            name="username"
-                            value={formData.username}
-                            onChange={handleChange}
-                            disabled
-                        />
-                    </div>
+        <Modal
+            title="Editar Usuário"
+            open={open}
+            onOk={() => form.submit()}
+            onCancel={handleCancel}
+            confirmLoading={loading}
+            okText="Confirmar"
+            cancelText="Cancelar"
+            okButtonProps={{
+                type: "primary",
+                loading: loading,
+                className: "ant-btn-ok",
+            }}
+            cancelButtonProps={{
+                type: "default",
+                className: "ant-btn-cancel",
+            }}
+            destroyOnClose
+        >
+            <Form
+                form={form}
+                onFinish={handleSubmit}
+                layout="vertical"
+                preserve={false}
+                initialValues={{
+                    first_name: user?.first_name || "",
+                    last_name: user?.last_name || "",
+                    email: user?.email || "",
+                    username: user?.username || "",
+                    cpf: formatCPF(user?.profile?.cpf) || "",
+                    phone: formatPhone(user?.profile?.phone) || "",
+                }}
+            >
+                <Form.Item name="username" label="Usuário">
+                    <Input disabled />
+                </Form.Item>
 
-                    <div className="form-group">
-                        <label htmlFor="first_name">Nome:</label>
-                        <input
-                            type="text"
-                            id="first_name"
-                            name="first_name"
-                            value={formData.first_name}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                <Form.Item
+                    name="first_name"
+                    label="Nome"
+                    rules={[{ required: true, message: "Informe o nome" }]}
+                >
+                    <Input />
+                </Form.Item>
 
-                    <div className="form-group">
-                        <label htmlFor="last_name">Sobrenome:</label>
-                        <input
-                            type="text"
-                            id="last_name"
-                            name="last_name"
-                            value={formData.last_name}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                <Form.Item
+                    name="last_name"
+                    label="Sobrenome"
+                    rules={[{ required: true, message: "Informe o sobrenome" }]}
+                >
+                    <Input />
+                </Form.Item>
 
-                    <div className="form-group">
-                        <label htmlFor="email">E-mail:</label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                <Form.Item
+                    name="email"
+                    label="E-mail"
+                    rules={[
+                        { required: true, message: "Informe o e-mail" },
+                        { type: "email", message: "E-mail inválido" },
+                    ]}
+                >
+                    <Input />
+                </Form.Item>
 
-                    <div className="form-group">
-                        <label htmlFor="cpf">CPF:</label>
-                        <input
-                            type="text"
-                            id="cpf"
-                            name="cpf"
-                            value={formData.cpf}
-                            onChange={handleChange}
-                            placeholder="000.000.000-00"
-                            maxLength={14}
-                            required
-                        />
-                        {errors.cpf && (
-                            <span className="error-message">{errors.cpf}</span>
-                        )}
-                    </div>
+                <Form.Item
+                    name="cpf"
+                    label="CPF"
+                    rules={[{ required: true, message: "Informe o CPF" }]}
+                >
+                    <Input placeholder="000.000.000-00" maxLength={14} />
+                </Form.Item>
 
-                    <div className="form-group">
-                        <label htmlFor="phone">Telefone:</label>
-                        <input
-                            type="text"
-                            id="phone"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            placeholder="(00) 00000-0000"
-                            maxLength={15}
-                            required
-                        />
-                        {errors.phone && (
-                            <span className="error-message">
-                                {errors.phone}
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="modal-actions">
-                        <button
-                            type="submit"
-                            className="modal-save-button"
-                            disabled={loading}
-                        >
-                            {loading ? "Salvando..." : "Salvar"}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="modal-cancel-button"
-                            disabled={loading}
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <Form.Item
+                    name="phone"
+                    label="Telefone"
+                    rules={[{ required: true, message: "Informe o telefone" }]}
+                >
+                    <Input placeholder="(00) 00000-0000" maxLength={15} />
+                </Form.Item>
+            </Form>
+        </Modal>
     );
 };
 
@@ -263,6 +207,7 @@ EditUserModal.propTypes = {
     user: PropTypes.object,
     onClose: PropTypes.func.isRequired,
     onSave: PropTypes.func.isRequired,
+    setOpen: PropTypes.func.isRequired,
 };
 
 export default EditUserModal;

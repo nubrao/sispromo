@@ -1,46 +1,39 @@
 import { useState, useEffect, useContext } from "react";
-import axios from "axios";
 import "../styles/form.css";
 import Loader from "../components/Loader";
-import { LoadingModal } from "../components/LoadingModal";
-import { AuthContext } from "../context/AuthContext";
-import { RoleContext } from "../context/RoleContext";
-import Toast from "../components/Toast";
+import { RoleContext } from "../contexts/RoleContext";
+import { Toast } from "../components/Toast";
 import EditUserModal from "../components/EditUserModal";
+import userRepository from "../repositories/userRepository";
+import { DeleteUserModal } from "../components/DeleteUserModal";
+import { ChangePasswordModal } from "../components/ChangePasswordModal";
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [modalTitle, setModalTitle] = useState("");
-    const [modalMessage, setModalMessage] = useState("");
-    const [success, setSuccess] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
-    const [toast, setToast] = useState({
-        show: false,
-        message: "",
-        type: "success",
-    });
     const [filters, setFilters] = useState({
         search: "",
         role: "",
         status: "",
     });
-    const { token } = useContext(AuthContext);
     const { isManager, userProfileId } = useContext(RoleContext);
-    const API_URL = import.meta.env.VITE_API_URL;
     const [selectedUser, setSelectedUser] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+        useState(false);
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [userToDelete, setUserToDelete] = useState(null);
 
     useEffect(() => {
-        if (isManager()) {
+        if (isManager) {
             fetchUsers();
         }
     }, [isManager]);
 
     useEffect(() => {
         filterUsers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters, users]);
 
     const filterUsers = () => {
@@ -90,141 +83,70 @@ const UserManagement = () => {
         });
     };
 
-    const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
-        setTimeout(() => {
-            setToast({ show: false, message: "", type: "success" });
-        }, 3000);
-    };
-
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`${API_URL}/api/users/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setUsers(response.data);
+            const data = await userRepository.getAllUsers();
+            setUsers(data);
+            setFilteredUsers(data);
         } catch (error) {
             console.error("Erro ao buscar usuários:", error);
-            showToast(
-                "Erro ao carregar usuários. Por favor, tente novamente.",
-                "error"
-            );
+            Toast.showToast("Erro ao carregar usuários", "error");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = (userId) => {
+        setUserToDelete(userId);
+        setDeleteModalVisible(true);
+    };
+
+    const handleDeleteSuccess = async () => {
+        setDeleteModalVisible(false);
+        setUserToDelete(null);
+        await fetchUsers();
+    };
+
+    const handleDeleteError = (error) => {
+        console.error("Erro ao excluir usuário:", error);
+        Toast.showToast("Erro ao excluir usuário", "error");
+    };
+
+    const handleToggleActive = async (userId, currentStatus) => {
+        try {
+            await userRepository.updateUser(userId, {
+                is_active: !currentStatus,
+            });
+            await fetchUsers();
+            Toast.showToast(
+                `Usuário ${
+                    currentStatus ? "desativado" : "ativado"
+                } com sucesso!`,
+                "success"
+            );
+        } catch (error) {
+            console.error("Erro ao alterar status do usuário:", error);
+            Toast.showToast("Erro ao alterar status do usuário", "error");
         }
     };
 
     const handleRoleChange = async (userId, newRole) => {
-        setModalTitle("Alterando Papel do Usuário");
-        setModalMessage("Processando alteração...");
-        setModalOpen(true);
-        setLoading(true);
-        setErrorMessage("");
-
         try {
-            await axios.patch(
-                `${API_URL}/api/users/${userId}/update_role/`,
-                { role: newRole },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
+            await userRepository.updateUser(userId, { role: newRole });
             await fetchUsers();
-        } catch (error) {
-            console.error("Erro ao atualizar papel do usuário:", error);
-            const errorMsg =
-                error.response?.data?.error ||
-                "Erro ao atualizar permissão. Por favor, tente novamente.";
-            setErrorMessage(errorMsg);
-            setModalMessage(errorMsg);
-        } finally {
-            setLoading(false);
-            setTimeout(() => {
-                setModalOpen(false);
-                setSuccess(false);
-                setErrorMessage("");
-            }, 2000);
-            setModalMessage("Papel do usuário atualizado com sucesso!");
-            setSuccess(true);
-        }
-    };
-
-    const handleActiveChange = async (userId, isActive) => {
-        setModalTitle(isActive ? "Ativando Usuário" : "Desativando Usuário");
-        setModalMessage("Processando alteração...");
-        setModalOpen(true);
-        setLoading(true);
-        setErrorMessage("");
-
-        try {
-            await axios.patch(
-                `${API_URL}/api/users/${userId}/`,
-                { is_active: isActive },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
+            const roleNames = {
+                promoter: "Promotor",
+                analyst: "Analista",
+                manager: "Gestor",
+            };
+            Toast.showToast(
+                `Função alterada para ${roleNames[newRole]}`,
+                "success"
             );
-            await fetchUsers();
         } catch (error) {
-            console.error("Erro ao atualizar status do usuário:", error);
-            const errorMsg =
-                error.response?.data?.error ||
-                "Erro ao atualizar status. Por favor, tente novamente.";
-            setErrorMessage(errorMsg);
-            setModalMessage(errorMsg);
-        } finally {
-            setLoading(false);
-            setTimeout(() => {
-                setModalOpen(false);
-                setSuccess(false);
-                setErrorMessage("");
-            }, 2000);
-            setSuccess(true);
-            setModalMessage(
-                `Usuário ${isActive ? "ativado" : "desativado"} com sucesso!`
-            );
-        }
-    };
-
-    const handleDeleteUser = async (userId) => {
-        if (!window.confirm("Tem certeza que deseja excluir este usuário?")) {
-            return;
-        }
-
-        setModalTitle("Excluindo Usuário");
-        setModalMessage("Processando exclusão...");
-        setModalOpen(true);
-        setLoading(true);
-        setErrorMessage("");
-
-        try {
-            await axios.delete(`${API_URL}/api/users/${userId}/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            await fetchUsers();
-        } catch (error) {
-            console.error("Erro ao excluir usuário:", error);
-            const errorMsg =
-                error.response?.data?.error ||
-                "Erro ao excluir usuário. Por favor, tente novamente.";
-            setErrorMessage(errorMsg);
-            setModalMessage(errorMsg);
-        } finally {
-            setLoading(false);
-            setTimeout(() => {
-                setModalOpen(false);
-                setSuccess(false);
-                setErrorMessage("");
-            }, 2000);
-            setModalMessage("Usuário excluído com sucesso!");
-            setSuccess(true);
+            console.error("Erro ao alterar função do usuário:", error);
+            Toast.showToast("Erro ao alterar função do usuário", "error");
         }
     };
 
@@ -235,82 +157,51 @@ const UserManagement = () => {
 
     const handleEditSave = async (editedUserData) => {
         try {
-            await axios.patch(
-                `${API_URL}/api/users/${selectedUser.id}/`,
-                editedUserData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
+            await userRepository.updateUser(selectedUser.id, editedUserData);
             await fetchUsers();
             setIsEditModalOpen(false);
-            setToast({
-                message: "Usuário atualizado com sucesso!",
-                type: "success",
-                show: true,
-            });
+            Toast.showToast("Usuário atualizado com sucesso!", "success");
         } catch (error) {
             console.error("Erro ao atualizar usuário:", error);
-            setToast({
-                message:
-                    error.response?.data?.error || "Erro ao atualizar usuário",
-                type: "error",
-                show: true,
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
 
-    const handleChangePassword = async (userId) => {
-        const newPassword = window.prompt(
-            "Digite a nova senha para o usuário:"
-        );
-        if (!newPassword) return;
+            // Tratamento específico para erros da API
+            if (error.response?.data) {
+                const errorData = error.response.data;
+                let errorMessage = "";
 
-        setModalTitle("Alterando Senha");
-        setModalMessage("Processando alteração...");
-        setModalOpen(true);
-        setLoading(true);
-        setErrorMessage("");
-
-        try {
-            await axios.patch(
-                `${API_URL}/api/users/${userId}/`,
-                {
-                    password: newPassword,
-                    password_confirm: newPassword,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
+                // Verifica se há mensagens de erro em campos específicos
+                if (typeof errorData === "object") {
+                    errorMessage = Object.entries(errorData)
+                        // eslint-disable-next-line no-unused-vars
+                        .map(([_, errors]) => {
+                            if (Array.isArray(errors)) {
+                                return errors.join(", ");
+                            }
+                            return errors;
+                        })
+                        .join(". ");
+                } else {
+                    errorMessage = errorData;
                 }
-            );
-            setSuccess(true);
-            setModalMessage("Senha alterada com sucesso!");
-        } catch (error) {
-            console.error("Erro ao alterar senha:", error);
-            const errorMsg =
-                error.response?.data?.error ||
-                "Erro ao alterar senha. Por favor, tente novamente.";
-            setErrorMessage(errorMsg);
-            setModalMessage(errorMsg);
-        } finally {
-            setLoading(false);
-            setTimeout(() => {
-                setModalOpen(false);
-                setSuccess(false);
-                setErrorMessage("");
-            }, 2000);
+
+                Toast.showToast(errorMessage, "error");
+            } else {
+                Toast.showToast("Erro ao atualizar usuário", "error");
+            }
         }
     };
 
-    if (!isManager()) {
+    const handlePasswordModalOpen = (user) => {
+        setSelectedUser(user);
+        setIsChangePasswordModalOpen(true);
+    };
+
+    const handlePasswordModalClose = () => {
+        setSelectedUser(null);
+        setIsChangePasswordModalOpen(false);
+    };
+
+    if (!isManager) {
         return (
             <div className="form-container">
                 <h2 className="form-title">Acesso Negado</h2>
@@ -351,8 +242,8 @@ const UserManagement = () => {
                     className="form-input-text"
                 >
                     <option value="">Todos os status</option>
-                    <option value="active">Ativo</option>
-                    <option value="inactive">Inativo</option>
+                    <option value="active">Ativos</option>
+                    <option value="inactive">Inativos</option>
                 </select>
                 <button
                     onClick={clearFilters}
@@ -361,40 +252,19 @@ const UserManagement = () => {
                     Limpar Filtros
                 </button>
             </div>
-
-            {toast.show && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() =>
-                        setToast({ show: false, message: "", type: "success" })
-                    }
-                />
-            )}
-
-            <LoadingModal
-                open={modalOpen}
-                success={success}
-                loading={loading}
-                errorMessage={errorMessage}
-                title={modalTitle}
-                message={modalMessage}
-                onClose={() => setModalOpen(false)}
-            />
-
-            {loading && !modalOpen ? (
-                <div className="loading-container">
-                    <Loader />
-                </div>
-            ) : (
-                <div className="table-container">
+            <div className="table-container">
+                {loading ? (
+                    <div className="loading-container">
+                        <Loader />
+                    </div>
+                ) : (
                     <table className="table">
                         <thead>
                             <tr>
                                 <th>Nome</th>
-                                <th>Usuário</th>
                                 <th>E-mail</th>
-                                <th>Regra</th>
+                                <th>Usuário</th>
+                                <th>Função</th>
                                 <th>Status</th>
                                 <th>Ações</th>
                             </tr>
@@ -403,15 +273,14 @@ const UserManagement = () => {
                             {filteredUsers.map((user) => (
                                 <tr key={user.id}>
                                     <td>
-                                        {user.first_name} {user.last_name}
+                                        {user.first_name.toUpperCase()}{" "}
+                                        {user.last_name.toUpperCase()}
                                     </td>
-                                    <td>{user.username}</td>
                                     <td>{user.email}</td>
+                                    <td>{user.username}</td>
                                     <td>
                                         <select
-                                            value={
-                                                user.current_role || "promoter"
-                                            }
+                                            value={user.current_role}
                                             onChange={(e) =>
                                                 handleRoleChange(
                                                     user.id,
@@ -419,7 +288,16 @@ const UserManagement = () => {
                                                 )
                                             }
                                             className="form-input-text"
-                                            disabled={user.id === userProfileId}
+                                            disabled={
+                                                user.userprofile_id ===
+                                                userProfileId
+                                            }
+                                            title={
+                                                user.userprofile_id ===
+                                                userProfileId
+                                                    ? "Não é possível alterar a função do seu próprio usuário"
+                                                    : "Ativar/inativar usuário"
+                                            }
                                         >
                                             <option value="promoter">
                                                 Promotor
@@ -433,22 +311,38 @@ const UserManagement = () => {
                                         </select>
                                     </td>
                                     <td>
-                                        <label className="switch">
-                                            <input
-                                                type="checkbox"
-                                                checked={user.is_active}
-                                                onChange={(e) =>
-                                                    handleActiveChange(
-                                                        user.id,
-                                                        e.target.checked
-                                                    )
-                                                }
-                                                disabled={
-                                                    user.id === userProfileId
-                                                }
-                                            />
-                                            <span className="slider round"></span>
-                                        </label>
+                                        <button
+                                            className={`status-btn ${
+                                                user.profile.is_active
+                                                    ? "active"
+                                                    : "inactive"
+                                            } ${
+                                                user.userprofile_id ===
+                                                userProfileId
+                                                    ? "disabled-action"
+                                                    : ""
+                                            }`}
+                                            onClick={() =>
+                                                handleToggleActive(
+                                                    user.id,
+                                                    user.profile.is_active
+                                                )
+                                            }
+                                            disabled={
+                                                user.userprofile_id ===
+                                                userProfileId
+                                            }
+                                            title={
+                                                user.userprofile_id ===
+                                                userProfileId
+                                                    ? "Não é possível alterar o status do seu próprio usuário"
+                                                    : "Ativar/inativar usuário"
+                                            }
+                                        >
+                                            {user.profile.is_active
+                                                ? "Ativo"
+                                                : "Inativo"}
+                                        </button>
                                     </td>
                                     <td>
                                         <div className="form-actions">
@@ -463,8 +357,8 @@ const UserManagement = () => {
                                             </button>
                                             <button
                                                 onClick={() =>
-                                                    handleChangePassword(
-                                                        user.id
+                                                    handlePasswordModalOpen(
+                                                        user
                                                     )
                                                 }
                                                 className="form-button password-button"
@@ -474,13 +368,24 @@ const UserManagement = () => {
                                             </button>
                                             <button
                                                 onClick={() =>
-                                                    handleDeleteUser(user.id)
+                                                    handleDelete(user.id)
                                                 }
-                                                className="form-button delete-button"
+                                                className={`form-button delete-button ${
+                                                    user.userprofile_id ===
+                                                    userProfileId
+                                                        ? "disabled-action"
+                                                        : ""
+                                                }`}
                                                 disabled={
-                                                    user.id === userProfileId
+                                                    user.userprofile_id ===
+                                                    userProfileId
                                                 }
-                                                title="Excluir usuário"
+                                                title={
+                                                    user.userprofile_id ===
+                                                    userProfileId
+                                                        ? "Não é possível excluir seu próprio usuário"
+                                                        : "Excluir usuário"
+                                                }
                                             >
                                                 🗑️
                                             </button>
@@ -490,17 +395,35 @@ const UserManagement = () => {
                             ))}
                         </tbody>
                     </table>
-                </div>
-            )}
+                )}
+            </div>
 
-            {isEditModalOpen && selectedUser && (
-                <EditUserModal
-                    open={isEditModalOpen}
-                    user={selectedUser}
-                    onClose={() => setIsEditModalOpen(false)}
-                    onSave={handleEditSave}
-                />
-            )}
+            {/* Modais */}
+            <EditUserModal
+                open={isEditModalOpen}
+                setOpen={setIsEditModalOpen}
+                user={selectedUser}
+                onSave={handleEditSave}
+            />
+
+            <ChangePasswordModal
+                visible={isChangePasswordModalOpen}
+                onClose={handlePasswordModalClose}
+                userId={selectedUser?.id}
+            />
+
+            <DeleteUserModal
+                visible={deleteModalVisible}
+                onClose={() => {
+                    setDeleteModalVisible(false);
+                    setUserToDelete(null);
+                }}
+                onConfirm={handleDeleteSuccess}
+                userId={userToDelete}
+                onSuccess={handleDeleteSuccess}
+                onError={handleDeleteError}
+                currentUserId={userProfileId}
+            />
         </div>
     );
 };

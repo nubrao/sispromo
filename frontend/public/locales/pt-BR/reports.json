@@ -1,0 +1,58 @@
+{
+    "title": "Relatórios",
+    "form": {
+        "fields": {
+            "promoter": {
+                "label": "Promotor",
+                "placeholder": "Selecione um promotor"
+            },
+            "brand": {
+                "label": "Marca",
+                "placeholder": "Selecione uma marca"
+            },
+            "store": {
+                "label": "Loja",
+                "placeholder": "Selecione uma loja"
+            },
+            "date_range": {
+                "label": "Período",
+                "start": "Data inicial",
+                "end": "Data final"
+            }
+        },
+        "buttons": {
+            "generate": "Gerar Relatório",
+            "processing": "Gerando...",
+            "clear": "Limpar Filtros",
+            "export": {
+                "excel": "Exportar Excel",
+                "pdf": "Exportar PDF"
+            }
+        }
+    },
+    "list": {
+        "columns": {
+            "promoter": "Promotor",
+            "brand": "Marca",
+            "store": "Loja",
+            "date": "Data",
+            "price": "Valor"
+        },
+        "total": "Total",
+        "empty": "Nenhum registro encontrado"
+    },
+    "messages": {
+        "error": {
+            "load": "Erro ao carregar dados",
+            "generate": "Erro ao gerar relatório",
+            "export": "Erro ao exportar relatório"
+        },
+        "success": {
+            "export": "Relatório exportado com sucesso"
+        }
+    },
+    "view": {
+        "table": "Visualização em Tabela",
+        "calendar": "Visualização em Calendário"
+    }
+}

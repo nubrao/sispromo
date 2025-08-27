@@ -1,82 +1,115 @@
 .navbar {
-    width: 100%;
-    height: 50px;
-    background-color: #5f805f;
-    color: white;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1000;
+    padding: 0 20px;
+    height: 64px;
+    background-color: #001529;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    margin-right: 40px;
+    flex-shrink: 0;
+}
+
+.navbar-brand h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.navbar-brand a {
+    text-decoration: none;
+    color: white;
 }
 
 .navbar-links {
-    flex-grow: 1;
-    margin-left: 20px;
-}
-
-.nav-links {
+    flex: 1;
     display: flex;
-    gap: 20px;
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+    justify-content: flex-start;
+    overflow-x: visible;
 }
 
-.nav-link {
+.nav-menu {
+    background: transparent;
+    line-height: 64px;
+    border: none;
     color: white;
-    text-decoration: none;
-    font-size: 16px;
-    transition: color 0.2s;
-    padding: 5px 10px;
-    border-radius: 4px;
+    min-width: auto;
+    flex: 1;
+    white-space: nowrap;
 }
 
-.nav-link:hover {
-    color: #b3d0b3;
-    background-color: rgba(255, 255, 255, 0.1);
+.nav-menu.ant-menu-horizontal {
+    border-bottom: none;
+    width: 100%;
 }
 
-.nav-link.active {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
+.nav-menu .ant-menu-item,
+.nav-menu .ant-menu-submenu {
+    padding: 0 16px;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.nav-menu .ant-menu-item:hover,
+.nav-menu .ant-menu-submenu:hover,
+.nav-menu .ant-menu-submenu-active,
+.nav-menu .ant-menu-submenu-title:hover {
+    color: white !important;
+}
+
+.nav-menu .ant-menu-item-selected,
+.nav-menu .ant-menu-submenu-selected > .ant-menu-submenu-title {
+    color: white !important;
+}
+
+.nav-menu .ant-menu-submenu-title {
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.nav-menu .anticon {
+    margin-right: 8px;
+    color: inherit;
 }
 
 .logout-button {
-    background-color: #ce4848;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    margin-right: 30px;
-    transition: background-color 0.2s;
-}
-
-.logout-button:hover {
-    background-color: #ff4747;
+    margin-left: 16px;
+    flex-shrink: 0;
 }
 
 .hamburger {
-    display: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
     cursor: pointer;
     padding: 10px;
+    color: white;
 }
 
+.navbar-title {
+    font-size: 1.2rem;
+    color: white;
+}
+
+/* Mobile Sidebar */
 .sidebar {
     position: fixed;
     top: 0;
-    left: -250px;
-    width: 250px;
+    left: -280px;
+    width: 280px;
     height: 100vh;
-    background: #444;
+    background-color: #001529;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
     transition: left 0.3s ease;
-    padding-top: 60px;
-    z-index: 1100;
+    z-index: 1000;
 }
 
 .sidebar.open {
@@ -86,63 +119,67 @@
 .close-sidebar {
     position: absolute;
     top: 10px;
-    right: 15px;
-    font-size: 20px;
+    right: 10px;
     background: none;
     border: none;
-    color: white;
+    font-size: 20px;
     cursor: pointer;
+    color: white;
 }
 
-.sidebar-links .nav-links {
-    flex-direction: column;
-    gap: 0;
+.sidebar-links {
+    padding: 20px;
+    padding-top: 50px;
 }
 
-.sidebar-links .nav-link {
-    padding: 15px 20px;
-    display: block;
-    border-radius: 0;
+.sidebar .nav-menu {
+    background: transparent;
+    border-right: none;
+    color: white;
 }
 
-.sidebar-links .nav-link:hover {
-    background-color: #5f805f;
+.sidebar .nav-menu .ant-menu-item,
+.sidebar .nav-menu .ant-menu-submenu {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.sidebar .nav-menu .ant-menu-item:hover,
+.sidebar .nav-menu .ant-menu-submenu:hover {
+    color: white;
+}
+
+.sidebar .nav-menu .ant-menu-item-selected {
+    background-color: #1890ff !important;
+    color: white;
+}
+
+.sidebar .logout-button {
+    margin: 20px;
+    width: calc(100% - 40px);
 }
 
 .overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1050;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
 }
 
-@media screen and (max-width: 768px) {
+@media (max-width: 767px) {
     .navbar {
-        padding: 0 5px;
+        padding: 0 16px;
     }
 
-    .navbar-title {
-        flex-grow: 1;
-        text-align: center;
-        font-weight: bold;
-        font-size: 16px;
-    }
-
-    .logout-button {
-        padding: 6px 12px;
-        margin-left: 10px;
+    .navbar-brand,
+    .navbar-links,
+    .navbar .logout-button {
+        display: none;
     }
 
     .hamburger {
-        display: block;
-        height: 40px;
-        width: 40px;
-    }
-
-    .navbar-links {
-        display: none;
+        display: flex;
     }
 }

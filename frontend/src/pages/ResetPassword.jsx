@@ -1,102 +1,116 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import "../styles/login.css";
-import Logo from "../assets/img/logo";
-import Loader from "../components/Loader";
+import { useTranslation } from "react-i18next";
+import { Form, Input, Button, Card, Typography } from "antd";
+import { MailOutlined } from "@ant-design/icons";
+import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import api from "../services/api";
+
+const { Title } = Typography;
 
 const ResetPassword = () => {
-    const [email, setEmail] = useState("");
+    const { t } = useTranslation(["auth", "common"]);
+    const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState(false);
-    const navigate = useNavigate();
-    const API_URL = import.meta.env.VITE_API_URL;
+    const [emailSent, setEmailSent] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError("");
-        setLoading(true);
-
+    const handleSubmit = async (values) => {
         try {
-            const response = await axios.post(
-                `${API_URL}/api/users/reset-password/`,
-                {
-                    email,
-                }
-            );
-
-            if (response.status === 200) {
-                setSuccess(true);
-            }
+            setLoading(true);
+            await api.post("/api/auth/reset-password/", {
+                email: values.email,
+            });
+            setEmailSent(true);
+            toast.success(t("auth:reset_password.messages.check_email"));
         } catch (error) {
-            setError(
-                error.response?.data?.message ||
-                    "Erro ao solicitar redefinição de senha. Por favor, tente novamente."
-            );
+            toast.error(t("auth:reset_password.messages.error"));
         } finally {
             setLoading(false);
         }
     };
 
-    if (success) {
-        return (
-            <>
-                <span className="welcome">Redefinição de Senha</span>
-                <div className="login-container">
-                    <Logo />
-                    <div className="success-message">
-                        <p>
-                            Um e-mail com instruções para redefinir sua senha
-                            foi enviado para {email}.
-                        </p>
-                        <Link to="/login" className="auth-link">
-                            Voltar para o Login
-                        </Link>
-                    </div>
-                </div>
-            </>
-        );
-    }
-
     return (
-        <>
-            <span className="welcome">Redefinir Senha</span>
-            <div className="login-container">
-                <Logo />
-                <form onSubmit={handleSubmit} className="login-form">
-                    {loading ? (
-                        <div className="loading-container">
-                            <Loader />
-                        </div>
-                    ) : (
-                        <>
-                            <p className="reset-instructions">
-                                Digite seu e-mail cadastrado para receber as
-                                instruções de redefinição de senha.
-                            </p>
-                            <input
-                                type="email"
-                                placeholder="E-mail"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="login-input"
-                                required
+        <div
+            style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: "100vh",
+                background: "#f0f2f5",
+            }}
+        >
+            <Card
+                style={{ width: 400, boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}
+            >
+                <Title
+                    level={2}
+                    style={{ textAlign: "center", marginBottom: 32 }}
+                >
+                    {t("auth:reset_password.title")}
+                </Title>
+
+                {!emailSent ? (
+                    <Form
+                        form={form}
+                        name="reset-password"
+                        onFinish={handleSubmit}
+                        layout="vertical"
+                    >
+                        <Form.Item
+                            name="email"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: t(
+                                        "auth:reset_password.form.email.required"
+                                    ),
+                                },
+                                {
+                                    type: "email",
+                                    message: t(
+                                        "auth:reset_password.form.email.invalid"
+                                    ),
+                                },
+                            ]}
+                        >
+                            <Input
+                                prefix={<MailOutlined />}
+                                placeholder={t(
+                                    "auth:reset_password.form.email.placeholder"
+                                )}
+                                size="large"
                             />
-                            {error && (
-                                <div className="error-message">{error}</div>
-                            )}
-                            <button type="submit" className="login-button">
-                                Enviar
-                            </button>
-                            <Link to="/login" className="auth-link">
-                                Voltar para o Login
-                            </Link>
-                        </>
-                    )}
-                </form>
-            </div>
-        </>
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={loading}
+                                block
+                                size="large"
+                            >
+                                {loading
+                                    ? t(
+                                          "auth:reset_password.buttons.processing"
+                                      )
+                                    : t("auth:reset_password.buttons.submit")}
+                            </Button>
+                        </Form.Item>
+                    </Form>
+                ) : (
+                    <div style={{ textAlign: "center" }}>
+                        <p>{t("auth:reset_password.messages.check_email")}</p>
+                    </div>
+                )}
+
+                <div style={{ textAlign: "center", marginTop: 16 }}>
+                    <Link to="/login">
+                        {t("auth:reset_password.buttons.back_to_login")}
+                    </Link>
+                </div>
+            </Card>
+        </div>
     );
 };
 

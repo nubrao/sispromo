@@ -1,237 +1,47 @@
-import { useContext, useState } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AuthContext } from "./context/AuthContext";
-import { RoleContext, RoleProvider } from "./context/RoleContext";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ResetPassword from "./pages/ResetPassword";
-import PromoterForm from "./pages/PromoterForm";
-import StoreForm from "./pages/StoreForm";
-import VisitForm from "./pages/VisitForm";
+import { useContext } from "react";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
+import { Layout } from "antd";
+import { AuthContext } from "./contexts/AuthContext";
+import { RoleProvider } from "./contexts/RoleContext";
 import Navbar from "./components/Navbar";
-import PropTypes from "prop-types";
-import BrandForm from "./pages/BrandForm";
-import Reports from "./pages/ReportsForm";
-import VisitPriceForm from "./pages/VisitPriceForm";
-import Dashboard from "./pages/Dashboard";
-import UserManagement from "./pages/UserManagement";
-import PromoterBrandAssignment from "./pages/PromoterBrandAssignment";
+import Loader from "./components/Loader";
+import "./styles/app.css";
 
-const PrivateRoute = ({ children }) => {
-    const { token } = useContext(AuthContext);
-    const { canAccessRoute, loading } = useContext(RoleContext);
-    const location = useLocation();
-
-    if (!token) {
-        return <Navigate to="/login" />;
-    }
-
-    if (loading) {
-        return <div>Carregando...</div>;
-    }
-
-    if (!canAccessRoute(location.pathname)) {
-        return <Navigate to="/home" />;
-    }
-
-    return children;
-};
-
-PrivateRoute.propTypes = {
-    children: PropTypes.node.isRequired,
-};
+const { Content } = Layout;
 
 function App() {
-    const { token } = useContext(AuthContext);
+    const { signed, loading: authLoading } = useContext(AuthContext);
     const location = useLocation();
-    const [loading, setLoading] = useState(null);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [success, setSuccess] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
-    const [dataLoaded, setDataLoaded] = useState(false);
+    const isPublicRoute =
+        location.pathname === "/login" ||
+        location.pathname === "/reset-password";
+
+    if (authLoading) {
+        return <Loader size="fullscreen" text="Carregando..." />;
+    }
+
+    // Se não estiver autenticado e não for uma rota pública, redireciona para login
+    if (!signed && !isPublicRoute) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // Se estiver autenticado e tentar acessar uma rota pública, redireciona para dashboard
+    if (signed && isPublicRoute) {
+        return <Navigate to="/" replace />;
+    }
 
     return (
         <RoleProvider>
-            <div
-                className={`app-container ${
-                    location.pathname === "/login" ? "login" : ""
-                }`}
-            >
-                {token && <Navbar />}
-                <div
-                    className={`content ${
-                        location.pathname === "/login" ? "login" : ""
+            <Layout className="app-layout">
+                {signed && !isPublicRoute && <Navbar />}
+                <Content
+                    className={`app-content ${
+                        isPublicRoute ? "login-page" : ""
                     }`}
                 >
-                    <Routes>
-                        <Route
-                            path="/"
-                            element={
-                                <Navigate
-                                    to={token ? "/home" : "/login"}
-                                    replace
-                                />
-                            }
-                        />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route
-                            path="/reset-password"
-                            element={<ResetPassword />}
-                        />
-                        <Route
-                            path="/home"
-                            element={
-                                <PrivateRoute>
-                                    <Dashboard />
-                                </PrivateRoute>
-                            }
-                        />
-                        <Route
-                            path="/promoters"
-                            element={
-                                <PrivateRoute>
-                                    <PromoterForm
-                                        loading={loading}
-                                        setLoading={setLoading}
-                                        modalOpen={modalOpen}
-                                        setModalOpen={setModalOpen}
-                                        success={success}
-                                        setSuccess={setSuccess}
-                                        errorMessage={errorMessage}
-                                        setErrorMessage={setErrorMessage}
-                                        dataLoaded={dataLoaded}
-                                        setDataLoaded={setDataLoaded}
-                                    />
-                                </PrivateRoute>
-                            }
-                        />
-                        <Route
-                            path="/stores"
-                            element={
-                                <PrivateRoute>
-                                    <StoreForm
-                                        loading={loading}
-                                        setLoading={setLoading}
-                                        modalOpen={modalOpen}
-                                        setModalOpen={setModalOpen}
-                                        success={success}
-                                        setSuccess={setSuccess}
-                                        errorMessage={errorMessage}
-                                        setErrorMessage={setErrorMessage}
-                                        dataLoaded={dataLoaded}
-                                        setDataLoaded={setDataLoaded}
-                                    />
-                                </PrivateRoute>
-                            }
-                        />
-                        <Route
-                            path="/brands"
-                            element={
-                                <PrivateRoute>
-                                    <BrandForm
-                                        loading={loading}
-                                        setLoading={setLoading}
-                                        modalOpen={modalOpen}
-                                        setModalOpen={setModalOpen}
-                                        success={success}
-                                        setSuccess={setSuccess}
-                                        errorMessage={errorMessage}
-                                        setErrorMessage={setErrorMessage}
-                                        dataLoaded={dataLoaded}
-                                        setDataLoaded={setDataLoaded}
-                                    />
-                                </PrivateRoute>
-                            }
-                        />
-                        <Route
-                            path="/promoter-brands"
-                            element={
-                                <PrivateRoute>
-                                    <PromoterBrandAssignment
-                                        loading={loading}
-                                        setLoading={setLoading}
-                                        modalOpen={modalOpen}
-                                        setModalOpen={setModalOpen}
-                                        success={success}
-                                        setSuccess={setSuccess}
-                                        errorMessage={errorMessage}
-                                        setErrorMessage={setErrorMessage}
-                                        dataLoaded={dataLoaded}
-                                        setDataLoaded={setDataLoaded}
-                                    />
-                                </PrivateRoute>
-                            }
-                        />
-                        <Route
-                            path="/visit-prices"
-                            element={
-                                <PrivateRoute>
-                                    <VisitPriceForm
-                                        loading={loading}
-                                        setLoading={setLoading}
-                                        modalOpen={modalOpen}
-                                        setModalOpen={setModalOpen}
-                                        success={success}
-                                        setSuccess={setSuccess}
-                                        errorMessage={errorMessage}
-                                        setErrorMessage={setErrorMessage}
-                                        dataLoaded={dataLoaded}
-                                        setDataLoaded={setDataLoaded}
-                                    />
-                                </PrivateRoute>
-                            }
-                        />
-                        <Route
-                            path="/visits"
-                            element={
-                                <PrivateRoute>
-                                    <VisitForm
-                                        loading={loading}
-                                        setLoading={setLoading}
-                                        modalOpen={modalOpen}
-                                        setModalOpen={setModalOpen}
-                                        success={success}
-                                        setSuccess={setSuccess}
-                                        errorMessage={errorMessage}
-                                        setErrorMessage={setErrorMessage}
-                                        dataLoaded={dataLoaded}
-                                        setDataLoaded={setDataLoaded}
-                                    />
-                                </PrivateRoute>
-                            }
-                        />
-                        <Route
-                            path="/reports"
-                            element={
-                                <PrivateRoute>
-                                    <Reports
-                                        loading={loading}
-                                        setLoading={setLoading}
-                                        modalOpen={modalOpen}
-                                        setModalOpen={setModalOpen}
-                                        success={success}
-                                        setSuccess={setSuccess}
-                                        errorMessage={errorMessage}
-                                        setErrorMessage={setErrorMessage}
-                                        dataLoaded={dataLoaded}
-                                        setDataLoaded={setDataLoaded}
-                                    />
-                                </PrivateRoute>
-                            }
-                        />
-                        <Route
-                            path="/users"
-                            element={
-                                <PrivateRoute>
-                                    <UserManagement />
-                                </PrivateRoute>
-                            }
-                        />
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                </div>
-            </div>
+                    <Outlet />
+                </Content>
+            </Layout>
         </RoleProvider>
     );
 }

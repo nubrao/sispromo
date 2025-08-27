@@ -1,0 +1,59 @@
+{
+    "title": "Preços de Visitas",
+    "form": {
+        "title": {
+            "new": "Novo Preço de Visita",
+            "edit": "Editar Preço de Visita"
+        },
+        "fields": {
+            "brand": {
+                "label": "Marca",
+                "placeholder": "Selecione uma marca",
+                "required": "Selecione uma marca"
+            },
+            "store": {
+                "label": "Loja",
+                "placeholder": "Selecione uma loja",
+                "required": "Selecione uma loja"
+            },
+            "price": {
+                "label": "Valor",
+                "placeholder": "Digite o valor da visita",
+                "required": "Digite o valor da visita",
+                "invalid": "Valor inválido"
+            }
+        },
+        "buttons": {
+            "save": "Salvar",
+            "cancel": "Cancelar",
+            "processing": "Processando..."
+        }
+    },
+    "list": {
+        "columns": {
+            "brand": "Marca",
+            "store": "Loja",
+            "price": "Valor"
+        }
+    },
+    "search": {
+        "placeholder": "Buscar por marca ou loja"
+    },
+    "buttons": {
+        "new": "Novo Preço"
+    },
+    "messages": {
+        "success": {
+            "create": "Preço criado com sucesso",
+            "update": "Preço atualizado com sucesso",
+            "delete": "Preço excluído com sucesso"
+        },
+        "error": {
+            "load": "Erro ao carregar preços",
+            "create": "Erro ao criar preço",
+            "update": "Erro ao atualizar preço",
+            "delete": "Erro ao excluir preço",
+            "duplicate": "Já existe um preço cadastrado para esta marca e loja"
+        }
+    }
+}

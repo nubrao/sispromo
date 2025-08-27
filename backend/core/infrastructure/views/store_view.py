@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 @extend_schema_view(
     list=extend_schema(
-        description="Lista todas as lojas cadastradas",
+        description="""Lista todas as lojas cadastradas.
+        - Todos os usuários autenticados podem listar
+        - Não requer papel específico""",
         responses={
             200: StoreSerializer(many=True),
             500: {
@@ -21,13 +23,29 @@ logger = logging.getLogger(__name__)
         }
     ),
     create=extend_schema(
-        description="Cria uma nova loja",
+        description="""Cria uma nova loja.
+        - Requer papel de Analista (role=2) ou Gestor (role=3)
+        - Promotores (role=1) não podem criar""",
         request=StoreSerializer,
         responses={
             201: StoreSerializer,
             400: {
                 "type": "object",
-                "properties": {"error": {"type": "string"}}
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "description": "Detalhes do erro de validação"
+                    }
+                }
+            },
+            403: {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "description": "Apenas gestores e analistas podem criar lojas"
+                    }
+                }
             },
             500: {
                 "type": "object",
@@ -36,13 +54,29 @@ logger = logging.getLogger(__name__)
         }
     ),
     update=extend_schema(
-        description="Atualiza uma loja existente",
+        description="""Atualiza uma loja existente.
+        - Requer papel de Analista (role=2) ou Gestor (role=3)
+        - Promotores (role=1) não podem atualizar""",
         request=StoreSerializer,
         responses={
             200: StoreSerializer,
             400: {
                 "type": "object",
-                "properties": {"error": {"type": "string"}}
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "description": "Detalhes do erro de validação"
+                    }
+                }
+            },
+            403: {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "description": "Apenas gestores e analistas podem atualizar lojas"
+                    }
+                }
             },
             500: {
                 "type": "object",
@@ -51,9 +85,20 @@ logger = logging.getLogger(__name__)
         }
     ),
     destroy=extend_schema(
-        description="Deleta uma loja",
+        description="""Deleta uma loja.
+        - Requer papel de Analista (role=2) ou Gestor (role=3)
+        - Promotores (role=1) não podem deletar""",
         responses={
             204: None,
+            403: {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "description": "Apenas gestores e analistas podem deletar lojas"
+                    }
+                }
+            },
             500: {
                 "type": "object",
                 "properties": {"error": {"type": "string"}}
@@ -72,8 +117,8 @@ class StoreViewSet(viewsets.ModelViewSet):
 
     def check_manager_analyst_permission(self):
         """Verifica se o usuário é gerente ou analista"""
-        user_role = self.request.user.userprofile.role
-        if user_role not in ['manager', 'analyst']:
+        user_role = self.request.user.role
+        if user_role not in [2, 3]:  # 2 = Analista, 3 = Gestor
             raise PermissionError(
                 "Apenas gerentes e analistas podem realizar esta operação."
             )
