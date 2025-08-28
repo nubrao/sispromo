@@ -222,12 +222,7 @@ const VisitsList = () => {
         return <div>Erro ao carregar dados. Por favor, tente novamente.</div>;
     }
 
-    // Se estiver carregando os dados principais
-    if (loadingVisits || loadingPromoters || loadingStores || loadingBrands) {
-        return <Loader />;
-    }
-
-    return (
+    return !(loadingVisits || loadingPromoters || loadingStores || loadingBrands) ? (
         <>
             <Card title={t("visits:form.title.new")} className="form-title">
                 <Space>
@@ -259,11 +254,12 @@ const VisitsList = () => {
 
                 <Table
                     bordered
-                    dataSource={filteredVisits}
                     columns={columns}
+                    dataSource={filteredVisits}
+                    rowKey="id"
                     loading={loadingVisits}
                     tableLayout="fixed"
-                    rowKey="id"
+                    rowClassName="editable-row"
                 />
             </Card>
 
@@ -287,6 +283,8 @@ const VisitsList = () => {
                 />
             </Modal>
         </>
+    ) : (
+        <Loader />
     );
 };
 

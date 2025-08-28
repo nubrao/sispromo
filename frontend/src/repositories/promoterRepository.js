@@ -19,11 +19,22 @@ class PromoterRepository {
         };
     }
 
-    // Lista todos os promotores
     async getAllPromoters() {
         try {
             const response = await api.get(this.baseURL);
-            return response.data.filter(user => user.role === 'promoter');
+
+            const promoters = response.data.map(user => ({
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                full_name: `${user.first_name} ${user.last_name}`.trim(),
+                first_name: user.first_name,
+                last_name: user.last_name,
+                phone: user.phone || '',
+                brands: []
+            }));
+
+            return promoters;
         } catch (error) {
             console.error("Erro ao buscar promotores:", error);
             throw error;

@@ -22,8 +22,14 @@
     max-width: 300px;
 }
 
-.brand-table {
-    margin-top: 20px;
+.editable-row .ant-form-item-explain {
+    position: absolute;
+    top: 100%;
+    left: 0;
+}
+
+.editable-row td {
+    padding: 5px 8px;
 }
 
 .action-button {

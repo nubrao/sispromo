@@ -210,16 +210,17 @@ const BrandList = () => {
                     </Button>
 
                     <Table
+                        bordered
                         columns={columns}
                         dataSource={filteredBrands}
                         rowKey={(record) =>
                             `${record.brand_id}-${record.store_id}`
                         }
                         loading={loading}
-                        bordered
                         tableLayout="fixed"
-                        className="brand-table"
+                        className="editable-row"
                     />
+
                 </Form>
             </Card>
 

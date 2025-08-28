@@ -98,8 +98,21 @@ api.interceptors.response.use(
                 window.location.href = '/login';
                 Toast.showToast('Sua sessão expirou. Por favor, faça login novamente.', 'warning');
             }
-        } else if (error.code === 'ECONNABORTED') {
-            console.error('Requisição excedeu o tempo limite. Tentando novamente...');
+        } else if (error.code === 'ECONNABORTED' && !originalRequest._retryCount) {
+            originalRequest._retryCount = 1;
+
+            console.warn(`Tentativa ${originalRequest._retryCount}/3: Requisição excedeu o tempo limite`);
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            return api.request(originalRequest);
+        } else if (error.code === 'ECONNABORTED' && originalRequest._retryCount < 3) {
+            originalRequest._retryCount++;
+
+            console.warn(`Tentativa ${originalRequest._retryCount}/3: Requisição excedeu o tempo limite`);
+
+            await new Promise(resolve => setTimeout(resolve, 2000 * originalRequest._retryCount));
+
             return api.request(originalRequest);
         }
 

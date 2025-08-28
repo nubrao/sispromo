@@ -6,7 +6,9 @@
         "unauthorized": "Você não está autorizado a acessar este recurso.",
         "forbidden": "Você não tem permissão para acessar este recurso.",
         "not_found": "O recurso solicitado não foi encontrado.",
-        "validation": "Por favor, verifique os dados informados."
+        "validation": "Por favor, verifique os dados informados",
+        "title": "Ops! Algo deu errado",
+        "description": "Ocorreu um erro ao carregar os dados. Por favor, tente novamente."
     },
     "buttons": {
         "save": "Salvar",
@@ -26,7 +28,8 @@
         "create_promoter": "Criar Promotor",
         "create_store": "Criar Loja",
         "create_brand": "Criar Marca",
-        "update": "Atualizar"
+        "update": "Atualizar",
+        "reload": "Recarregar"
     },
     "validation": {
         "required": "Este campo é obrigatório",
@@ -85,7 +88,9 @@
             "create": "Erro ao criar registro",
             "update": "Erro ao atualizar registro",
             "delete": "Erro ao excluir registro",
-            "unexpected": "Ocorreu um erro inesperado"
+            "unexpected": "Ocorreu um erro inesperado",
+            "title": "Ops! Algo deu errado",
+            "description": "Ocorreu um erro ao carregar os dados. Por favor, tente novamente."
         },
         "confirm": {
             "delete": "Tem certeza que deseja excluir este registro?"

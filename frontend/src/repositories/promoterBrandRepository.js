@@ -67,6 +67,27 @@ class PromoterBrandRepository {
             throw error;
         }
     }
+
+    // Sincroniza as marcas de um promotor
+    async syncPromoterBrands(promoterId, brandIds) {
+        try {
+            const response = await api.post(
+                `${this.baseURL}sync_promoter_brands/`,
+                {
+                    promoter_id: promoterId,
+                    brands: brandIds
+                },
+                {
+                    timeout: 30000
+                }
+            );
+            return response.data;
+        } catch (error) {
+            console.error(`Erro ao sincronizar marcas do promotor ${promoterId}:`, error);
+            message.error("Erro ao sincronizar marcas do promotor");
+            throw error;
+        }
+    }
 }
 
-export default new PromoterBrandRepository(); 
+export default new PromoterBrandRepository();

@@ -10,6 +10,16 @@
     margin-bottom: 16px;
 }
 
+.editable-row .ant-form-item-explain {
+    position: absolute;
+    top: 100%;
+    left: 0;
+}
+
+.editable-row td {
+    padding: 5px 8px;
+}
+
 .form-input {
     margin-bottom: 16px;
 }

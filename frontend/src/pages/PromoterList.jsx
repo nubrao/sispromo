@@ -1,146 +1,103 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import {
-    Table,
-    Input,
-    Space,
-    Button,
-    Card,
-    Form,
-    Row,
-    Col,
-    Tag,
-    Select,
-} from "antd";
-import {
-    EditOutlined,
-    SearchOutlined,
-    ClearOutlined,
-    PlusOutlined,
-} from "@ant-design/icons";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Form, Space, Card, Button, Input, Select, Table, Tag, Row, Col } from "antd";
+import { PlusOutlined, SearchOutlined, ClearOutlined, EditOutlined } from "@ant-design/icons";
+import ErrorBoundary from "../components/ErrorBoundary";
+import api from "../services/api";
+import Toast from "../components/Toast";
 import { formatPhone } from "../utils/formatters";
-import { useNavigate } from "react-router-dom";
-import "../styles/promoter.css";
-import { useCache } from "../hooks/useCache";
-import { Toast } from "../components/Toast";
-import Loader from "../components/Loader";
+
+const PromoterListWithErrorBoundary = () => {
+    const { t } = useTranslation(["common"]);
+
+    return (
+        <ErrorBoundary
+            errorTitle={t("common:messages.error.title")}
+            errorDescription={t("common:messages.error.description")}
+            reloadButtonText={t("common:buttons.reload")}
+            backButtonText={t("common:buttons.back")}
+        >
+            <PromoterList />
+        </ErrorBoundary>
+    );
+}
 
 const PromoterList = () => {
     const { t } = useTranslation(["promoters", "common"]);
     const navigate = useNavigate();
+    const location = useLocation();
     const [filteredPromoters, setFilteredPromoters] = useState([]);
     const [searchForm] = Form.useForm();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [availableBrands, setAvailableBrands] = useState([]);
 
-    // Usando o hook useCache para carregar os dados
-    const {
-        data: users,
-        loading: loadingUsers,
-        error: usersError,
-    } = useCache(
-        "/api/users/",
-        {},
-        {
-            ttl: 5 * 60 * 1000, // 5 minutos
-            onError: () => Toast.error(t("promoters:messages.error.load")),
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Add cache-busting query parameter
+            const timestamp = Date.now();
+
+            // Fetch fresh data from the database
+            const [promoters, promoterBrands] = await Promise.all([
+                api.get(`/api/users/?_t=${timestamp}`),
+                api.get(`/api/promoter-brands/?_t=${timestamp}`)
+            ]);
+
+            // Map brands to promoters
+            const promotersWithBrands = promoters.data.map(promoter => {
+                const brands = promoterBrands.data
+                    .filter(pb => pb.promoter?.id === promoter.id)
+                    .map(pb => ({
+                        brand_id: pb.brand.brand_id,
+                        brand_name: pb.brand.brand_name
+                    }));
+
+                return {
+                    ...promoter,
+                    brands: brands || []
+                };
+            });
+
+            setFilteredPromoters(promotersWithBrands);
+
+            // Extract unique brands for the filter
+            const uniqueBrands = [...new Set(
+                promoterBrands.data
+                    .map(pb => pb.brand)
+                    .filter(Boolean)
+                    .map(brand => JSON.stringify(brand))
+            )].map(str => JSON.parse(str));
+
+            setAvailableBrands(uniqueBrands);
+
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            setError(error);
+            Toast.error(t("promoters:messages.error.load"));
+        } finally {
+            setLoading(false);
         }
-    );
+    };
 
-    const {
-        data: promoterBrandsData,
-        loading: loadingBrands,
-        error: brandsError,
-    } = useCache(
-        "/api/promoter-brands/",
-        {},
-        {
-            ttl: 5 * 60 * 1000, // 5 minutos
-            timeout: 60000, // 60 segundos
-            onError: () =>
-                Toast.error(t("promoters:messages.error.load_brands")),
-        }
-    );
-
-    const { data: brandsData, loading: loadingAvailableBrands } = useCache(
-        "/api/brands/",
-        {},
-        {
-            ttl: 30 * 60 * 1000, // 30 minutos
-        }
-    );
-
-    // Processando os dados usando useMemo para evitar recálculos desnecessários
-    const allPromoters = useMemo(
-        () => users?.filter((user) => user.role === 1) || [],
-        [users]
-    );
-
-    const promoterBrands = useMemo(
-        () =>
-            promoterBrandsData?.reduce((acc, brand) => {
-                if (!acc[brand.promoter.id]) {
-                    acc[brand.promoter.id] = [];
-                }
-                acc[brand.promoter.id].push(brand);
-                return acc;
-            }, {}) || {},
-        [promoterBrandsData]
-    );
-
-    const availableBrands = useMemo(
-        () =>
-            brandsData
-                ? Array.from(
-                      new Set(brandsData.map((brand) => brand.brand_id))
-                  ).map((brandId) => ({
-                      id: brandId,
-                      brand_name: brandsData.find((b) => b.brand_id === brandId)
-                          .brand_name,
-                  }))
-                : [],
-        [brandsData]
-    );
-
-    // Inicializa os promotores filtrados apenas uma vez quando os dados são carregados
     useEffect(() => {
-        if (allPromoters.length > 0 && filteredPromoters.length === 0) {
-            setFilteredPromoters(allPromoters);
+        // Always fetch fresh data when mounting
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        if (location.state?.refresh || location.state?.forceRefresh) {
+            fetchData();
+            // Clear navigation state after fetch
+            navigate(location.pathname, {
+                replace: true,
+                state: {}
+            });
         }
-    }, [allPromoters]);
-
-    const handleEdit = (record) => {
-        navigate(`/promoters/${record.id}/edit`);
-    };
-
-    const handleSearch = () => {
-        const values = searchForm.getFieldsValue();
-        const filteredData = allPromoters.filter((item) => {
-            const fullName =
-                `${item.first_name} ${item.last_name}`.toLowerCase();
-            const searchName = values.name?.toLowerCase().trim() || "";
-            const searchPhone = values.phone?.trim() || "";
-
-            const nameMatch =
-                searchName === "" || fullName.includes(searchName);
-            const phoneMatch =
-                searchPhone === "" ||
-                formatPhone(item.phone).includes(searchPhone);
-
-            const brandMatch =
-                !values.brand?.length ||
-                promoterBrands[item.id]?.some((pb) =>
-                    values.brand.includes(pb.brand.brand_id)
-                );
-
-            return nameMatch && phoneMatch && brandMatch;
-        });
-
-        setFilteredPromoters(filteredData);
-    };
-
-    const clearFilters = () => {
-        searchForm.resetFields();
-        setFilteredPromoters(allPromoters);
-    };
+    }, [location.state?.refresh, location.state?.forceRefresh]);
 
     const columns = [
         {
@@ -169,16 +126,22 @@ const PromoterList = () => {
             width: 250,
             render: (_, record) => (
                 <Space size={[0, 8]} wrap>
-                    {promoterBrands[record.id]?.map((pb) => (
+                    {record.brands?.map((brand) => (
                         <Tag
-                            key={`${record.id}-${pb.brand.brand_id}`}
+                            key={`${record.id}-${brand.brand_id}`}
                             color="blue"
                         >
-                            {pb.brand.brand_name.toUpperCase()}
+                            {brand.brand_name.toUpperCase()}
                         </Tag>
                     )) || []}
                 </Space>
             ),
+        },
+        {
+            title: t("promoters:list.columns.username"),
+            dataIndex: "username",
+            key: "username",
+            width: 120,
         },
         {
             title: t("promoters:table.actions"),
@@ -199,122 +162,144 @@ const PromoterList = () => {
         },
     ];
 
-    // Se houver erro em alguma das requisições principais
-    if (usersError || brandsError) {
-        return <div>Erro ao carregar dados. Por favor, tente novamente.</div>;
-    }
+    const handleEdit = (record) => {
+        navigate(`/promoters/${record.id}/edit`);
+    };
 
-    // Se estiver carregando os dados principais
-    if (loadingUsers || loadingBrands) {
-        return <Loader />;
+    const clearFilters = () => {
+        searchForm.resetFields();
+        fetchData();
+    };
+
+    const handleSearch = () => {
+        const values = searchForm.getFieldsValue();
+        const filtered = filteredPromoters.filter(promoter => {
+            const nameMatch = !values.name ||
+                `${promoter.first_name} ${promoter.last_name}`
+                    .toLowerCase()
+                    .includes(values.name.toLowerCase());
+
+            const phoneMatch = !values.phone ||
+                promoter.phone.includes(values.phone.replace(/\D/g, ''));
+
+            const brandMatch = !values.brand?.length ||
+                promoter.brands.some(brand => values.brand.includes(brand.brand_id));
+
+            return nameMatch && phoneMatch && brandMatch;
+        });
+
+        setFilteredPromoters(filtered);
+    };
+
+    if (error) {
+        return <div>{t("promoters:messages.error.load")}</div>;
     }
 
     return (
-        <>
-            <Card title={t("promoters:title")} className="form-title">
-                <Space>
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => navigate("/promoters/new")}
-                        className="form-button"
-                    >
-                        {t("promoters:buttons.new")}
-                    </Button>
-                </Space>
-                <Form form={searchForm} layout="vertical" className="form">
-                    <Row gutter={16} className="search-row ">
-                        <Col xs={24} sm={8}>
-                            <Form.Item
-                                name="name"
-                                label={t("promoters:search.name")}
-                                className="form-input"
-                            >
-                                <Input
-                                    prefix={<SearchOutlined />}
-                                    placeholder={t("promoters:search.name")}
-                                    allowClear
-                                    onChange={(e) => {
-                                        searchForm.setFieldValue(
-                                            "name",
-                                            e.target.value
-                                        );
-                                        handleSearch();
-                                    }}
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                            <Form.Item
-                                name="phone"
-                                label={t("promoters:search.phone")}
-                                className="form-input"
-                            >
-                                <Input
-                                    prefix={<SearchOutlined />}
-                                    placeholder={t("promoters:search.phone")}
-                                    allowClear
-                                    onChange={(e) => {
-                                        searchForm.setFieldValue(
-                                            "phone",
-                                            e.target.value
-                                        );
-                                        handleSearch();
-                                    }}
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                            <Form.Item
-                                name="brand"
-                                label={t("promoters:filters.brand")}
-                                className="form-input"
-                            >
-                                <Select
-                                    mode="multiple"
-                                    allowClear
-                                    placeholder={t(
-                                        "promoters:filters.placeholders.brand"
-                                    )}
-                                    options={availableBrands.map((brand) => ({
-                                        value: brand.id,
-                                        label: brand.brand_name.toUpperCase(),
-                                    }))}
-                                    onChange={(value) => {
-                                        searchForm.setFieldValue(
-                                            "brand",
-                                            value
-                                        );
-                                        handleSearch();
-                                    }}
-                                    maxTagCount={2}
-                                    maxTagTextLength={10}
-                                    loading={loadingAvailableBrands}
-                                />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Button
-                        type="default"
-                        icon={<ClearOutlined />}
-                        onClick={clearFilters}
-                        className="form-button clear-button"
-                    >
-                        {t("common:buttons.clear_filters")}
-                    </Button>
-                </Form>
+        <Card title={t("promoters:title")} className="form-title">
+            <Space>
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => navigate("/promoters/new")}
+                    className="form-button"
+                >
+                    {t("promoters:buttons.new")}
+                </Button>
+            </Space>
+            <Form form={searchForm} layout="vertical" className="form">
+                <Row gutter={16} className="search-row ">
+                    <Col xs={24} sm={8}>
+                        <Form.Item
+                            name="name"
+                            label={t("promoters:search.name")}
+                            className="form-input"
+                        >
+                            <Input
+                                prefix={<SearchOutlined />}
+                                placeholder={t("promoters:search.name")}
+                                allowClear
+                                onChange={(e) => {
+                                    searchForm.setFieldValue(
+                                        "name",
+                                        e.target.value
+                                    );
+                                    handleSearch();
+                                }}
+                            />
+                        </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={8}>
+                        <Form.Item
+                            name="phone"
+                            label={t("promoters:search.phone")}
+                            className="form-input"
+                        >
+                            <Input
+                                prefix={<SearchOutlined />}
+                                placeholder={t("promoters:search.phone")}
+                                allowClear
+                                onChange={(e) => {
+                                    searchForm.setFieldValue(
+                                        "phone",
+                                        e.target.value
+                                    );
+                                    handleSearch();
+                                }}
+                            />
+                        </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={8}>
+                        <Form.Item
+                            name="brand"
+                            label={t("promoters:filters.brand")}
+                            className="form-input"
+                        >
+                            <Select
+                                mode="multiple"
+                                allowClear
+                                placeholder={t(
+                                    "promoters:filters.placeholders.brand"
+                                )}
+                                options={availableBrands.map((brand) => ({
+                                    value: brand.id,
+                                    label: brand.brand_name.toUpperCase(),
+                                }))}
+                                onChange={(value) => {
+                                    searchForm.setFieldValue(
+                                        "brand",
+                                        value
+                                    );
+                                    handleSearch();
+                                }}
+                                maxTagCount={2}
+                                maxTagTextLength={10}
+                                loading={loading}
+                            />
+                        </Form.Item>
+                    </Col>
+                </Row>
+                <Button
+                    type="default"
+                    icon={<ClearOutlined />}
+                    onClick={clearFilters}
+                    className="form-button clear-button"
+                >
+                    {t("common:buttons.clear_filters")}
+                </Button>
+            </Form>
 
-                <Table
-                    bordered
-                    dataSource={filteredPromoters}
-                    columns={columns}
-                    loading={loadingUsers || loadingBrands}
-                    tableLayout="fixed"
-                    rowKey="id"
-                />
-            </Card>
-        </>
+            <Table
+                bordered
+                columns={columns}
+                dataSource={filteredPromoters}
+                rowKey="id"
+                loading={loading}
+                tableLayout="fixed"
+                rowClassName="editable-row"
+            />
+        </Card>
     );
 };
 
-export default PromoterList;
+export default PromoterListWithErrorBoundary;

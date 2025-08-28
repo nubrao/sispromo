@@ -79,7 +79,6 @@ const Reports = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true);
             try {
                 await Promise.all([
                     fetchPromoters(),
@@ -238,10 +237,11 @@ const Reports = () => {
             <>
                 {renderSummary()}
                 <Table
+                    bordered
                     columns={columns}
                     dataSource={reports.visits}
-                    loading={loading}
                     rowKey="id"
+                    loading={loading}
                     pagination={{
                         total: reports.visits.length,
                         pageSize: 10,

@@ -75,96 +75,35 @@ const PromoterForm = () => {
     const handleSubmit = async (values) => {
         try {
             setLoading(true);
-            const cleanCPF = values.cpf.replace(/\D/g, "");
 
-            const promoterData = {
-                ...values,
-                cpf: cleanCPF,
+            // Update promoter details
+            await api.patch(`/api/users/${id}/`, {
+                first_name: values.first_name?.toUpperCase(),
+                last_name: values.last_name?.toUpperCase(),
+                cpf: values.cpf.replace(/\D/g, ""),
                 phone: values.phone.replace(/\D/g, ""),
-                first_name: values.first_name?.toUpperCase() || "",
-                last_name: values.last_name?.toUpperCase() || "",
-                city: values.city?.toUpperCase() || "",
-                state: values.state?.toUpperCase() || "",
-            };
+                email: values.email,
+                city: values.city?.toUpperCase(),
+                state: values.state?.toUpperCase(),
+            });
 
-            let promoterId = id;
-            if (!id) {
-                promoterData.username = cleanCPF;
-                promoterData.password = cleanCPF.substring(0, 6);
-                promoterData.password_confirm = cleanCPF.substring(0, 6);
-            }
+            // Sync brands
+            await api.post('/api/promoter-brands/sync_promoter_brands/', {
+                promoter_id: id,
+                brands: values.brands
+            });
 
-            if (id) {
-                await api.patch(`/api/users/${id}/`, promoterData);
-                toast.success(t("promoters:messages.success.update"));
-            } else {
-                const response = await api.post("/api/users/register/", promoterData);
-                toast.success(t("promoters:messages.success.create"));
-                promoterId = response.data.id;
-
-                setTempPassword(cleanCPF.substring(0, 6));
-                setShowPasswordModal(true);
-            }
-
-            if (values.brands) {
-                try {
-                    const currentBrandsResponse = await api.get(
-                        `/api/promoter-brands/?promoter_id=${promoterId}`
-                    );
-                    const currentBrands = currentBrandsResponse.data.map(
-                        (pb) => pb.brand.brand_id
-                    );
-
-                    const brandsToRemove = currentBrands.filter(
-                        (brandId) => !values.brands.includes(brandId)
-                    );
-                    const brandsToAdd = values.brands.filter(
-                        (brandId) => !currentBrands.includes(brandId)
-                    );
-
-                    for (const brandId of brandsToRemove) {
-                        const relationResponse = await api.get(
-                            `/api/promoter-brands/?promoter_id=${promoterId}&brand_id=${brandId}`
-                        );
-                        if (relationResponse.data.length > 0) {
-                            const relationId = relationResponse.data[0].id;
-                            await api.delete(
-                                `/api/promoter-brands/${relationId}/`
-                            );
-                        }
-                    }
-
-                    for (const brandId of brandsToAdd) {
-                        await api.post("/api/promoter-brands/", {
-                            promoter_id: promoterId,
-                            brand_id: brandId,
-                        });
-                    }
-                } catch (error) {
-                    console.error("Erro ao atualizar marcas:", error);
-                    toast.error(t("promoters:messages.error.update_brands"));
+            toast.success(t("promoters:messages.success.update"));
+            // Force refresh on list by passing timestamp
+            navigate('/promoters', {
+                state: {
+                    refresh: Date.now(),
+                    forceRefresh: true // New flag to force database fetch
                 }
-            }
-
-            navigate("/promoters");
+            });
         } catch (error) {
-            console.error("Erro ao salvar:", error);
-
-            if (error.response?.data) {
-                const errorData = error.response.data;
-                if (typeof errorData === "object") {
-                    Object.keys(errorData).forEach((key) => {
-                        const errorMessage = Array.isArray(errorData[key])
-                            ? errorData[key].join(", ")
-                            : errorData[key];
-                        toast.error(`${key}: ${errorMessage}`);
-                    });
-                } else {
-                    toast.error(errorData);
-                }
-            } else {
-                toast.error(t("promoters:messages.error.save"));
-            }
+            console.error('Error:', error);
+            toast.error(t("promoters:messages.errors.save"));
         } finally {
             setLoading(false);
         }

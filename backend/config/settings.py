@@ -142,6 +142,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
@@ -153,6 +156,11 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.FormParser",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Disable DRF's default caching
+    'DEFAULT_AUTHENTICATION_THROTTLE_CLASSES': [],
+    'DEFAULT_THROTTLE_CLASSES': [],
+    'DEFAULT_CACHE_RESPONSE_TIMEOUT': 0,
+    'DEFAULT_CACHE_KEY_FUNCTION': None
 }
 
 

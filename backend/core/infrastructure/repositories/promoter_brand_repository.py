@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.db import transaction
 from django.db.models import Prefetch
 from core.infrastructure.models.promoter_brand_model import PromoterBrand
 
@@ -9,6 +10,7 @@ class PromoterBrandRepository:
     CACHE_TIMEOUT = 300  # 5 minutos em segundos
 
     @staticmethod
+    @transaction.atomic
     def get_all_promoter_brands():
         """
         Retorna todas as associações entre promotores e marcas.
@@ -40,6 +42,7 @@ class PromoterBrandRepository:
         return promoter_brands
 
     @staticmethod
+    @transaction.atomic
     def get_promoter_brands_by_promoter(promoter_id):
         """
         Retorna todas as marcas associadas a um promotor específico.
@@ -74,6 +77,7 @@ class PromoterBrandRepository:
         return promoter_brands
 
     @staticmethod
+    @transaction.atomic
     def create_promoter_brand(promoter_id, brand_id):
         """
         Cria uma nova associação entre promotor e marca.
@@ -90,6 +94,7 @@ class PromoterBrandRepository:
         return promoter_brand
 
     @staticmethod
+    @transaction.atomic
     def delete_promoter_brand(promoter_brand_id):
         """
         Remove uma associação entre promotor e marca.
